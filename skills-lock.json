@@ -1,0 +1,35 @@
+{
+  "version": 1,
+  "skills": {
+    "higgsfield-generate": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-generate/SKILL.md",
+      "computedHash": "bbc07398092471d7d89c4bac3ee0319f49a424e00289277bc50d212dafa9a2b1"
+    },
+    "higgsfield-marketplace-cards": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-marketplace-cards/SKILL.md",
+      "computedHash": "4ca0798ee8eaf867301534037e98ed73eb70450f6d2db414e4bf7793ab9ee2a6"
+    },
+    "higgsfield-product-photoshoot": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-product-photoshoot/SKILL.md",
+      "computedHash": "6d5bc0fa9905e1d167e0c1be74a18e141596e49123adb94711a0758267f5c491"
+    },
+    "higgsfield-soul-id": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-soul-id/SKILL.md",
+      "computedHash": "de86f0bf66ee74684f8618b995daf2a6252e7890f395d54f2478067e7be69d7f"
+    },
+    "higgsfield-websites": {
+      "source": "higgsfield-ai/skills",
+      "sourceType": "github",
+      "skillPath": "higgsfield-websites/SKILL.md",
+      "computedHash": "c1db7d538ae2767fd6145a546948ad495fdeb7f1b05e98148c738c2c76de736a"
+    }
+  }
+}
