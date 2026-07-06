@@ -2,71 +2,74 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowRight, Mail, Lock, User, Globe, Shield,
-  ChevronRight, CheckCircle, Star,
+  ChevronRight, CheckCircle, Star, Sparkles,
   Utensils, BookOpen, Scissors, Droplets, ShoppingBag, Dumbbell, Wrench,
-  BarChart2, Users, Bell, Truck, CreditCard, Zap, Package, PieChart
+  BarChart2, Users, Bell, Truck, CreditCard, Zap, Package, PieChart,
+  HelpCircle, ArrowUpRight
 } from "lucide-react";
 import axios from "axios";
 
-/* ─────────────────────────────────────────────────────────────
-   BUSINESS VERTICALS — Clean, enterprise icons. No cartoons.
-───────────────────────────────────────────────────────────── */
 const VERTICALS = [
   {
     icon: Utensils,
     label: "Restaurant & Café",
-    desc: "Full table service, delivery & KDS management",
+    desc: "Table configurations, delivery mapping & live kitchen production ticketing.",
+    badge: "F&B Engine"
   },
   {
     icon: ShoppingBag,
-    label: "Retail & eCommerce",
-    desc: "Catalog, cart, checkout & order fulfillment",
+    label: "Retail & Commerce",
+    desc: "Dynamic catalogs, customer baskets, discount matrices & payments.",
+    badge: "eComm Core"
   },
   {
     icon: BookOpen,
-    label: "Workshop & Classes",
-    desc: "Booking, scheduling & attendance tracking",
+    label: "Workshops & Classes",
+    desc: "Interactive calendars, student rosters, scheduling & attendance logs.",
+    badge: "Bookings"
   },
   {
     icon: Scissors,
-    label: "Salon & Wellness",
-    desc: "Appointment queue & stylist assignment",
+    label: "Salon & Lifestyle",
+    desc: "Queue coordination, stylist allocation & service time tracking.",
+    badge: "Scheduler"
   },
   {
     icon: Droplets,
-    label: "Water & Hydration",
-    desc: "Subscription delivery & route dispatch",
+    label: "Fluid & Hydration",
+    desc: "Automated subscriptions, distribution fleet dispatch & routing.",
+    badge: "Subscriptions"
   },
   {
     icon: Dumbbell,
     label: "Gym & Fitness",
-    desc: "Membership tiers, class booking & renewals",
+    desc: "Membership tiers, check-in gates, trainer logs & auto-renewals.",
+    badge: "Memberships"
   },
   {
     icon: Wrench,
-    label: "Service & Repair",
-    desc: "Job ticketing, field technician dispatch",
+    label: "Service & Repairs",
+    desc: "Field dispatch, technician status tracking & material invoices.",
+    badge: "Field Ops"
   },
 ];
 
-/* ─────────────────────────────────────────────────────────────
-   PLATFORM CAPABILITIES
-───────────────────────────────────────────────────────────── */
 const CAPABILITIES = [
-  { icon: BarChart2, title: "Analytics Suite", desc: "Revenue trends, order metrics, and performance KPIs in a clean workspace dashboard." },
-  { icon: Users, title: "User Management", desc: "Role-based access for admins, kitchen staff, delivery drivers, and workshop trainers." },
-  { icon: Bell, title: "Live Order Routing", desc: "Real-time kitchen display screens and dispatch boards updated on every order event." },
-  { icon: Truck, title: "Delivery Fleet", desc: "Assign riders, track shipments, and mark deliveries complete from a logistics desk." },
-  { icon: CreditCard, title: "Payment & Invoicing", desc: "Accept cash, UPI, and card orders. Generate and export invoice records instantly." },
-  { icon: Package, title: "Inventory Control", desc: "Add, update, and remove catalog items with image URLs, pricing, and descriptions." },
-  { icon: PieChart, title: "Business Reports", desc: "Month-over-month revenue charts, top products, and customer acquisition data." },
-  { icon: Zap, title: "Instant Deployment", desc: "Spin up a fully isolated tenant node in under 90 seconds. Zero setup overhead." },
+  { icon: BarChart2, title: "Executive Analytics", desc: "Compile revenue timelines, average ticket values, and visual pipeline indicators in a clean, unified workspace dashboard." },
+  { icon: Users, title: "Role Gateways", desc: "Provision isolated secure views for managers, kitchen staff, delivery riders, and trainers with custom credentials." },
+  { icon: Bell, title: "Real-time Synchronization", desc: "Live-updating KDS feeds and dispatch boards powered by socket-driven state tracking. Zero page reloads required." },
+  { icon: Truck, title: "Logistics Coordination", desc: "Assign couriers, log cash-on-delivery values, and record proof-of-delivery milestones from a central operations desk." },
+  { icon: CreditCard, title: "Billing & Invoicing", desc: "Support cash, UPI, and manual card charges. Generate digital receipts and download historical auditing sheets." },
+  { icon: Package, title: "Dynamic Catalogs", desc: "Add, edit, or archive menu items instantly. Set unique pricing, rich text descriptions, and high-res image assets." },
+  { icon: PieChart, title: "Visual Growth Reports", desc: "Monitor month-over-month revenue growth, identify top-performing listings, and download corporate ledger audits." },
+  { icon: Zap, title: "Instant Deployment", desc: "Provision a new tenant storefront cluster in under 90 seconds. All databases, routes, and keys configured automatically." },
 ];
 
-/* ─────────────────────────────────────────────────────────────
-   TRUSTED BRANDS (social proof logos as text marks)
-───────────────────────────────────────────────────────────── */
-const BRANDS = ["Taste N Park", "Vana Herbals", "The Flour Studio", "Quartz Kitchen", "FitLife Arena", "AquaDrop Co."];
+const FAQS = [
+  { q: "How does the multi-tenant architecture work?", a: "Each business registered on HighP receives an isolated subdomain slug and database namespace. Your data, products, orders, and staff credentials remain entirely separate from other tenants." },
+  { q: "Can I manage multiple business locations?", a: "Yes. The HighP operations workspace is designed to let you control multiple storefronts, catalogs, and staff roles from a single administrator login." },
+  { q: "What hardware is required for the KDS?", a: "HighP works on any standard web browser. You can mount any tablet, iPad, or smart TV screen in your kitchen or dispatch desk to run the live feeds." },
+];
 
 export default function PlatformHome() {
   const navigate = useNavigate();
@@ -76,6 +79,7 @@ export default function PlatformHome() {
   });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [activeFaq, setActiveFaq] = useState(null);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -99,175 +103,168 @@ export default function PlatformHome() {
       localStorage.setItem(`role_${res.data.slug}`, "admin");
       navigate(`/${res.data.slug}/admin`);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Registration failed. Please try again.");
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Provisioning cluster timeout. Check DB connectivity.");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white">
+
+      {/* Ambient background decoration */}
+      <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-gradient-to-b from-[#5C0E1E]/5 to-transparent blur-3xl pointer-events-none" />
 
       {/* ══════════════════════════════════════════════════
-          NAVIGATION
+          NAVIGATION HEADER
       ══════════════════════════════════════════════════ */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-neutral-200/70 backdrop-blur-md">
-        <div className="max-w-7xl mx-auto px-5 lg:px-10 h-14 flex items-center justify-between">
-
-          {/* LOGO */}
-          <div className="flex items-center gap-2.5 flex-shrink-0">
-            <div className="w-6 h-6 bg-[#5C0E1E] rounded flex items-center justify-center">
-              <span className="font-black text-white text-[10px] tracking-tight">HP</span>
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#F5F5F0] transition-shadow duration-300 hover:shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
+          
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-[#5C0E1E] rounded-xl flex items-center justify-center shadow-md shadow-[#5C0E1E]/10">
+              <span className="font-black text-white text-xs">HP</span>
             </div>
-            <span className="font-black text-sm tracking-tight text-neutral-900">HighP</span>
-            <span className="text-[9px] font-bold text-[#737373] px-1.5 py-0.5 bg-neutral-100 rounded uppercase tracking-wider">Platform</span>
+            <div>
+              <span className="font-black text-sm tracking-tight text-neutral-950 block">HighP Platform</span>
+              <span className="text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">Enterprise Cloud</span>
+            </div>
           </div>
 
-          {/* CENTER LINKS */}
-          <div className="hidden md:flex items-center gap-7 text-[11px] font-medium text-neutral-500">
-            {["Features", "Verticals", "Pricing", "Docs", "Blog"].map(l => (
-              <a key={l} href="#" className="hover:text-neutral-900 transition-colors">{l}</a>
+          <div className="hidden md:flex items-center gap-8 text-[11px] font-bold text-[#737373] uppercase tracking-wider">
+            {["Solutions", "Modules", "Pricing", "Docs"].map(l => (
+              <a key={l} href={`#${l.toLowerCase()}`} className="hover:text-[#5C0E1E] transition-colors">{l}</a>
             ))}
           </div>
 
-          {/* RIGHT ACTIONS */}
-          <div className="flex items-center gap-3">
-            <a href="#" className="hidden sm:block text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">Log in</a>
-            <a href="#register" className="text-[11px] font-bold px-4 py-2 bg-[#5C0E1E] text-white rounded-lg hover:bg-[#3F0712] transition-all">
-              Get Started
+          <div className="flex items-center gap-4">
+            <a href="#" className="hidden sm:block text-[11px] font-black uppercase tracking-wider text-[#737373] hover:text-neutral-900 transition-colors">
+              Sign In
+            </a>
+            <a href="#register" className="text-[11px] font-black uppercase tracking-widest px-5 py-2.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white rounded-xl transition-all shadow-sm shadow-[#5C0E1E]/15">
+              Deploy Free
             </a>
           </div>
         </div>
       </nav>
 
       {/* ══════════════════════════════════════════════════
-          HERO SECTION
+          HERO LAYOUT
       ══════════════════════════════════════════════════ */}
-      <section className="max-w-7xl mx-auto px-5 lg:px-10 pt-16 pb-20">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 items-center">
+      <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-24">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
 
-          {/* LEFT: EDITORIAL COPY */}
-          <div className="lg:col-span-6 space-y-7">
-
-            {/* STATUS BADGE */}
-            <div className="inline-flex items-center gap-2 bg-[#5C0E1E]/8 border border-[#5C0E1E]/15 px-3 py-1.5 rounded-full">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#5C0E1E] animate-pulse" />
-              <span className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">
-                All-in-One Business Operating Platform
+          {/* LEFT: EDITORIAL PRESENTATION */}
+          <div className="lg:col-span-6 space-y-8">
+            <div className="inline-flex items-center gap-2 bg-[#5C0E1E]/6 border border-[#5C0E1E]/10 px-3.5 py-1.5 rounded-full shadow-sm">
+              <Sparkles className="w-3.5 h-3.5 text-[#5C0E1E]" />
+              <span className="text-[9px] font-black text-[#5C0E1E] uppercase tracking-widest">
+                Unified Multi-Tenant Engine
               </span>
             </div>
 
-            {/* HEADLINE */}
-            <div>
-              <h1 className="text-5xl lg:text-6xl font-black tracking-tight text-neutral-950 leading-[1.06] mb-4">
-                One platform for<br />
-                <span className="text-[#5C0E1E]">every business</span><br />
-                you run.
+            <div className="space-y-4">
+              <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-neutral-950 leading-[1.05]">
+                One gateway.
+                <br />
+                <span className="italic font-light text-[#5C0E1E]" style={{ fontFamily: "'Georgia', serif" }}>
+                  Every commercial
+                </span>
+                <br />
+                workspace.
               </h1>
-              <p className="text-neutral-500 text-[13px] leading-relaxed max-w-lg">
-                HighP is a multi-tenant SaaS platform that lets you deploy and manage restaurants, retail stores, workshops, salons, gyms, and more — all from a single operations hub. No code. No complexity.
+              <p className="text-[#737373] text-xs sm:text-sm leading-relaxed max-w-lg">
+                HighP provisions completely isolated sub-retail networks. Switch your layout engine between restaurants, digital catalogs, scheduling desks, or class bookings with a single click.
               </p>
             </div>
 
-            {/* KEY VALUE PROPS */}
-            <div className="space-y-2.5">
+            {/* INTEGRATED ARCHITECTURE HIGHLIGHTS */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-[#F5F5F0] pt-6">
               {[
-                "One dashboard. Multiple business verticals.",
-                "Kitchen display, delivery dispatch & analytics built in.",
-                "Role-based access for every staff member.",
-                "Live storefront for your customers in minutes.",
-              ].map(prop => (
-                <div key={prop} className="flex items-start gap-2.5 text-[12px] text-neutral-700 font-medium">
-                  <CheckCircle className="w-4 h-4 text-[#5C0E1E] flex-shrink-0 mt-0.5" />
-                  {prop}
+                { title: "No-Code Provisioning", desc: "Databases, route trees, and SSL initialized automatically." },
+                { title: "Universal Integrations", desc: "Live KDS monitors, driver hubs, and transaction ledgers." },
+              ].map(({ title, desc }) => (
+                <div key={title} className="space-y-1">
+                  <h4 className="text-[11px] font-black text-neutral-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <CheckCircle className="w-3.5 h-3.5 text-[#5C0E1E]" /> {title}
+                  </h4>
+                  <p className="text-[10px] text-[#737373] leading-relaxed pl-5">{desc}</p>
                 </div>
               ))}
             </div>
-
-            {/* SOCIAL PROOF */}
-            <div className="pt-4 border-t border-neutral-200">
-              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">Used by growing businesses</p>
-              <div className="flex flex-wrap gap-x-5 gap-y-2">
-                {BRANDS.map(b => (
-                  <span key={b} className="text-[11px] font-semibold text-neutral-400">{b}</span>
-                ))}
-              </div>
-            </div>
           </div>
 
-          {/* RIGHT: REGISTRATION FORM */}
+          {/* RIGHT: PREMIUM REGISTRATION PANEL */}
           <div className="lg:col-span-6" id="register">
-            <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden">
-
-              {/* FORM HEADER STRIP */}
-              <div className="bg-[#5C0E1E] px-7 py-5">
-                <h2 className="text-white font-black text-base tracking-tight">Create your account</h2>
-                <p className="text-white/60 text-[11px] mt-0.5">Start managing your business in under 2 minutes.</p>
+            <div className="bg-white border border-[#F5F5F0] rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.04)] overflow-hidden">
+              
+              <div className="bg-[#5C0E1E] px-8 py-6 text-white relative">
+                <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 blur-xl" />
+                <h2 className="text-lg font-black tracking-tight">Deploy Custom Node</h2>
+                <p className="text-white/60 text-[11px] mt-0.5">Fill variables to spin up isolated container.</p>
               </div>
 
-              <div className="px-7 py-6">
+              <div className="p-8">
                 {errorMsg && (
-                  <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-200 text-red-700 text-[11px] font-semibold rounded-xl mb-5">
-                    <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <div className="flex items-start gap-2.5 p-3.5 bg-red-50 border border-red-200/60 text-red-700 text-[11px] font-semibold rounded-xl mb-6">
+                    <Shield className="w-4 h-4 flex-shrink-0 mt-0.5" />
                     <span>{errorMsg}</span>
                   </div>
                 )}
 
                 <form onSubmit={handleOnboardSubmit} className="space-y-4">
-                  {/* NAME + SLUG */}
+                  
+                  {/* STORE NAME + SLUG */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Business Name</label>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Company Name</label>
                       <div className="relative">
-                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                         <input
                           type="text" name="name" required
                           placeholder="e.g. Taste N Park"
-                          className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
                           value={formData.name} onChange={handleInputChange}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">URL Slug</label>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">URL Slug</label>
                       <div className="relative">
-                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                         <input
                           type="text" name="slug" required
                           placeholder="tastenpark"
-                          className="w-full bg-neutral-50 border border-neutral-200 text-[#5C0E1E] font-mono pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-[#5C0E1E] font-mono pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-bold tracking-wider"
                           value={formData.slug} onChange={handleInputChange}
                         />
                       </div>
-                      {formData.slug && (
-                        <p className="text-[9px] text-neutral-400 mt-1 ml-1 font-mono">highp.app/{formData.slug}</p>
-                      )}
                     </div>
                   </div>
 
-                  {/* EMAIL */}
+                  {/* ADMIN EMAIL */}
                   <div>
-                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Email Address</label>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Administrator Email</label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                      <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                       <input
                         type="email" name="email" required
-                        placeholder="admin@yourbusiness.com"
-                        className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                        placeholder="admin@brand.com"
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
                         value={formData.email} onChange={handleInputChange}
                       />
                     </div>
                   </div>
 
-                  {/* PASSWORD */}
+                  {/* SECURITY PASSWORD */}
                   <div>
-                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Password</label>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Security Password</label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                      <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                       <input
                         type="password" name="password" required
-                        placeholder="Create a secure password"
-                        className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                        placeholder="Create custom lock-key"
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
                         value={formData.password} onChange={handleInputChange}
                       />
                     </div>
@@ -275,192 +272,170 @@ export default function PlatformHome() {
 
                   {/* TAGLINE */}
                   <div>
-                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Brand Tagline <span className="normal-case font-medium">(optional)</span></label>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Brand Tagline</label>
                     <input
                       type="text" name="tagline"
-                      placeholder="e.g. Fresh food, fast delivery"
-                      className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 px-3.5 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                      placeholder="e.g. Organic Wellness Culinary Hub"
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold italic"
                       value={formData.tagline} onChange={handleInputChange}
                     />
                   </div>
 
-                  {/* SUBMIT */}
+                  {/* SUBMIT BUTTON */}
                   <button
                     type="submit" disabled={loading}
-                    className="w-full py-3 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/15 mt-1 disabled:opacity-60"
+                    className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/15 mt-2 disabled:opacity-60"
                   >
                     {loading ? (
                       <>
                         <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                        Setting up your workspace...
+                        Provisioning Workspace...
                       </>
                     ) : (
-                      <>Create Free Account <ArrowRight className="w-3.5 h-3.5" /></>
+                      <>Deploy Free Instance <ArrowRight className="w-4 h-4" /></>
                     )}
                   </button>
-
-                  <p className="text-center text-[9px] text-neutral-400 leading-relaxed pt-1">
-                    No credit card required. Free to start. By signing up you agree to our{" "}
-                    <a href="#" className="underline hover:text-neutral-700">Terms</a> and{" "}
-                    <a href="#" className="underline hover:text-neutral-700">Privacy Policy</a>.
-                  </p>
                 </form>
               </div>
+
             </div>
           </div>
+
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          BUSINESS VERTICALS GRID
+          BUSINESS VERTICALS (7-grid, luxury cards)
       ══════════════════════════════════════════════════ */}
-      <section className="bg-[#FAFAFA] border-y border-neutral-200/60 py-16">
-        <div className="max-w-7xl mx-auto px-5 lg:px-10">
-
-          <div className="text-center mb-10">
-            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Industry Coverage</p>
+      <section className="bg-[#F5F5F0] border-y border-neutral-200/50 py-20" id="solutions">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+          
+          <div className="text-center max-w-xl mx-auto mb-16 space-y-3">
+            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">Architectural Presets</p>
             <h2 className="text-3xl font-black tracking-tight text-neutral-950">
-              Built for every type of business.
+              Adapts to any business model.
             </h2>
-            <p className="text-neutral-500 text-[12px] mt-2 max-w-lg mx-auto leading-relaxed">
-              Whether you run a café, a fitness studio, or a home services company — HighP adapts to your operations without any configuration overhead.
+            <p className="text-[#737373] text-xs leading-relaxed">
+              HighP adapts dynamically to serve specific vertical frameworks. No manual templates, no configuration overhead.
             </p>
           </div>
 
-          {/* 7-COLUMN VERTICAL CARDS */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
-            {VERTICALS.map(({ icon: Icon, label, desc }) => (
-              <div
-                key={label}
-                className="group bg-white border border-neutral-200/80 rounded-xl p-4 flex flex-col items-center text-center gap-3 hover:border-[#5C0E1E]/30 hover:shadow-md transition-all cursor-pointer"
-              >
-                <div className="w-9 h-9 bg-neutral-100 group-hover:bg-[#5C0E1E]/8 rounded-lg flex items-center justify-center transition-colors">
-                  <Icon className="w-4.5 h-4.5 text-neutral-600 group-hover:text-[#5C0E1E] transition-colors" strokeWidth={1.5} />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-4">
+            {VERTICALS.map((vertical, i) => {
+              const Icon = vertical.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-white border border-neutral-200/60 p-5 rounded-2xl flex flex-col justify-between items-start gap-4 hover:border-[#5C0E1E]/30 hover:shadow-md transition-all group"
+                >
+                  <div className="w-9 h-9 bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl flex items-center justify-center flex-shrink-0 group-hover:bg-[#5C0E1E]/8 group-hover:border-[#5C0E1E]/10 transition-all">
+                    <Icon className="w-4 h-4 text-[#737373] group-hover:text-[#5C0E1E] transition-colors" strokeWidth={1.8} />
+                  </div>
+                  <div>
+                    <span className="text-[8px] font-black text-[#737373] uppercase tracking-wider block mb-1">
+                      {vertical.badge}
+                    </span>
+                    <h3 className="text-xs font-black text-neutral-900 leading-snug">{vertical.label}</h3>
+                    <p className="text-[9px] text-[#737373] mt-1 leading-relaxed md:hidden lg:block">{vertical.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] font-black text-neutral-900 leading-snug">{label}</p>
-                  <p className="text-[9px] text-neutral-400 mt-1 leading-relaxed hidden sm:block">{desc}</p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          CAPABILITIES GRID — 8 modules, 4-col
+          CAPABILITIES MODULES (8 cards)
       ══════════════════════════════════════════════════ */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-5 lg:px-10">
+      <section className="py-20 bg-white" id="modules">
+        <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
-          <div className="mb-10">
-            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Platform Modules</p>
+          <div className="max-w-xl mb-16 space-y-3">
+            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">Platform capabilities</p>
             <h2 className="text-3xl font-black tracking-tight text-neutral-950">
-              Everything your team needs.
+              Completely integrated infrastructure.
             </h2>
-            <p className="text-neutral-500 text-[12px] mt-2 max-w-lg leading-relaxed">
-              HighP ships with a complete set of integrated tools. No third-party plugins required.
+            <p className="text-[#737373] text-xs leading-relaxed">
+              Avoid scattered tools. HighP bundles core databases, live production views, payment gateways, and staff nodes in one codebase.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-            {CAPABILITIES.map(({ icon: Icon, title, desc }) => (
-              <div
-                key={title}
-                className="group bg-white border border-neutral-200/70 rounded-2xl p-6 hover:border-[#5C0E1E]/25 hover:shadow-lg transition-all"
-              >
-                <div className="w-10 h-10 bg-[#5C0E1E]/8 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#5C0E1E]/15 transition-colors">
-                  <Icon className="w-5 h-5 text-[#5C0E1E]" strokeWidth={1.5} />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {CAPABILITIES.map((cap, i) => {
+              const Icon = cap.icon;
+              return (
+                <div
+                  key={i}
+                  className="bg-[#FAFAFA] border border-[#F5F5F0] p-6 rounded-2xl hover:bg-white hover:border-[#5C0E1E]/20 hover:shadow-lg transition-all group"
+                >
+                  <div className="w-9 h-9 bg-white border border-[#F5F5F0] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#5C0E1E]/8 group-hover:border-[#5C0E1E]/15 transition-all">
+                    <Icon className="w-4.5 h-4.5 text-[#5C0E1E]" strokeWidth={1.5} />
+                  </div>
+                  <h3 className="text-xs font-black text-neutral-950 mb-1.5 uppercase tracking-wide">{cap.title}</h3>
+                  <p className="text-[10px] text-[#737373] leading-relaxed">{cap.desc}</p>
                 </div>
-                <h3 className="text-[13px] font-black text-neutral-900 mb-1.5">{title}</h3>
-                <p className="text-[11px] text-neutral-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
+              );
+            })}
           </div>
+
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
-          HOW IT WORKS — 3-STEP FLOW
+          FAQ SECTION
       ══════════════════════════════════════════════════ */}
-      <section className="bg-[#FAFAFA] border-t border-neutral-200/60 py-16">
-        <div className="max-w-5xl mx-auto px-5 lg:px-10 text-center">
-
-          <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Getting Started</p>
-          <h2 className="text-3xl font-black tracking-tight text-neutral-950 mb-3">
-            Live in three steps.
-          </h2>
-          <p className="text-neutral-500 text-[12px] mb-12 max-w-md mx-auto leading-relaxed">
-            No developer required. Go from sign-up to a live storefront with staff access in under two minutes.
-          </p>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              {
-                step: "01",
-                title: "Register your workspace",
-                desc: "Enter your business name, URL slug, and credentials. Your isolated workspace is provisioned instantly.",
-              },
-              {
-                step: "02",
-                title: "Configure your catalog",
-                desc: "Add your products, set pricing, upload images, and configure your public-facing storefront theme.",
-              },
-              {
-                step: "03",
-                title: "Share and operate",
-                desc: "Share your storefront link with customers. Your team uses role-specific dashboards — kitchen, delivery, admin.",
-              },
-            ].map(({ step, title, desc }) => (
-              <div key={step} className="text-left">
-                <div className="text-[11px] font-black text-[#5C0E1E] mb-3 font-mono">{step}</div>
-                <div className="w-full h-px bg-[#5C0E1E]/20 mb-5" />
-                <h3 className="text-[14px] font-black text-neutral-900 mb-2">{title}</h3>
-                <p className="text-[11px] text-neutral-500 leading-relaxed">{desc}</p>
-              </div>
-            ))}
+      <section className="bg-[#FAFAFA] border-t border-[#F5F5F0] py-20">
+        <div className="max-w-4xl mx-auto px-6">
+          
+          <div className="text-center mb-12">
+            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">FAQ</p>
+            <h2 className="text-2xl font-black tracking-tight text-neutral-950 mt-1">Frequently Asked Questions</h2>
           </div>
-        </div>
-      </section>
 
-      {/* ══════════════════════════════════════════════════
-          CTA BOTTOM BANNER
-      ══════════════════════════════════════════════════ */}
-      <section className="bg-[#5C0E1E] py-14">
-        <div className="max-w-3xl mx-auto px-5 text-center">
-          <h2 className="text-3xl font-black text-white tracking-tight mb-3">
-            Ready to run your business smarter?
-          </h2>
-          <p className="text-white/60 text-[12px] mb-7 leading-relaxed max-w-md mx-auto">
-            Join growing businesses that have switched from scattered tools to a single, unified operations platform.
-          </p>
-          <a
-            href="#register"
-            className="inline-flex items-center gap-2 bg-white text-[#5C0E1E] font-black text-[11px] uppercase tracking-widest px-7 py-3.5 rounded-xl hover:bg-neutral-100 transition-all shadow-lg"
-          >
-            Get Started Free <ArrowRight className="w-3.5 h-3.5" />
-          </a>
-          <p className="text-white/40 text-[9px] mt-4 uppercase tracking-widest font-bold">No credit card · Cancel anytime</p>
+          <div className="space-y-4">
+            {FAQS.map((faq, idx) => {
+              const isOpen = activeFaq === idx;
+              return (
+                <div key={idx} className="bg-white border border-[#F5F5F0] rounded-2xl overflow-hidden shadow-sm">
+                  <button
+                    onClick={() => setActiveFaq(isOpen ? null : idx)}
+                    className="w-full text-left px-6 py-5 flex items-center justify-between font-bold text-xs text-neutral-900 focus:outline-none"
+                  >
+                    <span>{faq.q}</span>
+                    <HelpCircle className={`w-4 h-4 text-[#737373] transition-transform ${isOpen ? 'rotate-180 text-[#5C0E1E]' : ''}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="px-6 pb-5 text-[11px] text-[#737373] leading-relaxed border-t border-[#FAFAFA] pt-3 animate-fade-in">
+                      {faq.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
         </div>
       </section>
 
       {/* ══════════════════════════════════════════════════
           FOOTER
       ══════════════════════════════════════════════════ */}
-      <footer className="bg-white border-t border-neutral-200/60 py-8">
-        <div className="max-w-7xl mx-auto px-5 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-5 h-5 bg-[#5C0E1E] rounded flex items-center justify-center">
+      <footer className="bg-white border-t border-[#F5F5F0] py-10 px-6 lg:px-10">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-6 h-6 bg-[#5C0E1E] rounded-lg flex items-center justify-center shadow-md shadow-[#5C0E1E]/5">
               <span className="text-white font-black text-[9px]">HP</span>
             </div>
-            <span className="font-black text-[12px] text-neutral-700 tracking-tight">HighP Platform</span>
+            <span className="font-black text-xs uppercase tracking-widest text-neutral-700">HighP Platform</span>
           </div>
-          <div className="flex items-center gap-6 text-[10px] text-neutral-400 font-medium">
-            <a href="#" className="hover:text-neutral-700">Privacy</a>
-            <a href="#" className="hover:text-neutral-700">Terms</a>
-            <a href="#" className="hover:text-neutral-700">Support</a>
+          <div className="flex items-center gap-6 text-[10px] text-[#737373] font-bold uppercase tracking-wider">
+            <a href="#" className="hover:text-neutral-950 transition-colors">Privacy</a>
+            <a href="#" className="hover:text-neutral-955 transition-colors">Terms</a>
+            <a href="#" className="hover:text-neutral-955 transition-colors">Support</a>
           </div>
-          <p className="text-[10px] text-neutral-400">© 2026 HighP Technologies</p>
+          <p className="text-[10px] text-[#737373] font-mono">© 2026 HighP Cloud Inc.</p>
         </div>
       </footer>
 
