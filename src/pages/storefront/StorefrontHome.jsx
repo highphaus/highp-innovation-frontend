@@ -51,11 +51,9 @@ export default function Storefront() {
       });
   }, [storeSlug]);
 
-  // Sync category & search filters
   useEffect(() => {
     let result = products;
 
-    // Search query filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(p => 
@@ -64,7 +62,6 @@ export default function Storefront() {
       );
     }
 
-    // Category filter mapping
     if (selectedCategory !== "All") {
       result = result.filter(p => {
         const name = p.name.toLowerCase();
@@ -97,7 +94,6 @@ export default function Storefront() {
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
     
-    // Update local states for reactive UI feedback
     const totalQty = existing.reduce((s, i) => s + i.quantity, 0);
     const totalAmt = existing.reduce((s, i) => s + (i.price * i.quantity), 0);
     setCartCount(totalQty);
@@ -106,24 +102,24 @@ export default function Storefront() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 text-neutral-400">
-        <Loader2 className="w-9 h-9 animate-spin text-orange-500 mb-3" />
-        <p className="text-xs uppercase font-black tracking-widest animate-pulse">Syncing Catalog Node...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] text-[#737373]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#5C0E1E] mb-3" />
+        <p className="text-[10px] uppercase font-black tracking-widest animate-pulse">Syncing Storefront Menu...</p>
       </div>
     );
   }
 
   if (error || !storeData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0D0D0D] p-4 text-center">
-        <div className="bg-neutral-900/60 border border-neutral-800 p-8 rounded-[28px] shadow-2xl max-w-sm backdrop-blur-md">
-          <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-          <h2 className="text-lg font-black text-neutral-100 uppercase tracking-wide mb-2">Store Cluster Offline</h2>
-          <p className="text-neutral-400 text-xs leading-relaxed mb-6">
-            The target merchant tenant cluster is either uninitialized or temporarily unreachable. Check settings.
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4 text-center">
+        <div className="bg-white border border-[#F5F5F0] p-8 rounded-2xl shadow-lg max-w-sm">
+          <AlertCircle className="w-10 h-10 text-[#5C0E1E] mx-auto mb-4" />
+          <h2 className="text-base font-black text-neutral-900 uppercase tracking-wide mb-2">Store Offline</h2>
+          <p className="text-[#737373] text-xs leading-relaxed mb-6">
+            The target store catalog is temporarily unreachable.
           </p>
-          <Link to="/" className="px-5 py-3 bg-white hover:bg-neutral-200 text-black rounded-xl text-xs font-black uppercase tracking-wider block text-center transition-all shadow-md">
-            Return to Core Hub
+          <Link to="/" className="px-5 py-3 bg-[#5C0E1E] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center transition-all shadow-sm">
+            Return to Platform Hub
           </Link>
         </div>
       </div>
@@ -133,27 +129,27 @@ export default function Storefront() {
   const categories = ["All", "Mains", "Sides", "Beverages", "Desserts"];
 
   return (
-    <div className="min-h-screen bg-neutral-50 text-[#0D0D0D] font-sans pb-24 selection:bg-neutral-950 selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-24 selection:bg-[#5C0E1E] selection:text-white">
       
       {/* BRAND HEADER BAR */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-neutral-200/60 px-6 py-4 flex items-center justify-between shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#F5F5F0] px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
-          <span className={`text-xl font-black tracking-tight uppercase ${storeData.primaryColor}`}>
+          <span className="text-lg font-black tracking-tight uppercase text-neutral-950">
             {storeData.name}
           </span>
-          <span className="text-[9px] font-black uppercase px-2 py-0.5 rounded-full bg-neutral-100 text-neutral-500 tracking-wider">
-            Menu
+          <span className="text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-[#F5F5F0] text-[#737373] tracking-wider">
+            Storefront
           </span>
         </div>
 
         <div className="flex items-center gap-4">
           <Link 
             to={`/${storeSlug}/cart`} 
-            className="relative p-2.5 text-neutral-700 hover:text-neutral-950 transition-colors bg-neutral-100 rounded-xl"
+            className="relative p-2.5 text-neutral-600 hover:text-neutral-900 transition-colors bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl"
           >
-            <ShoppingCart className="w-5 h-5" />
+            <ShoppingCart className="w-4 h-4" />
             {cartCount > 0 && (
-              <span className={`absolute -top-1 -right-1 text-white text-[10px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md animate-bounce ${storeData.bgColor}`}>
+              <span className="absolute -top-1.5 -right-1.5 bg-[#5C0E1E] text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md">
                 {cartCount}
               </span>
             )}
@@ -161,32 +157,27 @@ export default function Storefront() {
         </div>
       </nav>
 
-      {/* LUXURY BANNER */}
-      <header className="bg-white border-b border-neutral-200/50 py-16 px-6 text-center relative overflow-hidden">
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-full pointer-events-none">
-          <div className="absolute top-12 left-10 w-32 h-32 rounded-full bg-neutral-100/50 blur-3xl" />
-          <div className="absolute bottom-6 right-10 w-44 h-44 rounded-full bg-neutral-100/80 blur-3xl" />
-        </div>
-
-        <div className="relative z-10 max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-neutral-100 text-[10px] font-bold text-neutral-500 mb-4 uppercase tracking-wider">
-            <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Curated Dining Catalog
+      {/* MARKETING HERO HEADER */}
+      <header className="bg-white border-b border-[#F5F5F0] py-16 px-6 text-center relative overflow-hidden">
+        <div className="relative z-10 max-w-2xl mx-auto space-y-4">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#5C0E1E]/8 border border-[#5C0E1E]/15 text-[10px] font-black text-[#5C0E1E] uppercase tracking-wider">
+            <Sparkles className="w-3 h-3 text-[#5C0E1E]" /> Premium Quality Handcrafted
           </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-neutral-900 tracking-tight leading-tight mb-3">
-            Welcome to <span className={storeData.primaryColor}>{storeData.name}</span>
+          <h1 className="text-4xl sm:text-5xl font-black text-neutral-955 tracking-tight leading-tight">
+            Welcome to <span className="italic font-light text-[#5C0E1E] mr-1" style={{ fontFamily: "'Georgia', serif" }}>{storeData.name}</span>
           </h1>
-          <p className="text-neutral-500 text-xs sm:text-sm font-medium leading-relaxed max-w-md mx-auto">
+          <p className="text-[#737373] text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
             {storeData.tagline || "Experience luxury handcrafted delicacies delivered instantly to your counter."}
           </p>
-          <div className={`w-12 h-1 mx-auto mt-5 rounded-full ${storeData.bgColor}`} />
+          <div className="w-10 h-0.5 mx-auto bg-[#5C0E1E] rounded-full" />
         </div>
       </header>
 
-      {/* SEARCH AND FILTER WORKSPACE */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white border border-neutral-200/80 p-4 rounded-2xl shadow-sm">
+      {/* FILTER & SEARCH */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white border border-[#F5F5F0] p-4 rounded-2xl shadow-sm">
           
-          {/* Category badges */}
+          {/* Category List */}
           <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
             {categories.map((cat) => {
               const isActive = selectedCategory === cat;
@@ -196,8 +187,8 @@ export default function Storefront() {
                   onClick={() => setSelectedCategory(cat)}
                   className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
                     isActive 
-                      ? `${storeData.bgColor} text-white shadow-sm scale-105` 
-                      : "bg-neutral-100 hover:bg-neutral-200/80 text-neutral-600"
+                      ? "bg-[#5C0E1E] text-white shadow-sm" 
+                      : "bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 text-neutral-605"
                   }`}
                 >
                   {cat}
@@ -208,62 +199,58 @@ export default function Storefront() {
 
           {/* Search bar */}
           <div className="relative md:w-72">
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-neutral-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input 
               type="text" 
-              placeholder="Search dishes, drinks..."
+              placeholder="Search items..."
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-400 focus:bg-white transition-all"
+              className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-9 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-350 focus:bg-white transition-all text-neutral-900"
             />
           </div>
         </div>
 
         {/* PRODUCTS CATALOG GRID */}
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white border border-neutral-200 rounded-[24px] shadow-sm">
-            <p className="text-neutral-400 font-black text-sm uppercase tracking-wider">No matching items found</p>
-            <p className="text-neutral-500 text-xs mt-1">Try resetting your filters or search keywords.</p>
+          <div className="text-center py-20 bg-white border border-[#F5F5F0] rounded-2xl shadow-sm">
+            <p className="text-neutral-400 font-bold text-xs uppercase tracking-wider">No matching items found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredProducts.map((product) => (
               <div 
                 key={product._id} 
-                className="bg-white border border-neutral-200/70 rounded-3xl overflow-hidden flex flex-col justify-between transition-all hover:shadow-lg hover:-translate-y-1 group"
+                className="bg-white border border-[#F5F5F0] rounded-2xl overflow-hidden flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-0.5 group shadow-sm"
               >
-                <Link to={`/${storeSlug}/product/${product._id}`} className="block relative overflow-hidden aspect-video bg-neutral-100 border-b border-neutral-100">
+                <Link to={`/${storeSlug}/product/${product._id}`} className="block relative overflow-hidden aspect-video bg-[#FAFAFA]">
                   <img 
                     src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"} 
                     alt={product.name} 
-                    className="w-full h-full object-cover group-hover:scale-[1.03] transition-transform duration-500" 
+                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" 
                   />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2.5 py-1 rounded-lg flex items-center gap-1 shadow-sm border border-neutral-100">
-                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                    <span className="text-[10px] font-black text-neutral-800">4.9</span>
+                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1 shadow-sm border border-[#F5F5F0]">
+                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                    <span className="text-[9px] font-black text-neutral-800">4.9</span>
                   </div>
                 </Link>
 
                 <div className="p-5 flex flex-col flex-1 justify-between">
                   <div className="mb-4">
                     <Link to={`/${storeSlug}/product/${product._id}`} className="block">
-                      <h3 className="text-base font-black text-neutral-900 hover:text-neutral-700 transition-colors leading-snug mb-1.5">
+                      <h3 className="text-sm font-black text-neutral-905 hover:text-[#5C0E1E] transition-colors leading-snug">
                         {product.name}
                       </h3>
                     </Link>
-                    <p className="text-neutral-500 text-xs leading-relaxed line-clamp-2">
+                    <p className="text-[#737373] text-[11px] leading-relaxed line-clamp-2 mt-1.5">
                       {product.description || "Fresh premium organic farm-to-table gourmet choice."}
                     </p>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-neutral-100">
-                    <div className="flex flex-col">
-                      <span className="text-[10px] font-black text-neutral-400 uppercase tracking-wider">Price</span>
-                      <span className="text-lg font-black text-neutral-900">₹{product.price}</span>
-                    </div>
+                  <div className="flex items-center justify-between pt-4 border-t border-[#F5F5F0]">
+                    <span className="text-base font-black text-neutral-900">₹{product.price}</span>
                     <button
                       onClick={() => addToCart(product)}
-                      className={`text-white px-5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm ${storeData.bgColor} ${storeData.hoverColor}`}
+                      className="bg-[#5C0E1E] hover:bg-[#3F0712] text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm"
                     >
                       Add to Cart
                     </button>
@@ -280,12 +267,12 @@ export default function Storefront() {
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 animate-fade-up">
           <Link 
             to={`/${storeSlug}/cart`} 
-            className="flex items-center justify-between bg-neutral-900 text-white px-6 py-4 rounded-2xl shadow-xl hover:bg-neutral-850 transition-all hover:scale-[1.02] border border-neutral-800"
+            className="flex items-center justify-between bg-neutral-900 text-white px-5 py-3.5 rounded-2xl shadow-xl hover:bg-neutral-850 transition-all hover:scale-[1.01]"
           >
             <div className="flex items-center gap-3">
               <div className="relative bg-white/10 p-2 rounded-xl">
-                <ShoppingCart className="w-5 h-5 text-white" />
-                <span className={`absolute -top-1 -right-1 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center ${storeData.bgColor}`}>
+                <ShoppingCart className="w-4 h-4 text-white" />
+                <span className="absolute -top-1 -right-1 bg-[#5C0E1E] text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center">
                   {cartCount}
                 </span>
               </div>
@@ -295,8 +282,8 @@ export default function Storefront() {
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-base font-black text-white">₹{cartTotal}</span>
-              <span className="text-xs font-black uppercase bg-white text-black px-3 py-1.5 rounded-lg tracking-wider">
+              <span className="text-sm font-black text-white">₹{cartTotal}</span>
+              <span className="text-[10px] font-black uppercase bg-white text-black px-3 py-1.5 rounded-lg tracking-wider">
                 Checkout
               </span>
             </div>

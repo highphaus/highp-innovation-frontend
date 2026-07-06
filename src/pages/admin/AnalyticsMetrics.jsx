@@ -35,12 +35,13 @@ export default function AnalyticsMetrics() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 font-sans pb-20 selection:bg-neutral-950 selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#5C0E1E] selection:text-white">
+      
       {/* HEADER */}
       <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5">
-            <TrendingUp className="w-4 h-4 text-emerald-400" />
+            <TrendingUp className="w-4 h-4 text-white" />
           </div>
           <span className="font-black text-xs uppercase tracking-wider">{storeSlug} — Analytics Suite</span>
         </div>
@@ -49,26 +50,26 @@ export default function AnalyticsMetrics() {
         </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8">
         {loading ? (
-          <div className="text-center py-20 text-neutral-400 animate-pulse text-sm">Compiling financial metrics datasets...</div>
+          <div className="text-center py-20 text-[#737373] animate-pulse text-xs uppercase tracking-widest font-bold">Compiling metric assets...</div>
         ) : (
           <>
             {/* KPI METRIC TILES */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               {[
-                { label: "Gross Generated Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: "text-emerald-500", bg: "bg-emerald-50" },
-                { label: "Order Transaction Logs", value: `${orders.length} Logged`, icon: ClipboardList, color: "text-blue-500", bg: "bg-blue-50" },
-                { label: "Catalog Listings", value: `${products.length} Products`, icon: Package, color: "text-purple-500", bg: "bg-purple-50" },
-                { label: "Incoming Active Queue", value: `${pendingOrders + preparingOrders} Tickets`, icon: Clock, color: "text-amber-500", bg: "bg-amber-50" },
+                { label: "Gross Generated Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: "text-[#5C0E1E]", bg: "bg-[#5C0E1E]/8" },
+                { label: "Order Transaction Logs", value: `${orders.length} Logged`, icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
+                { label: "Catalog Listings", value: `${products.length} Products`, icon: Package, color: "text-purple-500", bg: "bg-purple-55" },
+                { label: "Incoming Active Queue", value: `${pendingOrders + preparingOrders} Tickets`, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
               ].map(({ label, value, icon: Icon, color, bg }) => (
-                <div key={label} className="bg-white border border-neutral-200 rounded-3xl p-5 shadow-sm flex items-center justify-between">
+                <div key={label} className="bg-white border border-[#F5F5F0] rounded-2xl p-5 shadow-sm flex items-center justify-between">
                   <div>
-                    <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest block">{label}</span>
+                    <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block">{label}</span>
                     <span className="text-xl font-black text-neutral-900 mt-1 block">{value}</span>
                   </div>
-                  <div className={`w-11 h-11 ${bg} rounded-xl flex items-center justify-center`}>
-                    <Icon className={`w-5 h-5 ${color}`} />
+                  <div className={`w-10 h-10 ${bg} rounded-xl flex items-center justify-center`}>
+                    <Icon className={`w-4.5 h-4.5 ${color}`} />
                   </div>
                 </div>
               ))}
@@ -78,23 +79,23 @@ export default function AnalyticsMetrics() {
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
               
               {/* ORDER STATUS SEGMENTS */}
-              <div className="bg-white border border-neutral-200 rounded-[28px] p-6 shadow-sm lg:col-span-1">
-                <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-5 flex items-center gap-1.5">
-                  <Activity className="w-4.5 h-4.5 text-neutral-500" /> Pipeline Segments
+              <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm lg:col-span-1 space-y-5">
+                <h3 className="font-black text-xs uppercase tracking-widest text-[#737373] flex items-center gap-1.5">
+                  <Activity className="w-4 h-4 text-[#737373]" /> Pipeline Segments
                 </h3>
                 <div className="space-y-4">
                   {[
-                    { label: "Completed Operations", count: completedOrders, color: "bg-emerald-500", rawColor: "emerald" },
-                    { label: "Active Preparation", count: preparingOrders, color: "bg-orange-500", rawColor: "orange" },
-                    { label: "Pending Verification", count: pendingOrders, color: "bg-amber-500", rawColor: "amber" },
-                    { label: "Cancelled Tickets", count: cancelledOrders, color: "bg-red-500", rawColor: "red" },
+                    { label: "Completed Operations", count: completedOrders, color: "bg-emerald-500" },
+                    { label: "Active Preparation", count: preparingOrders, color: "bg-orange-500" },
+                    { label: "Pending Verification", count: pendingOrders, color: "bg-amber-500" },
+                    { label: "Cancelled Tickets", count: cancelledOrders, color: "bg-red-505" },
                   ].map(({ label, count, color }) => (
-                    <div key={label} className="bg-neutral-50 p-4.5 rounded-2xl border border-neutral-100/50">
+                    <div key={label} className="bg-[#FAFAFA] p-4 rounded-xl border border-[#F5F5F0]">
                       <div className="flex justify-between items-center mb-2">
                         <span className="text-xs font-black text-neutral-700">{label}</span>
-                        <span className="text-xs font-black text-neutral-900 bg-white px-2 py-0.5 border rounded-lg shadow-sm">{count}</span>
+                        <span className="text-xs font-black text-neutral-900 bg-white px-2 py-0.5 border border-[#F5F5F0] rounded shadow-sm">{count}</span>
                       </div>
-                      <div className="h-2 bg-neutral-200 rounded-full overflow-hidden">
+                      <div className="h-1.5 bg-neutral-200 rounded-full overflow-hidden">
                         <div 
                           className={`h-full ${color} rounded-full transition-all duration-500`}
                           style={{ width: orders.length ? `${(count / orders.length) * 100}%` : "0%" }} 
@@ -106,13 +107,13 @@ export default function AnalyticsMetrics() {
               </div>
 
               {/* RECENT TRANSACTION DOCKETS */}
-              <div className="bg-white border border-neutral-200 rounded-[28px] p-6 shadow-sm lg:col-span-2">
-                <h3 className="font-black text-xs uppercase tracking-widest text-neutral-400 mb-5 flex items-center gap-1.5">
-                  <ShieldCheck className="w-4.5 h-4.5 text-neutral-500" /> Ledger Auditing
+              <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm lg:col-span-2 space-y-5">
+                <h3 className="font-black text-xs uppercase tracking-widest text-[#737373] flex items-center gap-1.5">
+                  <ShieldCheck className="w-4 h-4 text-[#737373]" /> Ledger Auditing
                 </h3>
                 
                 {orders.length === 0 ? (
-                  <div className="text-center py-20 text-neutral-455">
+                  <div className="text-center py-20 text-neutral-400">
                     <ClipboardList className="w-10 h-10 text-neutral-250 mx-auto mb-2" />
                     <p className="text-xs font-semibold">No transactions found inside database logs.</p>
                   </div>
@@ -121,10 +122,10 @@ export default function AnalyticsMetrics() {
                     {orders.slice(0, 10).map(order => {
                       const cfg = statusConfig[order.status] || statusConfig.pending;
                       return (
-                        <div key={order._id} className="flex items-center justify-between p-4 bg-neutral-50 rounded-2xl border border-neutral-100 hover:border-neutral-200 hover:bg-neutral-50/80 transition-all">
+                        <div key={order._id} className="flex items-center justify-between p-4 bg-[#FAFAFA] rounded-2xl border border-[#F5F5F0] hover:border-neutral-250 transition-all">
                           <div>
                             <p className="text-xs font-black text-neutral-900">{order.customerName}</p>
-                            <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">
+                            <p className="text-[9px] text-[#737373] font-bold uppercase tracking-wider mt-0.5">
                               {order.items?.length || 0} Items · {new Date(order.createdAt).toLocaleTimeString()}
                             </p>
                           </div>

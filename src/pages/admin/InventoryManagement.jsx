@@ -33,11 +33,11 @@ export default function InventoryManagement() {
         description: form.description,
         image: form.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"
       });
-      setSuccess("✅ Product added successfully!");
+      setSuccess("Product published in catalog successfully.");
       setForm({ name: "", price: "", description: "", image: "" });
       fetchProducts();
     } catch (err) {
-      setError(err.response?.data?.error || "Failed to add product. Check database connection.");
+      setError(err.response?.data?.error || "Failed to publish product.");
     } finally {
       setSubmitting(false);
     }
@@ -54,85 +54,89 @@ export default function InventoryManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 font-sans pb-20 selection:bg-neutral-950 selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#5C0E1E] selection:text-white">
+      
       {/* HEADER */}
       <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
         <div className="flex items-center gap-3">
           <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5">
-            <ShoppingBag className="w-4 h-4 text-blue-400" />
+            <ShoppingBag className="w-4 h-4 text-white" />
           </div>
-          <span className="font-black text-xs uppercase tracking-wider">{storeSlug} — Catalog</span>
+          <span className="font-black text-xs uppercase tracking-wider">{storeSlug} — Catalog Workspace</span>
         </div>
         <Link to={`/${storeSlug}/admin`} className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors bg-neutral-800 px-3.5 py-2 rounded-xl">
           <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
         </Link>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
         {/* ADD PRODUCT FORM PANEL */}
         <div className="lg:col-span-1">
-          <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm sticky top-6">
-            <h2 className="font-black text-sm uppercase tracking-widest text-neutral-800 mb-5 flex items-center gap-2">
-              <Plus className="w-4.5 h-4.5 text-blue-500" /> Add Catalog Item
-            </h2>
+          <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm sticky top-6 space-y-5">
+            <div>
+              <h2 className="font-black text-sm uppercase tracking-widest text-[#5C0E1E] flex items-center gap-2">
+                <Plus className="w-4.5 h-4.5" /> Publish New Item
+              </h2>
+              <div className="h-0.5 w-8 bg-[#5C0E1E] mt-2 rounded-full" />
+            </div>
             
-            {error && <div className="p-3.5 bg-red-50 border border-red-100 text-red-650 text-xs rounded-xl mb-4 font-medium">{error}</div>}
-            {success && <div className="p-3.5 bg-emerald-50 border border-emerald-100 text-emerald-750 text-xs rounded-xl mb-4 font-medium">{success}</div>}
+            {error && <div className="p-3 bg-red-50 border border-red-200/60 text-red-700 text-xs rounded-xl font-medium">{error}</div>}
+            {success && <div className="p-3 bg-emerald-50 border border-emerald-250 text-emerald-700 text-xs rounded-xl font-medium">{success}</div>}
             
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">Product Title</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Product Title</label>
                 <input 
                   required 
                   type="text" 
-                  placeholder="e.g. Rosemary Salt Fries" 
+                  placeholder="e.g. Cold-Pressed Sesame Oil" 
                   value={form.name}
                   onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  className="w-full border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/30 transition-all" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
                 />
               </div>
               
               <div>
-                <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">Price Value (₹)</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Price Value (₹)</label>
                 <input 
                   required 
                   type="number" 
                   min="0" 
-                  placeholder="199" 
+                  placeholder="450" 
                   value={form.price}
                   onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                  className="w-full border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/30 transition-all" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">Description</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Description</label>
                 <textarea 
                   rows={3} 
-                  placeholder="Describe taste profile or details..." 
+                  placeholder="Describe details, ingredients, etc..." 
                   value={form.description}
                   onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  className="w-full border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/30 transition-all resize-none" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all resize-none text-neutral-900" 
                 />
               </div>
 
               <div>
-                <label className="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">Image URL Address</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Image URL Address</label>
                 <input 
                   type="url" 
                   placeholder="https://images.unsplash.com/..." 
                   value={form.image}
                   onChange={e => setForm(p => ({ ...p, image: e.target.value }))}
-                  className="w-full border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/30 transition-all" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
                 />
-                <span className="text-[9px] text-neutral-400 font-bold block mt-1 ml-1">Leave empty to auto-apply premium placeholder</span>
+                <span className="text-[9px] text-[#737373] font-medium block mt-1.5 ml-1">Optional. Defaults to preset banner if empty.</span>
               </div>
 
               <button 
                 type="submit" 
                 disabled={submitting}
-                className="w-full py-3 bg-neutral-900 hover:bg-neutral-850 active:scale-[0.98] text-white font-black text-xs uppercase tracking-wider rounded-xl transition-all mt-2 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50"
+                className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all mt-2 flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/10 disabled:opacity-50"
               >
                 {submitting ? (
                   <>
@@ -149,45 +153,46 @@ export default function InventoryManagement() {
 
         {/* PRODUCTS LIST GRID */}
         <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-5">
-            <h2 className="font-black text-sm uppercase tracking-widest text-neutral-400 ml-1">
-              Active Catalog ({products.length})
+          <div className="flex items-center justify-between mb-5 ml-1">
+            <h2 className="font-black text-[10px] uppercase tracking-widest text-[#737373]">
+              Active Listings ({products.length})
             </h2>
           </div>
 
           {loading ? (
-            <div className="text-center py-20 text-neutral-400 text-sm animate-pulse">Synchronizing inventory databases...</div>
+            <div className="text-center py-20 text-[#737373] text-sm animate-pulse">Syncing catalog index...</div>
           ) : products.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-24 bg-white border border-neutral-200 rounded-[28px] text-neutral-400 shadow-sm">
-              <PackageX className="w-12 h-12 mb-3 stroke-[1.5] text-neutral-300" />
+            <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#F5F5F0] rounded-2xl text-[#737373] shadow-sm">
+              <PackageX className="w-12 h-12 mb-3 stroke-[1.2]" />
               <p className="text-sm font-semibold">No catalog entries instantiated.</p>
               <p className="text-xs mt-1">Configure products inside the builder sidebar.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {products.map(product => (
-                <div key={product._id} className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow animate-fade-in group">
+                <div key={product._id} className="bg-white border border-[#F5F5F0] rounded-2xl overflow-hidden flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow animate-fade-in group">
                   <div>
-                    <div className="h-44 bg-neutral-100 overflow-hidden relative border-b">
+                    <div className="h-44 bg-[#FAFAFA] overflow-hidden relative border-b border-[#F5F5F0]">
                       {product.image ? (
-                        <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-300" />
+                        <img src={product.image} alt={product.name} className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-300" />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-neutral-300">
-                          <ImageOff className="w-10 h-10" />
+                        <div className="w-full h-full flex items-center justify-center text-neutral-350">
+                          <ImageOff className="w-8 h-8" />
                         </div>
                       )}
                     </div>
                     <div className="p-5">
-                      <h3 className="font-black text-sm text-neutral-900">{product.name}</h3>
-                      <p className="text-xs text-neutral-500 mt-1.5 leading-relaxed line-clamp-2">{product.description || "No description configured."}</p>
+                      <h3 className="font-black text-sm text-neutral-900 leading-snug">{product.name}</h3>
+                      <p className="text-xs text-[#737373] mt-1.5 leading-relaxed line-clamp-2">{product.description || "No description configured."}</p>
                     </div>
                   </div>
                   <div className="p-5 pt-0">
-                    <div className="flex items-center justify-between pt-3 border-t border-neutral-100">
+                    <div className="flex items-center justify-between pt-3 border-t border-[#F5F5F0]">
                       <span className="text-base font-black text-neutral-900">₹{product.price}</span>
                       <button 
                         onClick={() => handleDelete(product._id)}
-                        className="p-2.5 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                        className="p-2 text-[#737373] hover:text-[#5C0E1E] hover:bg-red-50 rounded-xl transition-all"
+                        title="Delete product"
                       >
                         <Trash2 className="w-4 h-4" />
                       </button>
