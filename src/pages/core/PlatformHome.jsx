@@ -1,92 +1,72 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  ArrowRight, UtensilsCrossed, Cake, Wrench, Droplets,
-  Scissors, ShoppingBag, Leaf, MoreHorizontal, Mail,
-  Lock, User, Globe, Quote, ChevronRight, Star, Shield
+  ArrowRight, Mail, Lock, User, Globe, Shield,
+  ChevronRight, CheckCircle, Star,
+  Utensils, BookOpen, Scissors, Droplets, ShoppingBag, Dumbbell, Wrench,
+  BarChart2, Users, Bell, Truck, CreditCard, Zap, Package, PieChart
 } from "lucide-react";
 import axios from "axios";
 
-/* ─── Business Concept Configurations ─────────────────── */
-const CONCEPTS = [
+/* ─────────────────────────────────────────────────────────────
+   BUSINESS VERTICALS — Clean, enterprise icons. No cartoons.
+───────────────────────────────────────────────────────────── */
+const VERTICALS = [
   {
-    id: "restaurant",
-    label: "Restaurant",
-    subtitle: "Dine-in & Delivery",
-    icon: UtensilsCrossed,
-    bg: "bg-rose-50",
-    iconColor: "text-rose-600",
-    ring: "ring-rose-200",
-    popular: false,
+    icon: Utensils,
+    label: "Restaurant & Café",
+    desc: "Full table service, delivery & KDS management",
   },
   {
-    id: "bakery",
-    label: "Bakery",
-    subtitle: "Artisan & Pastry",
-    icon: Cake,
-    bg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    ring: "ring-amber-200",
-    popular: false,
-  },
-  {
-    id: "workshop",
-    label: "Workshop",
-    subtitle: "Skills & Training",
-    icon: Wrench,
-    bg: "bg-slate-50",
-    iconColor: "text-slate-600",
-    ring: "ring-slate-200",
-    popular: false,
-  },
-  {
-    id: "water",
-    label: "Water Solutions",
-    subtitle: "Hydration Fleet",
-    icon: Droplets,
-    bg: "bg-sky-50",
-    iconColor: "text-sky-600",
-    ring: "ring-sky-200",
-    popular: false,
-  },
-  {
-    id: "salon",
-    label: "Salon & Spa",
-    subtitle: "Lifestyle & Beauty",
-    icon: Scissors,
-    bg: "bg-pink-50",
-    iconColor: "text-pink-600",
-    ring: "ring-pink-200",
-    popular: false,
-  },
-  {
-    id: "retail",
-    label: "Retail Store",
-    subtitle: "Commerce & Goods",
     icon: ShoppingBag,
-    bg: "bg-violet-50",
-    iconColor: "text-violet-600",
-    ring: "ring-violet-200",
-    popular: false,
+    label: "Retail & eCommerce",
+    desc: "Catalog, cart, checkout & order fulfillment",
   },
   {
-    id: "organic",
-    label: "Organic & Oils",
-    subtitle: "Wellness & Purity",
-    icon: Leaf,
-    bg: "bg-[#5C0E1E]/5",
-    iconColor: "text-[#5C0E1E]",
-    ring: "ring-[#5C0E1E]/20",
-    popular: true, /* highlighted as new concept */
+    icon: BookOpen,
+    label: "Workshop & Classes",
+    desc: "Booking, scheduling & attendance tracking",
+  },
+  {
+    icon: Scissors,
+    label: "Salon & Wellness",
+    desc: "Appointment queue & stylist assignment",
+  },
+  {
+    icon: Droplets,
+    label: "Water & Hydration",
+    desc: "Subscription delivery & route dispatch",
+  },
+  {
+    icon: Dumbbell,
+    label: "Gym & Fitness",
+    desc: "Membership tiers, class booking & renewals",
+  },
+  {
+    icon: Wrench,
+    label: "Service & Repair",
+    desc: "Job ticketing, field technician dispatch",
   },
 ];
 
-/* ─── Testimonials for social proof ──────────────────── */
-const TESTIMONIALS = [
-  { text: "Our cold-pressed oil store went live in minutes. The organic storefront converted remarkably well.", brand: "Vana Herbals", star: 5 },
-  { text: "Switching between restaurant and bakery modes in the admin panel is seamless.", brand: "The Flour Studio", star: 5 },
-  { text: "KDS integration is flawless. Our kitchen team is 40% faster since deploying.", brand: "Quartz Kitchen", star: 5 },
+/* ─────────────────────────────────────────────────────────────
+   PLATFORM CAPABILITIES
+───────────────────────────────────────────────────────────── */
+const CAPABILITIES = [
+  { icon: BarChart2, title: "Analytics Suite", desc: "Revenue trends, order metrics, and performance KPIs in a clean workspace dashboard." },
+  { icon: Users, title: "User Management", desc: "Role-based access for admins, kitchen staff, delivery drivers, and workshop trainers." },
+  { icon: Bell, title: "Live Order Routing", desc: "Real-time kitchen display screens and dispatch boards updated on every order event." },
+  { icon: Truck, title: "Delivery Fleet", desc: "Assign riders, track shipments, and mark deliveries complete from a logistics desk." },
+  { icon: CreditCard, title: "Payment & Invoicing", desc: "Accept cash, UPI, and card orders. Generate and export invoice records instantly." },
+  { icon: Package, title: "Inventory Control", desc: "Add, update, and remove catalog items with image URLs, pricing, and descriptions." },
+  { icon: PieChart, title: "Business Reports", desc: "Month-over-month revenue charts, top products, and customer acquisition data." },
+  { icon: Zap, title: "Instant Deployment", desc: "Spin up a fully isolated tenant node in under 90 seconds. Zero setup overhead." },
 ];
+
+/* ─────────────────────────────────────────────────────────────
+   TRUSTED BRANDS (social proof logos as text marks)
+───────────────────────────────────────────────────────────── */
+const BRANDS = ["Taste N Park", "Vana Herbals", "The Flour Studio", "Quartz Kitchen", "FitLife Arena", "AquaDrop Co."];
 
 export default function PlatformHome() {
   const navigate = useNavigate();
@@ -96,7 +76,6 @@ export default function PlatformHome() {
   });
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [selectedConcept, setSelectedConcept] = useState("organic");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -115,13 +94,12 @@ export default function PlatformHome() {
     setLoading(true);
     setErrorMsg("");
     try {
-      const response = await axios.post("http://localhost:5000/api/stores/register", formData);
-      const { token, slug } = response.data;
-      localStorage.setItem(`token_${slug}`, token);
-      localStorage.setItem(`role_${slug}`, "admin");
-      navigate(`/${slug}/admin`);
+      const res = await axios.post("http://localhost:5000/api/stores/register", formData);
+      localStorage.setItem(`token_${res.data.slug}`, res.data.token);
+      localStorage.setItem(`role_${res.data.slug}`, "admin");
+      navigate(`/${res.data.slug}/admin`);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Deployment cluster initialization timeout.");
+      setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -130,354 +108,359 @@ export default function PlatformHome() {
   return (
     <div className="min-h-screen bg-white text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white">
 
-      {/* ─── NAVIGATION HEADER ─────────────────────────── */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#F5F5F0]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 bg-[#5C0E1E] rounded-lg flex items-center justify-center">
-              <span className="font-black text-white text-xs">H</span>
+      {/* ══════════════════════════════════════════════════
+          NAVIGATION
+      ══════════════════════════════════════════════════ */}
+      <nav className="sticky top-0 z-50 bg-white border-b border-neutral-200/70 backdrop-blur-md">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10 h-14 flex items-center justify-between">
+
+          {/* LOGO */}
+          <div className="flex items-center gap-2.5 flex-shrink-0">
+            <div className="w-6 h-6 bg-[#5C0E1E] rounded flex items-center justify-center">
+              <span className="font-black text-white text-[10px] tracking-tight">HP</span>
             </div>
-            <span className="font-black text-sm uppercase tracking-widest text-neutral-900">High P</span>
-            <span className="hidden md:block text-[9px] font-bold text-[#737373] uppercase tracking-widest px-2 py-0.5 bg-[#F5F5F0] rounded-full">Platform</span>
+            <span className="font-black text-sm tracking-tight text-neutral-900">HighP</span>
+            <span className="text-[9px] font-bold text-[#737373] px-1.5 py-0.5 bg-neutral-100 rounded uppercase tracking-wider">Platform</span>
           </div>
 
-          <div className="hidden md:flex items-center gap-8 text-[11px] font-semibold text-[#737373]">
-            {["Platform", "Solutions", "Pricing", "Resources"].map(l => (
-              <span key={l} className="hover:text-neutral-900 cursor-pointer transition-colors tracking-wide">{l}</span>
+          {/* CENTER LINKS */}
+          <div className="hidden md:flex items-center gap-7 text-[11px] font-medium text-neutral-500">
+            {["Features", "Verticals", "Pricing", "Docs", "Blog"].map(l => (
+              <a key={l} href="#" className="hover:text-neutral-900 transition-colors">{l}</a>
             ))}
           </div>
 
+          {/* RIGHT ACTIONS */}
           <div className="flex items-center gap-3">
-            <span className="hidden sm:block text-[11px] font-semibold text-[#737373] cursor-pointer hover:text-neutral-900 transition-colors">Sign In</span>
-            <button className="text-[11px] font-bold px-4 py-2 bg-[#5C0E1E] text-white rounded-xl hover:bg-[#3F0712] transition-all shadow-sm">
+            <a href="#" className="hidden sm:block text-[11px] font-semibold text-neutral-600 hover:text-neutral-900 transition-colors">Log in</a>
+            <a href="#register" className="text-[11px] font-bold px-4 py-2 bg-[#5C0E1E] text-white rounded-lg hover:bg-[#3F0712] transition-all">
               Get Started
-            </button>
+            </a>
           </div>
         </div>
       </nav>
 
-      {/* ─── HERO SECTION ──────────────────────────────── */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-20 grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
+      {/* ══════════════════════════════════════════════════
+          HERO SECTION
+      ══════════════════════════════════════════════════ */}
+      <section className="max-w-7xl mx-auto px-5 lg:px-10 pt-16 pb-20">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-14 items-center">
 
-        {/* LEFT EDITORIAL COLUMN */}
-        <div className="lg:col-span-6 space-y-8">
+          {/* LEFT: EDITORIAL COPY */}
+          <div className="lg:col-span-6 space-y-7">
 
-          {/* PILL BADGE */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#5C0E1E]/8 border border-[#5C0E1E]/15">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#5C0E1E] animate-pulse" />
-            <span className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">
-              Multi-Concept Operating Platform
-            </span>
+            {/* STATUS BADGE */}
+            <div className="inline-flex items-center gap-2 bg-[#5C0E1E]/8 border border-[#5C0E1E]/15 px-3 py-1.5 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-[#5C0E1E] animate-pulse" />
+              <span className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">
+                All-in-One Business Operating Platform
+              </span>
+            </div>
+
+            {/* HEADLINE */}
+            <div>
+              <h1 className="text-5xl lg:text-6xl font-black tracking-tight text-neutral-950 leading-[1.06] mb-4">
+                One platform for<br />
+                <span className="text-[#5C0E1E]">every business</span><br />
+                you run.
+              </h1>
+              <p className="text-neutral-500 text-[13px] leading-relaxed max-w-lg">
+                HighP is a multi-tenant SaaS platform that lets you deploy and manage restaurants, retail stores, workshops, salons, gyms, and more — all from a single operations hub. No code. No complexity.
+              </p>
+            </div>
+
+            {/* KEY VALUE PROPS */}
+            <div className="space-y-2.5">
+              {[
+                "One dashboard. Multiple business verticals.",
+                "Kitchen display, delivery dispatch & analytics built in.",
+                "Role-based access for every staff member.",
+                "Live storefront for your customers in minutes.",
+              ].map(prop => (
+                <div key={prop} className="flex items-start gap-2.5 text-[12px] text-neutral-700 font-medium">
+                  <CheckCircle className="w-4 h-4 text-[#5C0E1E] flex-shrink-0 mt-0.5" />
+                  {prop}
+                </div>
+              ))}
+            </div>
+
+            {/* SOCIAL PROOF */}
+            <div className="pt-4 border-t border-neutral-200">
+              <p className="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">Used by growing businesses</p>
+              <div className="flex flex-wrap gap-x-5 gap-y-2">
+                {BRANDS.map(b => (
+                  <span key={b} className="text-[11px] font-semibold text-neutral-400">{b}</span>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* HEADLINE — clean sans + italic serif accent */}
-          <div className="space-y-3">
-            <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-neutral-950 leading-[1.05]">
-              Run Every Business.
-              <br />
-              <span className="italic font-light text-[#5C0E1E]" style={{ fontFamily: "'Georgia', serif" }}>
-                One Platform.
-              </span>
-            </h1>
-            <p className="text-[#737373] text-sm leading-relaxed max-w-md">
-              From restaurant dining to cold-pressed organic oils — provision fully isolated storefront clusters, live kitchen displays, and enterprise analytics in under 90 seconds.
+          {/* RIGHT: REGISTRATION FORM */}
+          <div className="lg:col-span-6" id="register">
+            <div className="bg-white border border-neutral-200/80 rounded-2xl shadow-[0_8px_40px_rgba(0,0,0,0.06)] overflow-hidden">
+
+              {/* FORM HEADER STRIP */}
+              <div className="bg-[#5C0E1E] px-7 py-5">
+                <h2 className="text-white font-black text-base tracking-tight">Create your account</h2>
+                <p className="text-white/60 text-[11px] mt-0.5">Start managing your business in under 2 minutes.</p>
+              </div>
+
+              <div className="px-7 py-6">
+                {errorMsg && (
+                  <div className="flex items-start gap-2.5 p-3 bg-red-50 border border-red-200 text-red-700 text-[11px] font-semibold rounded-xl mb-5">
+                    <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
+
+                <form onSubmit={handleOnboardSubmit} className="space-y-4">
+                  {/* NAME + SLUG */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Business Name</label>
+                      <div className="relative">
+                        <User className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                        <input
+                          type="text" name="name" required
+                          placeholder="e.g. Taste N Park"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                          value={formData.name} onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">URL Slug</label>
+                      <div className="relative">
+                        <Globe className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                        <input
+                          type="text" name="slug" required
+                          placeholder="tastenpark"
+                          className="w-full bg-neutral-50 border border-neutral-200 text-[#5C0E1E] font-mono pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                          value={formData.slug} onChange={handleInputChange}
+                        />
+                      </div>
+                      {formData.slug && (
+                        <p className="text-[9px] text-neutral-400 mt-1 ml-1 font-mono">highp.app/{formData.slug}</p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* EMAIL */}
+                  <div>
+                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Email Address</label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                      <input
+                        type="email" name="email" required
+                        placeholder="admin@yourbusiness.com"
+                        className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                        value={formData.email} onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* PASSWORD */}
+                  <div>
+                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Password</label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-neutral-400" />
+                      <input
+                        type="password" name="password" required
+                        placeholder="Create a secure password"
+                        className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 pl-9 pr-3 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                        value={formData.password} onChange={handleInputChange}
+                      />
+                    </div>
+                  </div>
+
+                  {/* TAGLINE */}
+                  <div>
+                    <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5">Brand Tagline <span className="normal-case font-medium">(optional)</span></label>
+                    <input
+                      type="text" name="tagline"
+                      placeholder="e.g. Fresh food, fast delivery"
+                      className="w-full bg-neutral-50 border border-neutral-200 text-neutral-900 px-3.5 py-2.5 text-[12px] rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all"
+                      value={formData.tagline} onChange={handleInputChange}
+                    />
+                  </div>
+
+                  {/* SUBMIT */}
+                  <button
+                    type="submit" disabled={loading}
+                    className="w-full py-3 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/15 mt-1 disabled:opacity-60"
+                  >
+                    {loading ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        Setting up your workspace...
+                      </>
+                    ) : (
+                      <>Create Free Account <ArrowRight className="w-3.5 h-3.5" /></>
+                    )}
+                  </button>
+
+                  <p className="text-center text-[9px] text-neutral-400 leading-relaxed pt-1">
+                    No credit card required. Free to start. By signing up you agree to our{" "}
+                    <a href="#" className="underline hover:text-neutral-700">Terms</a> and{" "}
+                    <a href="#" className="underline hover:text-neutral-700">Privacy Policy</a>.
+                  </p>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          BUSINESS VERTICALS GRID
+      ══════════════════════════════════════════════════ */}
+      <section className="bg-[#FAFAFA] border-y border-neutral-200/60 py-16">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10">
+
+          <div className="text-center mb-10">
+            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Industry Coverage</p>
+            <h2 className="text-3xl font-black tracking-tight text-neutral-950">
+              Built for every type of business.
+            </h2>
+            <p className="text-neutral-500 text-[12px] mt-2 max-w-lg mx-auto leading-relaxed">
+              Whether you run a café, a fitness studio, or a home services company — HighP adapts to your operations without any configuration overhead.
             </p>
           </div>
 
-          {/* VALUE PROPOSITIONS */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-            {[
-              "Multi-Tenant Node Isolation",
-              "Live Kitchen KDS Routing",
-              "Organic & Wellness Vertical",
-              "Enterprise Analytics Suite",
-            ].map(prop => (
-              <div key={prop} className="flex items-center gap-2.5 text-[11px] font-semibold text-neutral-700">
-                <div className="w-4 h-4 rounded bg-[#5C0E1E]/10 flex items-center justify-center flex-shrink-0">
-                  <ChevronRight className="w-2.5 h-2.5 text-[#5C0E1E]" />
+          {/* 7-COLUMN VERTICAL CARDS */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-3">
+            {VERTICALS.map(({ icon: Icon, label, desc }) => (
+              <div
+                key={label}
+                className="group bg-white border border-neutral-200/80 rounded-xl p-4 flex flex-col items-center text-center gap-3 hover:border-[#5C0E1E]/30 hover:shadow-md transition-all cursor-pointer"
+              >
+                <div className="w-9 h-9 bg-neutral-100 group-hover:bg-[#5C0E1E]/8 rounded-lg flex items-center justify-center transition-colors">
+                  <Icon className="w-4.5 h-4.5 text-neutral-600 group-hover:text-[#5C0E1E] transition-colors" strokeWidth={1.5} />
                 </div>
-                {prop}
+                <div>
+                  <p className="text-[11px] font-black text-neutral-900 leading-snug">{label}</p>
+                  <p className="text-[9px] text-neutral-400 mt-1 leading-relaxed hidden sm:block">{desc}</p>
+                </div>
               </div>
             ))}
           </div>
-
-          {/* TESTIMONIALS ROTATOR */}
-          <div className="border-t border-[#F5F5F0] pt-6">
-            <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest mb-3">Trusted by industry leaders</p>
-            <div className="flex items-start gap-3 p-4 bg-[#FAFAFA] rounded-2xl border border-[#F5F5F0]">
-              <Quote className="w-4 h-4 text-[#5C0E1E] flex-shrink-0 mt-0.5" />
-              <div>
-                <p className="text-[11px] text-neutral-700 leading-relaxed italic">{TESTIMONIALS[0].text}</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <div className="flex gap-0.5">
-                    {Array(TESTIMONIALS[0].star).fill(0).map((_, i) => (
-                      <Star key={i} className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                    ))}
-                  </div>
-                  <span className="text-[10px] font-bold text-[#737373]">{TESTIMONIALS[0].brand}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* RIGHT REGISTRATION PANEL */}
-        <div className="lg:col-span-6">
-          <div className="bg-white border border-[#F0EEEB] rounded-3xl shadow-[0_20px_60px_rgba(92,14,30,0.08)] overflow-hidden">
-
-            {/* CARD TOP TINT BAR */}
-            <div className="h-1.5 w-full bg-gradient-to-r from-[#5C0E1E] via-[#8B1A2E] to-[#5C0E1E]" />
-
-            <div className="p-8">
-              <div className="mb-7">
-                <h2 className="text-xl font-black tracking-tight text-neutral-950">Create your account</h2>
-                <p className="text-[11px] text-[#737373] mt-1">Initialize your isolated merchant workspace cluster</p>
-              </div>
-
-              {errorMsg && (
-                <div className="p-3.5 bg-red-50 border border-red-200/60 text-red-700 text-[11px] font-semibold rounded-2xl mb-5 flex items-start gap-2.5">
-                  <Shield className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleOnboardSubmit} className="space-y-4">
-                {/* NAME + SLUG GRID */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5">
-                      Company / Store Name
-                    </label>
-                    <div className="relative">
-                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#737373]" />
-                      <input
-                        type="text" name="name" required
-                        placeholder="e.g. Vana Herbals"
-                        className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-9 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
-                        value={formData.name} onChange={handleInputChange}
-                      />
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5">
-                      URL Slug
-                    </label>
-                    <div className="relative">
-                      <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#737373]" />
-                      <input
-                        type="text" name="slug" required
-                        placeholder="vana-herbals"
-                        className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-[#5C0E1E] font-mono pl-9 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-bold tracking-wider"
-                        value={formData.slug} onChange={handleInputChange}
-                      />
-                    </div>
-                    {formData.slug && (
-                      <p className="text-[9px] text-[#737373] mt-1 ml-1 font-mono">/{formData.slug}</p>
-                    )}
-                  </div>
-                </div>
-
-                {/* EMAIL */}
-                <div>
-                  <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5">
-                    Administrator Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#737373]" />
-                    <input
-                      type="email" name="email" required
-                      placeholder="admin@brand.com"
-                      className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-9 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
-                      value={formData.email} onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                {/* PASSWORD */}
-                <div>
-                  <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5">
-                    Security Password
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-[#737373]" />
-                    <input
-                      type="password" name="password" required
-                      placeholder="•••••••••••"
-                      className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-9 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
-                      value={formData.password} onChange={handleInputChange}
-                    />
-                  </div>
-                </div>
-
-                {/* TAGLINE */}
-                <div>
-                  <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5">
-                    Brand Tagline (optional)
-                  </label>
-                  <input
-                    type="text" name="tagline"
-                    placeholder="Purity in every drop."
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium italic"
-                    value={formData.tagline} onChange={handleInputChange}
-                  />
-                </div>
-
-                {/* SUBMIT */}
-                <button
-                  type="submit" disabled={loading}
-                  className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/20 mt-2 disabled:opacity-60"
-                >
-                  {loading ? (
-                    <>
-                      <span className="inline-block w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      Provisioning Cluster...
-                    </>
-                  ) : (
-                    <>Sign Up Free <ArrowRight className="w-3.5 h-3.5" /></>
-                  )}
-                </button>
-
-                <p className="text-center text-[9px] text-[#737373] pt-1">
-                  By signing up, you agree to our Terms & Privacy Policy.
-                </p>
-              </form>
-            </div>
-          </div>
         </div>
       </section>
 
-      {/* ─── CONCEPT GRID SECTION ──────────────────────── */}
-      <section className="bg-[#F5F5F0] border-t border-neutral-200/60 py-20">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10">
+      {/* ══════════════════════════════════════════════════
+          CAPABILITIES GRID — 8 modules, 4-col
+      ══════════════════════════════════════════════════ */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10">
 
-          {/* SECTION HEADER */}
-          <div className="text-center mb-12 space-y-3">
-            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">Business Verticals</p>
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-neutral-950">
-              One Platform.{" "}
-              <span className="italic font-light text-[#737373]" style={{ fontFamily: "'Georgia', serif" }}>
-                Every Business Concept.
-              </span>
+          <div className="mb-10">
+            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Platform Modules</p>
+            <h2 className="text-3xl font-black tracking-tight text-neutral-950">
+              Everything your team needs.
             </h2>
-            <p className="text-[#737373] text-xs max-w-md mx-auto leading-relaxed">
-              Deploy any layout configuration engine with a single provisioning action. Each vertical ships with its own KDS, analytics, and storefront themes.
+            <p className="text-neutral-500 text-[12px] mt-2 max-w-lg leading-relaxed">
+              HighP ships with a complete set of integrated tools. No third-party plugins required.
             </p>
           </div>
 
-          {/* 7-CONCEPT GRID */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
-            {CONCEPTS.map((concept) => {
-              const Icon = concept.icon;
-              const isActive = selectedConcept === concept.id;
-              return (
-                <button
-                  key={concept.id}
-                  onClick={() => setSelectedConcept(concept.id)}
-                  className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border transition-all text-center group ${
-                    isActive
-                      ? "bg-white border-[#5C0E1E]/30 shadow-lg shadow-[#5C0E1E]/10 scale-[1.02]"
-                      : "bg-white border-transparent hover:border-neutral-200 hover:shadow-md"
-                  }`}
-                >
-                  {/* NEW BADGE for Organic */}
-                  {concept.popular && (
-                    <span className="absolute -top-2 -right-2 bg-[#5C0E1E] text-white text-[8px] font-black px-1.5 py-0.5 rounded-full uppercase tracking-wider">
-                      New
-                    </span>
-                  )}
-
-                  <div className={`w-10 h-10 ${concept.bg} rounded-xl flex items-center justify-center ring-1 ${concept.ring} transition-all group-hover:scale-110`}>
-                    <Icon className={`w-5 h-5 ${concept.iconColor}`} />
-                  </div>
-
-                  <div>
-                    <p className="text-[11px] font-black text-neutral-900 leading-tight">{concept.label}</p>
-                    <p className="text-[9px] text-[#737373] font-medium mt-0.5">{concept.subtitle}</p>
-                  </div>
-
-                  {isActive && (
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-4 h-0.5 bg-[#5C0E1E] rounded-full" />
-                  )}
-                </button>
-              );
-            })}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {CAPABILITIES.map(({ icon: Icon, title, desc }) => (
+              <div
+                key={title}
+                className="group bg-white border border-neutral-200/70 rounded-2xl p-6 hover:border-[#5C0E1E]/25 hover:shadow-lg transition-all"
+              >
+                <div className="w-10 h-10 bg-[#5C0E1E]/8 rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#5C0E1E]/15 transition-colors">
+                  <Icon className="w-5 h-5 text-[#5C0E1E]" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-[13px] font-black text-neutral-900 mb-1.5">{title}</h3>
+                <p className="text-[11px] text-neutral-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
           </div>
-
-          {/* ORGANIC WELLNESS SPOTLIGHT (activates when "Organic & Oils" selected) */}
-          {selectedConcept === "organic" && (
-            <div className="mt-10 grid grid-cols-1 lg:grid-cols-2 gap-8 bg-white rounded-3xl border border-[#F0EEEB] p-8 shadow-sm animate-fade-in">
-              <div className="space-y-5">
-                <div className="inline-flex items-center gap-2 bg-[#5C0E1E]/8 px-3 py-1.5 rounded-full border border-[#5C0E1E]/15">
-                  <Leaf className="w-3 h-3 text-[#5C0E1E]" />
-                  <span className="text-[9px] font-black text-[#5C0E1E] uppercase tracking-widest">Organic & Wellness Vertical</span>
-                </div>
-                <h3 className="text-2xl font-black tracking-tight text-neutral-950">
-                  Cold-Pressed. Pure. <br />
-                  <span className="italic font-light text-[#5C0E1E]" style={{ fontFamily: "'Georgia', serif" }}>
-                    High-Converting.
-                  </span>
-                </h3>
-                <p className="text-[#737373] text-xs leading-relaxed">
-                  Launch a premium wellness storefront built for single-product landing mechanics. Integrates directly with order management, KDS dispatch, and real-time analytics. Designed to convert organic buyers with editorial-style product photography, rich descriptions, and trust anchors.
-                </p>
-                <div className="grid grid-cols-2 gap-3">
-                  {[
-                    "Single-product landing page",
-                    "Trust seal component",
-                    "Subscription order support",
-                    "Premium editorial themes",
-                  ].map(f => (
-                    <div key={f} className="flex items-center gap-2 text-[10px] font-semibold text-neutral-700">
-                      <div className="w-3 h-3 rounded bg-[#5C0E1E]/10 flex items-center justify-center flex-shrink-0">
-                        <ChevronRight className="w-2 h-2 text-[#5C0E1E]" />
-                      </div>
-                      {f}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* WELLNESS PRODUCT PREVIEW CARD */}
-              <div className="relative">
-                <div className="bg-[#F5F5F0] rounded-2xl p-6 h-full flex flex-col justify-between border border-[#EBEBEB]">
-                  <div className="flex items-start justify-between mb-4">
-                    <div>
-                      <p className="text-[9px] font-black text-[#737373] uppercase tracking-widest">Storefront Preview</p>
-                      <h4 className="text-lg font-black text-neutral-900 mt-1">Organic Cold-Press<br />Sesame Oil</h4>
-                    </div>
-                    <div className="bg-[#5C0E1E] text-white px-3 py-1 rounded-full text-[10px] font-black">
-                      ₹450
-                    </div>
-                  </div>
-
-                  {/* MOCK PRODUCT IMAGE PLACEHOLDER */}
-                  <div className="flex-1 bg-gradient-to-br from-[#5C0E1E]/5 to-amber-50 rounded-xl flex items-center justify-center border border-[#EBEBEB] mb-4 min-h-[100px]">
-                    <div className="text-center space-y-1">
-                      <Leaf className="w-8 h-8 text-[#5C0E1E]/30 mx-auto" />
-                      <p className="text-[9px] text-[#737373] font-medium">100% Cold-Pressed</p>
-                    </div>
-                  </div>
-
-                  <button className="w-full py-2.5 bg-[#5C0E1E] text-white text-[10px] font-black rounded-xl uppercase tracking-wider">
-                    Add to Cart
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
-      {/* ─── FOOTER ────────────────────────────────────── */}
-      <footer className="border-t border-[#F0EEEB] bg-white py-8 px-6 lg:px-10">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+      {/* ══════════════════════════════════════════════════
+          HOW IT WORKS — 3-STEP FLOW
+      ══════════════════════════════════════════════════ */}
+      <section className="bg-[#FAFAFA] border-t border-neutral-200/60 py-16">
+        <div className="max-w-5xl mx-auto px-5 lg:px-10 text-center">
+
+          <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-2">Getting Started</p>
+          <h2 className="text-3xl font-black tracking-tight text-neutral-950 mb-3">
+            Live in three steps.
+          </h2>
+          <p className="text-neutral-500 text-[12px] mb-12 max-w-md mx-auto leading-relaxed">
+            No developer required. Go from sign-up to a live storefront with staff access in under two minutes.
+          </p>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[
+              {
+                step: "01",
+                title: "Register your workspace",
+                desc: "Enter your business name, URL slug, and credentials. Your isolated workspace is provisioned instantly.",
+              },
+              {
+                step: "02",
+                title: "Configure your catalog",
+                desc: "Add your products, set pricing, upload images, and configure your public-facing storefront theme.",
+              },
+              {
+                step: "03",
+                title: "Share and operate",
+                desc: "Share your storefront link with customers. Your team uses role-specific dashboards — kitchen, delivery, admin.",
+              },
+            ].map(({ step, title, desc }) => (
+              <div key={step} className="text-left">
+                <div className="text-[11px] font-black text-[#5C0E1E] mb-3 font-mono">{step}</div>
+                <div className="w-full h-px bg-[#5C0E1E]/20 mb-5" />
+                <h3 className="text-[14px] font-black text-neutral-900 mb-2">{title}</h3>
+                <p className="text-[11px] text-neutral-500 leading-relaxed">{desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          CTA BOTTOM BANNER
+      ══════════════════════════════════════════════════ */}
+      <section className="bg-[#5C0E1E] py-14">
+        <div className="max-w-3xl mx-auto px-5 text-center">
+          <h2 className="text-3xl font-black text-white tracking-tight mb-3">
+            Ready to run your business smarter?
+          </h2>
+          <p className="text-white/60 text-[12px] mb-7 leading-relaxed max-w-md mx-auto">
+            Join growing businesses that have switched from scattered tools to a single, unified operations platform.
+          </p>
+          <a
+            href="#register"
+            className="inline-flex items-center gap-2 bg-white text-[#5C0E1E] font-black text-[11px] uppercase tracking-widest px-7 py-3.5 rounded-xl hover:bg-neutral-100 transition-all shadow-lg"
+          >
+            Get Started Free <ArrowRight className="w-3.5 h-3.5" />
+          </a>
+          <p className="text-white/40 text-[9px] mt-4 uppercase tracking-widest font-bold">No credit card · Cancel anytime</p>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════
+          FOOTER
+      ══════════════════════════════════════════════════ */}
+      <footer className="bg-white border-t border-neutral-200/60 py-8">
+        <div className="max-w-7xl mx-auto px-5 lg:px-10 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2.5">
             <div className="w-5 h-5 bg-[#5C0E1E] rounded flex items-center justify-center">
-              <span className="text-white font-black text-[9px]">H</span>
+              <span className="text-white font-black text-[9px]">HP</span>
             </div>
-            <span className="font-black text-xs uppercase tracking-widest text-neutral-700">High P Platform</span>
+            <span className="font-black text-[12px] text-neutral-700 tracking-tight">HighP Platform</span>
           </div>
-          <p className="text-[10px] text-[#737373] font-medium">© 2026 HighP Technologies. All rights reserved.</p>
+          <div className="flex items-center gap-6 text-[10px] text-neutral-400 font-medium">
+            <a href="#" className="hover:text-neutral-700">Privacy</a>
+            <a href="#" className="hover:text-neutral-700">Terms</a>
+            <a href="#" className="hover:text-neutral-700">Support</a>
+          </div>
+          <p className="text-[10px] text-neutral-400">© 2026 HighP Technologies</p>
         </div>
       </footer>
 
