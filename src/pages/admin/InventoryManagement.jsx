@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ShoppingBag, Plus, Trash2, PackageX, ImageOff, ArrowLeft, Loader2, Sparkles } from "lucide-react";
+import { ShoppingBag, Plus, Trash2, PackageX, ImageOff, ArrowLeft, Loader2 } from "lucide-react";
 import axios from "axios";
+import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
 
 export default function InventoryManagement() {
   const { storeSlug } = useParams();
   const [products, setProducts] = useState([]);
+  const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({ name: "", price: "", description: "", image: "" });
@@ -18,7 +20,16 @@ export default function InventoryManagement() {
       .catch(() => setLoading(false));
   };
 
-  useEffect(() => { if (storeSlug) fetchProducts(); }, [storeSlug]);
+  useEffect(() => {
+    if (storeSlug) {
+      fetchProducts();
+      axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+    }
+  }, [storeSlug]);
+
+  const softwareType = storeData?.softwareType || "restaurant";
+  const details = getVerticalDetails(softwareType);
+  const theme = getTheme(storeData);
 
   const handleAdd = async (e) => {
     e.preventDefault();
@@ -54,7 +65,7 @@ export default function InventoryManagement() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-neutral-800 selection:text-white">
       
       {/* HEADER */}
       <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
@@ -75,10 +86,10 @@ export default function InventoryManagement() {
         <div className="lg:col-span-1">
           <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm sticky top-6 space-y-5">
             <div>
-              <h2 className="font-black text-sm uppercase tracking-widest text-[#5C0E1E] flex items-center gap-2">
-                <Plus className="w-4.5 h-4.5" /> Publish New Item
+              <h2 className={`font-black text-sm uppercase tracking-widest ${theme.primary} flex items-center gap-2`}>
+                <Plus className="w-4.5 h-4.5" /> Publish {details.productLabel}
               </h2>
-              <div className="h-0.5 w-8 bg-[#5C0E1E] mt-2 rounded-full" />
+              <div className={`h-0.5 w-8 ${theme.bg} mt-2 rounded-full`} />
             </div>
             
             {error && <div className="p-3 bg-red-50 border border-red-200/60 text-red-700 text-xs rounded-xl font-medium">{error}</div>}
@@ -86,14 +97,14 @@ export default function InventoryManagement() {
             
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Product Title</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">{details.productLabel} Title</label>
                 <input 
                   required 
                   type="text" 
                   placeholder="e.g. Cold-Pressed Sesame Oil" 
                   value={form.name}
                   onChange={e => setForm(p => ({ ...p, name: e.target.value }))}
-                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900" 
                 />
               </div>
               
@@ -106,7 +117,7 @@ export default function InventoryManagement() {
                   placeholder="450" 
                   value={form.price}
                   onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
-                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900" 
                 />
               </div>
 
@@ -117,7 +128,7 @@ export default function InventoryManagement() {
                   placeholder="Describe details, ingredients, etc..." 
                   value={form.description}
                   onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all resize-none text-neutral-900" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all resize-none text-neutral-900" 
                 />
               </div>
 
@@ -128,7 +139,7 @@ export default function InventoryManagement() {
                   placeholder="https://images.unsplash.com/..." 
                   value={form.image}
                   onChange={e => setForm(p => ({ ...p, image: e.target.value }))}
-                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all text-neutral-900" 
+                  className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900" 
                 />
                 <span className="text-[9px] text-[#737373] font-medium block mt-1.5 ml-1">Optional. Defaults to preset banner if empty.</span>
               </div>
@@ -136,7 +147,7 @@ export default function InventoryManagement() {
               <button 
                 type="submit" 
                 disabled={submitting}
-                className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all mt-2 flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/10 disabled:opacity-50"
+                className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-xl transition-all mt-2 flex items-center justify-center gap-2 shadow-md disabled:opacity-50`}
               >
                 {submitting ? (
                   <>
@@ -144,7 +155,7 @@ export default function InventoryManagement() {
                     <span>Cataloging...</span>
                   </>
                 ) : (
-                  <span>Publish Product</span>
+                  <span>Publish {details.productLabel}</span>
                 )}
               </button>
             </form>
@@ -191,7 +202,7 @@ export default function InventoryManagement() {
                       <span className="text-base font-black text-neutral-900">₹{product.price}</span>
                       <button 
                         onClick={() => handleDelete(product._id)}
-                        className="p-2 text-[#737373] hover:text-[#5C0E1E] hover:bg-red-50 rounded-xl transition-all"
+                        className="p-2 text-[#737373] hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
                         title="Delete product"
                       >
                         <Trash2 className="w-4 h-4" />

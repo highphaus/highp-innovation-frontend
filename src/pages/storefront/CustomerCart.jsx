@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, CheckCircle, Loader2, User, CreditCard, Shield } from "lucide-react";
+import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, CheckCircle, Loader2, User, CreditCard } from "lucide-react";
 import axios from "axios";
+import { getTheme, getVerticalDetails } from "./StorefrontHome";
 
 export default function CustomerCart() {
   const { storeSlug } = useParams();
@@ -59,19 +60,23 @@ export default function CustomerCart() {
     }
   };
 
+  const softwareType = storeData?.softwareType || "restaurant";
+  const details = getVerticalDetails(softwareType);
+  const theme = getTheme(storeData);
+
   if (placed) return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6 selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6 selection:bg-neutral-800 selection:text-white">
       <div className="bg-white border border-[#F5F5F0] rounded-2xl p-10 text-center max-w-sm shadow-sm animate-fade-up">
-        <div className="w-16 h-16 bg-[#5C0E1E]/8 rounded-full flex items-center justify-center mx-auto mb-5">
-          <CheckCircle className="w-8 h-8 text-[#5C0E1E]" />
+        <div className={`w-16 h-16 ${theme.lightBg} rounded-full flex items-center justify-center mx-auto mb-5`}>
+          <CheckCircle className={`w-8 h-8 ${theme.primary}`} />
         </div>
-        <h2 className="text-lg font-black text-neutral-900 mb-2">Order Confirmed</h2>
+        <h2 className="text-lg font-black text-neutral-900 mb-2">Request Confirmed</h2>
         <p className="text-[#737373] text-xs mb-6 leading-relaxed">
-          Your order has been queued inside the system and dispatched directly to the kitchen production feed.
+          Your details have been registered inside the multi-tenant system and dispatched directly to the active operator live feed.
         </p>
         <Link 
           to={`/${storeSlug}`} 
-          className="block py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white text-[10px] font-black uppercase tracking-wider rounded-xl text-center shadow-md transition-all active:scale-95"
+          className={`block py-3.5 ${theme.bg} ${theme.hover} text-white text-[10px] font-black uppercase tracking-wider rounded-xl text-center shadow-md transition-all active:scale-95`}
         >
           Return to Storefront
         </Link>
@@ -80,7 +85,7 @@ export default function CustomerCart() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-neutral-800 selection:text-white">
       
       {/* HEADER */}
       <div className="bg-white border-b border-[#F5F5F0] px-6 py-4 flex items-center justify-between shadow-sm">
@@ -88,7 +93,7 @@ export default function CustomerCart() {
           <ShoppingCart className="w-5 h-5 text-neutral-905" />
           <span className="font-black text-xs uppercase tracking-wider text-neutral-900">Your Basket</span>
         </div>
-        <Link to={`/${storeSlug}`} className="flex items-center gap-1.5 text-xs font-bold text-[#737373] hover:text-[#5C0E1E] transition-colors">
+        <Link to={`/${storeSlug}`} className={`flex items-center gap-1.5 text-xs font-bold text-[#737373] hover:${theme.primary} transition-colors`}>
           <ArrowLeft className="w-3.5 h-3.5" /> Back to Store
         </Link>
       </div>
@@ -106,8 +111,8 @@ export default function CustomerCart() {
               <ShoppingCart className="w-12 h-12 text-[#737373] mx-auto mb-4 stroke-[1.2]" />
               <h3 className="font-black text-neutral-805 mb-2">Your basket is empty</h3>
               <p className="text-xs text-[#737373] mb-6">You haven't cataloged any items inside your order yet.</p>
-              <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#5C0E1E] hover:bg-[#3F0712] text-white font-black text-[10px] uppercase tracking-wider rounded-xl inline-block shadow-sm">
-                Explore Menu
+              <Link to={`/${storeSlug}`} className={`px-5 py-3 ${theme.bg} ${theme.hover} text-white font-black text-[10px] uppercase tracking-wider rounded-xl inline-block shadow-sm`}>
+                Explore Storefront
               </Link>
             </div>
           ) : (
@@ -141,7 +146,7 @@ export default function CustomerCart() {
                     </button>
                     <button 
                       onClick={() => removeItem(item._id)} 
-                      className="w-7 h-7 rounded-lg text-neutral-400 hover:text-[#5C0E1E] hover:bg-red-50 flex items-center justify-center ml-1 transition-all"
+                      className={`w-7 h-7 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center ml-1 transition-all`}
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -159,7 +164,7 @@ export default function CustomerCart() {
             <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm sticky top-6 space-y-6">
               <div>
                 <h3 className="font-black text-[10px] uppercase tracking-widest text-[#737373]">Checkout Summary</h3>
-                <div className="h-0.5 w-8 bg-[#5C0E1E] mt-2 rounded-full" />
+                <div className={`h-0.5 w-8 ${theme.bg} mt-2 rounded-full`} />
               </div>
               
               <div className="space-y-3.5 text-xs text-[#737373]">
@@ -168,7 +173,7 @@ export default function CustomerCart() {
                   <span className="font-bold text-neutral-900">₹{totalAmount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Service Tax (GST 5%)</span>
+                  <span>Service Tax / GST</span>
                   <span className="font-bold text-neutral-950">Calculated</span>
                 </div>
                 <div className="h-px bg-[#F5F5F0]" />
@@ -189,7 +194,7 @@ export default function CustomerCart() {
                       placeholder="e.g. Shamsaifudheen" 
                       value={customerName}
                       onChange={e => setCustomerName(e.target.value)}
-                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all text-neutral-905" 
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-905" 
                     />
                   </div>
                 </div>
@@ -198,22 +203,22 @@ export default function CustomerCart() {
                   <CreditCard className="w-4 h-4 text-[#737373]" />
                   <div>
                     <span className="text-[9px] font-black uppercase text-[#737373] block tracking-wider">Payment Node</span>
-                    <span className="text-[10px] font-bold text-neutral-800 block">Cash on Delivery / Counter</span>
+                    <span className="text-[10px] font-bold text-neutral-800 block">Cash on Delivery / On-site Payment</span>
                   </div>
                 </div>
 
                 <button 
                   type="submit" 
                   disabled={submitting}
-                  className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white font-black text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-[#5C0E1E]/10 disabled:opacity-50"
+                  className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md disabled:opacity-50`}
                 >
                   {submitting ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Placing Order...</span>
+                      <span>Processing...</span>
                     </>
                   ) : (
-                    <span>Submit & Checkout</span>
+                    <span>Confirm & Book</span>
                   )}
                 </button>
               </form>

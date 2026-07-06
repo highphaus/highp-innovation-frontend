@@ -3,14 +3,29 @@ import { useParams, Link } from "react-router-dom";
 import {
   TrendingUp, ClipboardList, Users2, Landmark,
   ArrowUpRight, RefreshCw, ShoppingBag, ChefHat,
-  Bike, BarChart3, ShieldCheck, Store, MoreHorizontal
+  Bike, BarChart3, ShieldCheck, Store, BookOpen, Scissors, Droplets, Dumbbell, Wrench
 } from "lucide-react";
 import axios from "axios";
+import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
 
 /* ─── MOCK FALLBACK DATA (renders if backend is unreachable) ─ */
 const FALLBACK_STORE = { name: "Your Store", slug: "" };
 const FALLBACK_PRODUCTS = [];
 const FALLBACK_ORDERS = [];
+
+// ─── VERTICAL LABEL TRANSLATOR FOR WORKSPACE OPERATIONS ───
+export function getVerticalAdminLabels(softwareType) {
+  const map = {
+    restaurant: { kds: "Kitchen KDS", delivery: "Delivery Dispatch", activeTitle: "Live Kitchen Queue" },
+    retail: { kds: "Order Dispatch", delivery: "Couriers Feed", activeTitle: "Order Preparation" },
+    workshop: { kds: "Roster Board", delivery: "Instructors Desk", activeTitle: "Active Registrants" },
+    salon: { kds: "Chair Queue", delivery: "Stylists Assignment", activeTitle: "Waitlist Queue" },
+    water: { kds: "Dispatch Queue", delivery: "Fleet Routing", activeTitle: "Subscription Deliveries" },
+    gym: { kds: "Gate Scanner", delivery: "Trainers Log", activeTitle: "Member Gate Check-ins" },
+    repair: { kds: "Work Orders", delivery: "Tech Assignments", activeTitle: "Service Jobs Queue" }
+  };
+  return map[softwareType || "restaurant"] || map.restaurant;
+}
 
 /* ─── Inline Sparkline (SVG line chart) ──────────────────── */
 function SparklineChart({ data, color = "#5C0E1E", height = 40 }) {
@@ -59,7 +74,7 @@ const REVENUE_DATA = [3.1, 4.4, 3.8, 5.2, 6.1, 4.9, 7.3, 8.2];
 const MAX_REV = Math.max(...REVENUE_DATA);
 
 /* ─── METRIC CARD ─────────────────────────────────────────── */
-function MetricCard({ title, value, change, positive, icon: Icon, sparkData, iconBg, iconColor }) {
+function MetricCard({ title, value, change, positive, icon: Icon, sparkData, iconBg, iconColor, themeColor }) {
   return (
     <div className="bg-white border border-[#F0EEEB] rounded-2xl p-6 shadow-sm flex flex-col justify-between space-y-4 hover:shadow-md transition-shadow">
       <div className="flex justify-between items-start">
@@ -69,14 +84,14 @@ function MetricCard({ title, value, change, positive, icon: Icon, sparkData, ico
         </div>
       </div>
       <div>
-        <h3 className="text-2xl font-black tracking-tight text-neutral-950">{value}</h3>
+        <h3 className="text-2xl font-black tracking-tight text-neutral-955">{value}</h3>
         <p className={`text-[10px] font-bold mt-0.5 ${positive ? "text-emerald-600" : "text-red-500"}`}>
           {positive ? "↑" : "↓"} {change}
         </p>
       </div>
       {sparkData && (
         <div className="border-t border-[#F5F5F0] pt-3">
-          <SparklineChart data={sparkData} color="#5C0E1E" height={32} />
+          <SparklineChart data={sparkData} color={themeColor} height={32} />
         </div>
       )}
     </div>
@@ -133,16 +148,20 @@ export default function AdminDashboard() {
 
   useEffect(() => { if (storeSlug) fetchAll(); }, [storeSlug]);
 
+  const softwareType = storeData?.softwareType || "restaurant";
+  const details = getVerticalDetails(softwareType);
+  const theme = getTheme(storeData);
+  const adminLabels = getVerticalAdminLabels(softwareType);
+
   /* ─── Computed Metrics ──────────────────────────────────── */
   const totalRevenue = orders.reduce((s, o) => s + (o.totalAmount || 0), 0);
   const activeOrders = orders.filter(o => ["pending", "preparing"].includes(o.status)).length;
-  const completedOrders = orders.filter(o => o.status === "completed").length;
 
   /* ─── LOADING STATE ─────────────────────────────────────── */
   if (loading) return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
       <div className="text-center space-y-3">
-        <div className="w-8 h-8 border-2 border-[#5C0E1E]/20 border-t-[#5C0E1E] rounded-full animate-spin mx-auto" />
+        <div className={`w-8 h-8 border-2 border-neutral-200 border-t-[#5C0E1E] rounded-full animate-spin mx-auto`} style={{ borderTopColor: theme.colorCode }} />
         <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest animate-pulse">
           Syncing Operational Metrics...
         </p>
@@ -151,7 +170,7 @@ export default function AdminDashboard() {
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans antialiased selection:bg-neutral-800 selection:text-white">
 
       {/* ─── TOP NAV HEADER ──────────────────────────────── */}
       <header className="sticky top-0 z-40 bg-white border-b border-[#F0EEEB] px-6 lg:px-10 py-4">
@@ -159,14 +178,14 @@ export default function AdminDashboard() {
 
           {/* LEFT: BRAND ID */}
           <div className="flex items-center gap-3">
-            <div className="w-7 h-7 bg-[#5C0E1E] rounded-lg flex items-center justify-center">
+            <div className={`w-7 h-7 ${theme.bg} rounded-lg flex items-center justify-center`}>
               <span className="font-black text-white text-xs">H</span>
             </div>
             <div className="hidden sm:block">
               <span className="font-black text-xs uppercase tracking-widest text-neutral-900 block">
                 {storeData?.name}
               </span>
-              <span className="text-[9px] text-[#737373] font-mono">/{storeSlug}</span>
+              <span className="text-[9px] text-[#737373] font-mono">/{storeSlug} ({softwareType})</span>
             </div>
           </div>
 
@@ -176,14 +195,14 @@ export default function AdminDashboard() {
               { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
               { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
               { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
-              { to: `/${storeSlug}/kitchen`, label: "Kitchen" },
-              { to: `/${storeSlug}/delivery`, label: "Delivery" },
+              { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
+              { to: `/${storeSlug}/delivery`, label: adminLabels.delivery },
             ].map(({ to, label, active }) => (
               <Link
                 key={to} to={to}
                 className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                   active
-                    ? "bg-[#5C0E1E] text-white"
+                    ? `${theme.bg} text-white`
                     : "text-[#737373] hover:text-neutral-900 hover:bg-[#F5F5F0]"
                 }`}
               >
@@ -208,7 +227,7 @@ export default function AdminDashboard() {
             </button>
             <Link
               to={`/${storeSlug}`}
-              className="flex items-center gap-1.5 text-[10px] font-black text-[#5C0E1E] bg-[#5C0E1E]/8 hover:bg-[#5C0E1E]/15 px-3 py-1.5 rounded-lg transition-all"
+              className={`flex items-center gap-1.5 text-[10px] font-black ${theme.primary} ${theme.lightBg} hover:bg-neutral-100 px-3 py-1.5 rounded-lg transition-all`}
             >
               <Store className="w-3 h-3" /> Storefront <ArrowUpRight className="w-2.5 h-2.5" />
             </Link>
@@ -222,14 +241,14 @@ export default function AdminDashboard() {
         {/* PAGE TITLE */}
         <div className="flex items-end justify-between border-b border-[#F0EEEB] pb-5">
           <div>
-            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest mb-1">
+            <p className={`text-[10px] font-black ${theme.primary} uppercase tracking-widest mb-1`}>
               Operations Dashboard
             </p>
             <h1 className="text-2xl font-black tracking-tight text-neutral-950">
               Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"} ✦
             </h1>
             <p className="text-[11px] text-[#737373] font-medium mt-0.5">
-              Here's what's happening in your {storeData?.name} workspace today.
+              Here's what's happening in your {storeData?.name} {softwareType} engine today.
             </p>
           </div>
           <div className="hidden sm:flex items-center gap-2 text-[10px] text-[#737373] font-semibold bg-white border border-[#F0EEEB] px-3 py-2 rounded-xl">
@@ -241,17 +260,18 @@ export default function AdminDashboard() {
         {/* ─── 4 KPI METRIC TILES ──────────────────────── */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
           <MetricCard
-            title="Total Revenue"
+            title="Total Earnings"
             value={`₹${(totalRevenue || 248000).toLocaleString("en-IN")}`}
             change="12.5% from last month"
             positive={true}
             icon={Landmark}
-            iconBg="bg-[#5C0E1E]/8"
-            iconColor="text-[#5C0E1E]"
+            iconBg={theme.lightBg}
+            iconColor={theme.primary}
             sparkData={[3.1, 3.8, 4.2, 3.9, 5.1, 6.2, 5.8, 7.3]}
+            themeColor={theme.colorCode}
           />
           <MetricCard
-            title="Total Orders"
+            title="Total Bookings / Sales"
             value={orders.length || "1,243"}
             change="8.2% from last month"
             positive={true}
@@ -259,6 +279,7 @@ export default function AdminDashboard() {
             iconBg="bg-blue-50"
             iconColor="text-blue-600"
             sparkData={[12, 18, 14, 22, 19, 28, 24, 31]}
+            themeColor={theme.colorCode}
           />
           <MetricCard
             title="Active Customers"
@@ -269,9 +290,10 @@ export default function AdminDashboard() {
             iconBg="bg-violet-50"
             iconColor="text-violet-600"
             sparkData={[200, 320, 280, 410, 390, 520, 480, 610]}
+            themeColor={theme.colorCode}
           />
           <MetricCard
-            title="Pending Invoices"
+            title="Pending Settlements"
             value={`₹${activeOrders > 0 ? (activeOrders * 850).toLocaleString("en-IN") : "24,500"}`}
             change="6.0% from last month"
             positive={false}
@@ -279,6 +301,7 @@ export default function AdminDashboard() {
             iconBg="bg-amber-50"
             iconColor="text-amber-600"
             sparkData={[8, 12, 7, 15, 11, 9, 13, 10]}
+            themeColor={theme.colorCode}
           />
         </div>
 
@@ -315,8 +338,8 @@ export default function AdminDashboard() {
                 <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="w-full h-full">
                   <defs>
                     <linearGradient id="revenueGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#5C0E1E" stopOpacity="0.12" />
-                      <stop offset="100%" stopColor="#5C0E1E" stopOpacity="0" />
+                      <stop offset="0%" stopColor={theme.colorCode} stopOpacity="0.12" />
+                      <stop offset="100%" stopColor={theme.colorCode} stopOpacity="0" />
                     </linearGradient>
                   </defs>
                   {/* Area fill */}
@@ -327,7 +350,7 @@ export default function AdminDashboard() {
                   {/* Main line */}
                   <polyline
                     points={REVENUE_DATA.map((v, i) => `${i * (100 / (REVENUE_DATA.length - 1))},${100 - (v / MAX_REV) * 90}`).join(" ")}
-                    fill="none" stroke="#5C0E1E" strokeWidth="1.8"
+                    fill="none" stroke={theme.colorCode} strokeWidth="1.8"
                     strokeLinecap="round" strokeLinejoin="round"
                   />
                   {/* Data points */}
@@ -336,7 +359,7 @@ export default function AdminDashboard() {
                       key={i}
                       cx={i * (100 / (REVENUE_DATA.length - 1))}
                       cy={100 - (v / MAX_REV) * 90}
-                      r="2" fill="#5C0E1E"
+                      r="2" fill={theme.colorCode}
                     />
                   ))}
                 </svg>
@@ -353,7 +376,7 @@ export default function AdminDashboard() {
             {/* LEGEND */}
             <div className="flex items-center gap-6 pt-2 border-t border-[#F5F5F0] text-[10px] font-semibold text-[#737373]">
               <div className="flex items-center gap-1.5">
-                <div className="w-3 h-0.5 bg-[#5C0E1E] rounded" />
+                <div className="w-3 h-0.5 rounded" style={{ backgroundColor: theme.colorCode }} />
                 Revenue 2026
               </div>
               <div className="flex items-center gap-1.5">
@@ -363,25 +386,24 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* TRANSACTION LOG LEDGER (scrollable) */}
+          {/* TRANSACTION LOG LEDGER */}
           <div className="bg-white border border-[#F0EEEB] rounded-2xl shadow-sm flex flex-col overflow-hidden">
             <div className="p-5 border-b border-[#F5F5F0] flex items-center justify-between flex-shrink-0">
               <div>
-                <h3 className="text-sm font-black uppercase tracking-tight text-neutral-950">Order Ledger</h3>
+                <h3 className="text-sm font-black uppercase tracking-tight text-neutral-955">Transaction Ledger</h3>
                 <p className="text-[9px] text-[#737373] font-medium mt-0.5">
                   {orders.length} records indexed
                 </p>
               </div>
               <Link
                 to={`/${storeSlug}/admin/analytics`}
-                className="text-[9px] font-black text-[#5C0E1E] hover:underline uppercase tracking-wider"
+                className={`text-[9px] font-black ${theme.primary} hover:underline uppercase tracking-wider`}
               >
                 View All →
               </Link>
             </div>
 
             <div className="flex-1 overflow-y-auto divide-y divide-[#F5F5F0] max-h-[280px]">
-              {/* Live orders from backend */}
               {orders.length > 0 ? (
                 orders.slice(0, 10).map((order, i) => (
                   <div key={order._id || i} className="p-4 hover:bg-[#FAFAFA] transition-colors">
@@ -391,20 +413,19 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-mono text-[#737373]">
-                        {order.items?.length || 0} items · {new Date(order.createdAt).toLocaleDateString()}
+                        {order.items?.length || 0} units · {new Date(order.createdAt).toLocaleDateString()}
                       </span>
                       <StatusBadge status={order.status} />
                     </div>
                   </div>
                 ))
               ) : (
-                /* FALLBACK sample entries when no live data */
                 [
-                  { id: "#ORD-1245", item: "Sesame Oil 500ml", price: "₹450", date: "Today 14:20", status: "completed" },
-                  { id: "#ORD-1244", item: "Truffle Smash Burger", price: "₹349", date: "Today 13:55", status: "preparing" },
-                  { id: "#ORD-1243", item: "Vanilla Iced Latte", price: "₹169", date: "Today 13:10", status: "completed" },
-                  { id: "#ORD-1242", item: "Pistachio Cheesecake", price: "₹289", date: "Today 12:40", status: "pending" },
-                  { id: "#ORD-1241", item: "Salmon Croissant", price: "₹299", date: "Yesterday", status: "completed" },
+                  { id: "#TX-1245", item: "Customer Registration", price: "₹450", date: "Today 14:20", status: "completed" },
+                  { id: "#TX-1244", item: "Core Service Charge", price: "₹349", date: "Today 13:55", status: "preparing" },
+                  { id: "#TX-1243", item: "Basic Pass Entry", price: "₹169", date: "Today 13:10", status: "completed" },
+                  { id: "#TX-1242", item: "Artisanal Premium Session", price: "₹289", date: "Today 12:40", status: "pending" },
+                  { id: "#TX-1241", item: "Subscription Package", price: "₹299", date: "Yesterday", status: "completed" },
                 ].map((order, i) => (
                   <div key={i} className="p-4 hover:bg-[#FAFAFA] transition-colors">
                     <div className="flex items-center justify-between mb-1">
@@ -412,7 +433,7 @@ export default function AdminDashboard() {
                       <span className="text-[11px] font-black text-neutral-950">{order.price}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-mono text-[#737373]">{order.id} · {order.date}</span>
+                      <span className="text-[9px] font-mono text-[#737373]">Mock {order.id} · {order.date}</span>
                       <StatusBadge status={order.status} />
                     </div>
                   </div>
@@ -424,15 +445,15 @@ export default function AdminDashboard() {
 
         {/* ─── WORKSPACE SHORTCUT GRID ─────────────────── */}
         <div>
-          <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest mb-4">Quick Access</p>
+          <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest mb-4">Quick Access Operations Desk</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
             {[
               { to: `/${storeSlug}/admin/inventory`, icon: ShoppingBag, label: "Inventory", count: `${products.length} items`, iconBg: "bg-blue-50", iconColor: "text-blue-600" },
-              { to: `/${storeSlug}/admin/analytics`, icon: BarChart3, label: "Analytics", count: "Revenue view", iconBg: "bg-[#5C0E1E]/8", iconColor: "text-[#5C0E1E]" },
-              { to: `/${storeSlug}/kitchen`, icon: ChefHat, label: "Kitchen KDS", count: `${activeOrders} active`, iconBg: "bg-orange-50", iconColor: "text-orange-600" },
-              { to: `/${storeSlug}/delivery`, icon: Bike, label: "Delivery", count: "Dispatch desk", iconBg: "bg-sky-50", iconColor: "text-sky-600" },
+              { to: `/${storeSlug}/admin/analytics`, icon: BarChart3, label: "Analytics", count: "Ledger report", iconBg: theme.lightBg, iconColor: theme.primary },
+              { to: `/${storeSlug}/kitchen`, icon: ChefHat, label: adminLabels.kds, count: `${activeOrders} active`, iconBg: "bg-orange-50", iconColor: "text-orange-600" },
+              { to: `/${storeSlug}/delivery`, icon: Bike, label: adminLabels.delivery, count: "Dispatch board", iconBg: "bg-sky-50", iconColor: "text-sky-600" },
               { to: `/${storeSlug}/login`, icon: ShieldCheck, label: "Staff Login", count: "Role access", iconBg: "bg-violet-50", iconColor: "text-violet-600" },
-              { to: `/${storeSlug}`, icon: Store, label: "Storefront", count: "Live menu", iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
+              { to: `/${storeSlug}`, icon: Store, label: "Storefront", count: "Live site", iconBg: "bg-emerald-50", iconColor: "text-emerald-600" },
             ].map(({ to, icon: Icon, label, count, iconBg, iconColor }) => (
               <Link
                 key={to} to={to}
@@ -442,7 +463,7 @@ export default function AdminDashboard() {
                   <Icon className={`w-4 h-4 ${iconColor}`} />
                 </div>
                 <div>
-                  <p className="text-[11px] font-black text-neutral-900 group-hover:text-[#5C0E1E] transition-colors">{label}</p>
+                  <p className={`text-[11px] font-black text-neutral-900 group-hover:${theme.primary} transition-colors`}>{label}</p>
                   <p className="text-[9px] text-[#737373] font-medium">{count}</p>
                 </div>
               </Link>

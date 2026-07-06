@@ -13,7 +13,7 @@ const VERTICALS = [
   {
     id: "restaurant",
     icon: Utensils,
-    label: "Restaurant & Café",
+    label: "🍴 Restaurant & Café",
     desc: "Table configurations, delivery mapping & live kitchen production ticketing.",
     badge: "F&B Engine",
     theme: { color: "red", primary: "text-[#5C0E1E]", bg: "bg-[#5C0E1E]", hover: "hover:bg-[#3F0712]" }
@@ -21,7 +21,7 @@ const VERTICALS = [
   {
     id: "retail",
     icon: ShoppingBag,
-    label: "Retail & Commerce",
+    label: "🛍️ Retail & Commerce",
     desc: "Dynamic catalogs, customer baskets, discount matrices & payments.",
     badge: "eComm Core",
     theme: { color: "blue", primary: "text-blue-600", bg: "bg-blue-600", hover: "hover:bg-blue-700" }
@@ -29,7 +29,7 @@ const VERTICALS = [
   {
     id: "workshop",
     icon: BookOpen,
-    label: "Workshops & Classes",
+    label: "📖 Workshops & Classes",
     desc: "Interactive calendars, student rosters, scheduling & attendance logs.",
     badge: "Bookings",
     theme: { color: "emerald", primary: "text-emerald-600", bg: "bg-emerald-600", hover: "hover:bg-emerald-700" }
@@ -37,7 +37,7 @@ const VERTICALS = [
   {
     id: "salon",
     icon: Scissors,
-    label: "Salon & Lifestyle",
+    label: "✂️ Salon & Lifestyle",
     desc: "Queue coordination, stylist allocation & service time tracking.",
     badge: "Scheduler",
     theme: { color: "rose", primary: "text-rose-600", bg: "bg-rose-600", hover: "hover:bg-rose-700" }
@@ -45,7 +45,7 @@ const VERTICALS = [
   {
     id: "water",
     icon: Droplets,
-    label: "Fluid & Hydration",
+    label: "💧 Fluid & Hydration",
     desc: "Automated subscriptions, distribution fleet dispatch & routing.",
     badge: "Subscriptions",
     theme: { color: "sky", primary: "text-sky-600", bg: "bg-sky-600", hover: "hover:bg-sky-700" }
@@ -53,7 +53,7 @@ const VERTICALS = [
   {
     id: "gym",
     icon: Dumbbell,
-    label: "Gym & Fitness",
+    label: "🏋️ Gym & Fitness",
     desc: "Membership tiers, check-in gates, trainer logs & auto-renewals.",
     badge: "Memberships",
     theme: { color: "purple", primary: "text-purple-600", bg: "bg-purple-600", hover: "hover:bg-purple-700" }
@@ -61,7 +61,7 @@ const VERTICALS = [
   {
     id: "repair",
     icon: Wrench,
-    label: "Service & Repairs",
+    label: "🔧 Service & Repairs",
     desc: "Field dispatch, technician status tracking & material invoices.",
     badge: "Field Ops",
     theme: { color: "slate", primary: "text-slate-600", bg: "bg-slate-600", hover: "hover:bg-slate-700" }
@@ -117,6 +117,7 @@ export default function PlatformHome() {
     const targetVertical = VERTICALS.find(v => v.id === selectedSoftware) || VERTICALS[0];
     const submitPayload = {
       ...formData,
+      softwareType: selectedSoftware,
       themeColor: targetVertical.theme.color,
       primaryColor: targetVertical.theme.primary,
       bgColor: targetVertical.theme.bg,
@@ -190,7 +191,7 @@ export default function PlatformHome() {
             </div>
 
             <div className="space-y-4">
-              <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-neutral-950 leading-[1.05]">
+              <h1 className="text-5xl sm:text-6xl font-black tracking-tight text-neutral-955 leading-[1.05]">
                 One gateway.
                 <br />
                 <span className="italic font-light text-[#5C0E1E]" style={{ fontFamily: "'Georgia', serif" }}>
@@ -220,14 +221,14 @@ export default function PlatformHome() {
             </div>
           </div>
 
-          {/* RIGHT: PREMIUM REGISTRATION PANEL WITH SOFTWARE SELECTOR */}
+          {/* RIGHT: PREMIUM REGISTRATION FORM */}
           <div className="lg:col-span-7" id="register">
             <div className="bg-white border border-[#F5F5F0] rounded-2xl shadow-[0_16px_50px_rgba(0,0,0,0.04)] overflow-hidden">
               
               <div className="bg-[#5C0E1E] px-8 py-6 text-white relative">
                 <div className="absolute top-0 right-0 w-24 h-24 bg-white/5 rounded-full -mr-6 -mt-6 blur-xl" />
                 <h2 className="text-lg font-black tracking-tight">Deploy Custom Node</h2>
-                <p className="text-white/60 text-[11px] mt-0.5">Fill parameters and select software core to instantiate.</p>
+                <p className="text-white/60 text-[11px] mt-0.5">Configure your custom node options to deploy.</p>
               </div>
 
               <div className="p-8 space-y-6">
@@ -238,111 +239,103 @@ export default function PlatformHome() {
                   </div>
                 )}
 
-                <form onSubmit={handleOnboardSubmit} className="space-y-6">
+                <form onSubmit={handleOnboardSubmit} className="space-y-5">
                   
-                  {/* SOFTWARE CORE ENGINE SELECTOR */}
-                  <div className="space-y-2">
-                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest ml-1">
-                      1. Choose Software Core Engine
+                  {/* SOFTWARE CORE DROPDOWN */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
+                      Choose Software Engine
                     </label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                      {VERTICALS.map((vertical) => {
-                        const Icon = vertical.icon;
-                        const isSelected = selectedSoftware === vertical.id;
-                        return (
-                          <button
-                            type="button"
-                            key={vertical.id}
-                            onClick={() => setSelectedSoftware(vertical.id)}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border text-center transition-all cursor-pointer ${
-                              isSelected 
-                                ? "bg-[#5C0E1E] border-transparent text-white shadow-md shadow-[#5C0E1E]/10" 
-                                : "bg-[#FAFAFA] border-[#F5F5F0] text-neutral-600 hover:bg-neutral-100/50"
-                            }`}
-                          >
-                            <Icon className="w-4 h-4 mb-1.5" strokeWidth={isSelected ? 2.5 : 1.8} />
-                            <span className="text-[10px] font-bold leading-tight tracking-tight">{vertical.label}</span>
-                          </button>
-                        );
-                      })}
+                    <div className="relative">
+                      <Layers className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      <select 
+                        value={selectedSoftware}
+                        onChange={e => setSelectedSoftware(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-10 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all font-semibold appearance-none cursor-pointer"
+                      >
+                        {VERTICALS.map((v) => (
+                          <option key={v.id} value={v.id}>
+                            {v.label} ({v.badge})
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs font-bold text-neutral-400">
+                        ▼
+                      </div>
                     </div>
                   </div>
 
-                  {/* ACCOUNT SETTINGS FIELDS */}
-                  <div className="space-y-4">
-                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest ml-1">
-                      2. Configure Workspace Parameters
-                    </label>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Company / Store Name</label>
-                        <div className="relative">
-                          <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                          <input
-                            type="text" name="name" required
-                            placeholder="e.g. Taste N Park"
-                            className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
-                            value={formData.name} onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Subdomain URL Slug</label>
-                        <div className="relative">
-                          <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                          <input
-                            type="text" name="slug" required
-                            placeholder="tastenpark"
-                            className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-[#5C0E1E] font-mono pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-bold tracking-wider"
-                            value={formData.slug} onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Admin Email</label>
-                        <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                          <input
-                            type="email" name="email" required
-                            placeholder="admin@brand.com"
-                            className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
-                            value={formData.email} onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Vault Password</label>
-                        <div className="relative">
-                          <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-                          <input
-                            type="password" name="password" required
-                            placeholder="••••••••"
-                            className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
-                            value={formData.password} onChange={handleInputChange}
-                          />
-                        </div>
-                      </div>
-                    </div>
-
+                  {/* COMPANY & SLUG */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Brand Tagline</label>
-                      <input
-                        type="text" name="tagline"
-                        placeholder="e.g. Gourmet Artisan Kitchen"
-                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold italic"
-                        value={formData.tagline} onChange={handleInputChange}
-                      />
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Company / Store Name</label>
+                      <div className="relative">
+                        <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="text" name="name" required
+                          placeholder="e.g. Taste N Park"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
+                          value={formData.name} onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Subdomain URL Slug</label>
+                      <div className="relative">
+                        <Globe className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="text" name="slug" required
+                          placeholder="tastenpark"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-[#5C0E1E] font-mono pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-bold tracking-wider"
+                          value={formData.slug} onChange={handleInputChange}
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  {/* SUBMIT BUTTON */}
+                  {/* EMAIL & PASSWORD */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Admin Email</label>
+                      <div className="relative">
+                        <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="email" name="email" required
+                          placeholder="admin@brand.com"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
+                          value={formData.email} onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Vault Password</label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                        <input
+                          type="password" name="password" required
+                          placeholder="••••••••"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
+                          value={formData.password} onChange={handleInputChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TAGLINE */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Brand Tagline</label>
+                    <input
+                      type="text" name="tagline"
+                      placeholder="e.g. Gourmet Artisan Kitchen"
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold italic"
+                      value={formData.tagline} onChange={handleInputChange}
+                    />
+                  </div>
+
+                  {/* SUBMIT */}
                   <button
                     type="submit" disabled={loading}
-                    className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/15 disabled:opacity-60"
+                    className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/15 mt-2 disabled:opacity-60"
                   >
                     {loading ? (
                       <>
@@ -431,7 +424,7 @@ export default function PlatformHome() {
                   <div className="w-9 h-9 bg-white border border-[#F5F5F0] rounded-xl flex items-center justify-center mb-4 group-hover:bg-[#5C0E1E]/8 group-hover:border-[#5C0E1E]/15 transition-all">
                     <Icon className="w-4.5 h-4.5 text-[#5C0E1E]" strokeWidth={1.5} />
                   </div>
-                  <h3 className="text-xs font-black text-neutral-950 mb-1.5 uppercase tracking-wide">{cap.title}</h3>
+                  <h3 className="text-xs font-black text-neutral-955 mb-1.5 uppercase tracking-wide">{cap.title}</h3>
                   <p className="text-[10px] text-[#737373] leading-relaxed">{cap.desc}</p>
                 </div>
               );

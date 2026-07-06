@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Mail, Lock, ShieldCheck, AlertCircle,
-  ArrowRight, Leaf, LayoutDashboard, ChefHat, Bike
+  ArrowRight, LayoutDashboard, ChefHat, Bike
 } from "lucide-react";
 import axios from "axios";
+import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
 
 /* ─── Floating geometric shape for maroon panel ───── */
 function FloatingShape({ className }) {
@@ -23,6 +24,14 @@ export default function UnifiedLogin() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [storeData, setStoreData] = useState(null);
+
+  useEffect(() => {
+    axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+  }, [storeSlug]);
+
+  const theme = getTheme(storeData);
+  const details = getVerticalDetails(storeData?.softwareType);
 
   const handleProcessLogin = async (e) => {
     e.preventDefault();
@@ -46,7 +55,7 @@ export default function UnifiedLogin() {
   };
 
   return (
-    <div className="min-h-screen flex selection:bg-[#5C0E1E] selection:text-white font-sans antialiased">
+    <div className="min-h-screen flex selection:bg-neutral-800 selection:text-white font-sans antialiased">
 
       {/* ─── LEFT PANEL: Deep Maroon with Geometric Art ──── */}
       <div className="hidden lg:flex lg:w-1/2 relative bg-[#3F0712] flex-col justify-between p-12 overflow-hidden">
@@ -143,8 +152,8 @@ export default function UnifiedLogin() {
               <span className="font-black text-sm uppercase tracking-widest text-neutral-900">High P</span>
             </div>
 
-            <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">
-              {storeSlug} workspace
+            <p className={`text-[10px] font-black ${theme.primary} uppercase tracking-widest`}>
+              {storeSlug} workspace · {storeData?.softwareType || 'restaurant'}
             </p>
             <h2 className="text-2xl font-black tracking-tight text-neutral-950">Welcome back.</h2>
             <p className="text-[11px] text-[#737373] leading-relaxed">
@@ -209,7 +218,7 @@ export default function UnifiedLogin() {
             {/* SUBMIT BUTTON */}
             <button
               type="submit" disabled={loading}
-              className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md shadow-[#5C0E1E]/20 disabled:opacity-60"
+              className={`w-full py-3.5 ${theme.bg} ${theme.hover} active:scale-[0.99] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-60`}
             >
               {loading ? (
                 <>

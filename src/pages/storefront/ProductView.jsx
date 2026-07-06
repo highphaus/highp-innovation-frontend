@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield } from "lucide-react";
 import axios from "axios";
+import { getTheme, getVerticalDetails } from "./StorefrontHome";
 
 export default function ProductView() {
   const { storeSlug, productId } = useParams();
@@ -38,31 +39,35 @@ export default function ProductView() {
     setTimeout(() => setAdded(false), 2000);
   };
 
+  const softwareType = storeData?.softwareType || "restaurant";
+  const details = getVerticalDetails(softwareType);
+  const theme = getTheme(storeData);
+
   if (loading) return (
     <div className="min-h-screen bg-[#FAFAFA] text-[#737373] flex items-center justify-center">
-      <div className="text-xs uppercase font-black tracking-widest animate-pulse">Loading Product details...</div>
+      <div className="text-xs uppercase font-black tracking-widest animate-pulse">Loading {details.productLabel} details...</div>
     </div>
   );
 
   if (!product) return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6 text-center">
       <div className="bg-white border border-[#F5F5F0] p-8 rounded-2xl shadow-sm max-w-sm">
-        <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight mb-2">Product Not Found</h2>
+        <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight mb-2">{details.productLabel} Not Found</h2>
         <p className="text-[#737373] text-xs mb-6">The item you are attempting to query does not exist in our catalog index.</p>
-        <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#5C0E1E] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block">
-          ← Return to Menu
+        <Link to={`/${storeSlug}`} className={`px-5 py-3 ${theme.bg} ${theme.hover} text-white rounded-xl text-[10px] font-black uppercase tracking-wider block`}>
+          ← Return to storefront
         </Link>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-16 selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-16 selection:bg-neutral-800 selection:text-white">
       
       {/* NAV */}
       <nav className="bg-white border-b border-[#F5F5F0] text-neutral-900 px-6 py-4 flex items-center justify-between shadow-sm">
         <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-[#737373] hover:text-neutral-900 transition-colors">
-          <ArrowLeft className="w-4 h-4" /> <span>Back to {storeData?.name || "Menu"}</span>
+          <ArrowLeft className="w-4 h-4" /> <span>Back to {storeData?.name || "Storefront"}</span>
         </Link>
         <Link to={`/${storeSlug}/cart`} className="relative p-2 text-[#737373] hover:text-neutral-900 transition-colors">
           <ShoppingCart className="w-4 h-4" />
@@ -100,17 +105,17 @@ export default function ProductView() {
             
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block mb-1">Gourmet Choice</span>
+                <span className={`text-[9px] font-black ${theme.primary} uppercase tracking-widest block mb-1`}>{details.productLabel}</span>
                 <h1 className="text-xl font-black text-neutral-900 leading-snug">{product.name}</h1>
               </div>
               <div className="text-right">
                 <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block mb-1">Standard</span>
-                <span className="text-xl font-black text-neutral-950 block">₹{product.price}</span>
+                <span className="text-xl font-black text-neutral-955 block">₹{product.price}</span>
               </div>
             </div>
 
             <p className="text-xs text-[#737373] leading-relaxed">
-              {product.description || "Indulge in our exquisite gourmet selection, handcrafted by master chefs using premium local ingredients and fresh organic greens."}
+              {product.description || `Fresh premium ${details.productLabel.toLowerCase()} prepared carefully for premium experience and convenience.`}
             </p>
 
             <div className="h-px bg-[#F5F5F0]" />
@@ -118,10 +123,10 @@ export default function ProductView() {
             {/* BENEFITS */}
             <div className="space-y-3">
               <div className="flex items-center gap-2.5 text-xs text-[#737373] font-medium">
-                <Shield className="w-4 h-4 text-emerald-500" /> Fresh preparation on order
+                <Shield className="w-4 h-4 text-emerald-500" /> Inspected and certified quality
               </div>
               <div className="flex items-center gap-2.5 text-xs text-[#737373] font-medium">
-                <Star className="w-4 h-4 text-amber-500 fill-amber-500/10" /> Authentic ingredients and flavors
+                <Star className="w-4 h-4 text-amber-500 fill-amber-500/10" /> 100% authentic satisfaction guarantee
               </div>
             </div>
 
@@ -153,10 +158,10 @@ export default function ProductView() {
           <div className="space-y-3">
             <button 
               onClick={addToCart}
-              className="w-full py-3.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-[#5C0E1E]/10"
+              className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md`}
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              {added ? "Item Added to Cart! ✓" : `Add to Cart · ₹${product.price * quantity}`}
+              {added ? "Selection added! ✓" : `${details.actionLabel} · ₹${product.price * quantity}`}
             </button>
 
             <Link 

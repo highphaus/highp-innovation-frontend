@@ -2,24 +2,30 @@ import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { TrendingUp, ShoppingBag, ClipboardList, ArrowLeft, IndianRupee, Package, Clock, ShieldCheck, Activity } from "lucide-react";
 import axios from "axios";
+import { getTheme } from "../storefront/StorefrontHome";
 
 export default function AnalyticsMetrics() {
   const { storeSlug } = useParams();
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
+  const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!storeSlug) return;
     Promise.all([
       axios.get(`http://localhost:5000/api/orders/${storeSlug}`),
-      axios.get(`http://localhost:5000/api/products/${storeSlug}`)
-    ]).then(([ordersRes, productsRes]) => {
+      axios.get(`http://localhost:5000/api/products/${storeSlug}`),
+      axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+    ]).then(([ordersRes, productsRes, storeRes]) => {
       setOrders(ordersRes.data);
       setProducts(productsRes.data);
+      setStoreData(storeRes.data);
       setLoading(false);
     }).catch(() => setLoading(false));
   }, [storeSlug]);
+
+  const theme = getTheme(storeData);
 
   const totalRevenue = orders.reduce((sum, o) => sum + (o.totalAmount || 0), 0);
   const pendingOrders = orders.filter(o => o.status === 'pending').length;
@@ -58,7 +64,7 @@ export default function AnalyticsMetrics() {
             {/* KPI METRIC TILES */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
               {[
-                { label: "Gross Generated Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: "text-[#5C0E1E]", bg: "bg-[#5C0E1E]/8" },
+                { label: "Gross Generated Revenue", value: `₹${totalRevenue.toLocaleString('en-IN')}`, icon: IndianRupee, color: theme.primary, bg: theme.lightBg },
                 { label: "Order Transaction Logs", value: `${orders.length} Logged`, icon: ClipboardList, color: "text-blue-600", bg: "bg-blue-50" },
                 { label: "Catalog Listings", value: `${products.length} Products`, icon: Package, color: "text-purple-500", bg: "bg-purple-55" },
                 { label: "Incoming Active Queue", value: `${pendingOrders + preparingOrders} Tickets`, icon: Clock, color: "text-amber-600", bg: "bg-amber-50" },
