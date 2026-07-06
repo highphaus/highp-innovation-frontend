@@ -13,7 +13,7 @@ const VERTICALS = [
   {
     id: "restaurant",
     icon: Utensils,
-    label: "🍴 Restaurant & Café",
+    label: "Restaurant & Cafe",
     desc: "Table configurations, delivery mapping & live kitchen production ticketing.",
     badge: "F&B Engine",
     theme: { color: "red", primary: "text-[#5C0E1E]", bg: "bg-[#5C0E1E]", hover: "hover:bg-[#3F0712]" }
@@ -21,7 +21,7 @@ const VERTICALS = [
   {
     id: "retail",
     icon: ShoppingBag,
-    label: "🛍️ Retail & Commerce",
+    label: "Retail & Commerce",
     desc: "Dynamic catalogs, customer baskets, discount matrices & payments.",
     badge: "eComm Core",
     theme: { color: "blue", primary: "text-blue-600", bg: "bg-blue-600", hover: "hover:bg-blue-700" }
@@ -29,7 +29,7 @@ const VERTICALS = [
   {
     id: "workshop",
     icon: BookOpen,
-    label: "📖 Workshops & Classes",
+    label: "Workshops & Classes",
     desc: "Interactive calendars, student rosters, scheduling & attendance logs.",
     badge: "Bookings",
     theme: { color: "emerald", primary: "text-emerald-600", bg: "bg-emerald-600", hover: "hover:bg-emerald-700" }
@@ -37,7 +37,7 @@ const VERTICALS = [
   {
     id: "salon",
     icon: Scissors,
-    label: "✂️ Salon & Lifestyle",
+    label: "Salon & Lifestyle",
     desc: "Queue coordination, stylist allocation & service time tracking.",
     badge: "Scheduler",
     theme: { color: "rose", primary: "text-rose-600", bg: "bg-rose-600", hover: "hover:bg-rose-700" }
@@ -45,7 +45,7 @@ const VERTICALS = [
   {
     id: "water",
     icon: Droplets,
-    label: "💧 Fluid & Hydration",
+    label: "Fluid & Hydration",
     desc: "Automated subscriptions, distribution fleet dispatch & routing.",
     badge: "Subscriptions",
     theme: { color: "sky", primary: "text-sky-600", bg: "bg-sky-600", hover: "hover:bg-sky-700" }
@@ -53,7 +53,7 @@ const VERTICALS = [
   {
     id: "gym",
     icon: Dumbbell,
-    label: "🏋️ Gym & Fitness",
+    label: "Gym & Fitness",
     desc: "Membership tiers, check-in gates, trainer logs & auto-renewals.",
     badge: "Memberships",
     theme: { color: "purple", primary: "text-purple-600", bg: "bg-purple-600", hover: "hover:bg-purple-700" }
@@ -61,7 +61,7 @@ const VERTICALS = [
   {
     id: "repair",
     icon: Wrench,
-    label: "🔧 Service & Repairs",
+    label: "Service & Repairs",
     desc: "Field dispatch, technician status tracking & material invoices.",
     badge: "Field Ops",
     theme: { color: "slate", primary: "text-slate-600", bg: "bg-slate-600", hover: "hover:bg-slate-700" }
@@ -92,9 +92,14 @@ export default function PlatformHome() {
     name: "", slug: "", email: "", password: "", tagline: ""
   });
   const [selectedSoftware, setSelectedSoftware] = useState("restaurant");
+  const [subscriptionPlan, setSubscriptionPlan] = useState("basic");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [activeFaq, setActiveFaq] = useState(null);
+
+  // Success deployment approval state
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [registeredSlug, setRegisteredSlug] = useState("");
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -118,6 +123,7 @@ export default function PlatformHome() {
     const submitPayload = {
       ...formData,
       softwareType: selectedSoftware,
+      subscriptionPlan,
       themeColor: targetVertical.theme.color,
       primaryColor: targetVertical.theme.primary,
       bgColor: targetVertical.theme.bg,
@@ -126,9 +132,8 @@ export default function PlatformHome() {
 
     try {
       const res = await axios.post("http://localhost:5000/api/stores/register", submitPayload);
-      localStorage.setItem(`token_${res.data.slug}`, res.data.token);
-      localStorage.setItem(`role_${res.data.slug}`, "admin");
-      navigate(`/${res.data.slug}/admin`);
+      setRegisteredSlug(res.data.slug);
+      setShowSuccessModal(true);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Provisioning cluster timeout. Check DB connectivity.");
     } finally {
@@ -137,14 +142,53 @@ export default function PlatformHome() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans antialiased selection:bg-[#5C0E1E] selection:text-white relative">
 
       {/* Ambient background decoration */}
       <div className="absolute top-0 right-0 w-[40%] h-[40%] bg-gradient-to-b from-[#5C0E1E]/5 to-transparent blur-3xl pointer-events-none" />
 
-      {/* ══════════════════════════════════════════════════
-          NAVIGATION HEADER
-      ══════════════════════════════════════════════════ */}
+      {/* SUCCESS MODAL FOR TRIAL / PENDING APPROVAL */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white border border-[#F5F5F0] rounded-2xl p-8 max-w-md w-full shadow-2xl text-center space-y-6 animate-fade-up">
+            <div className="w-16 h-16 bg-emerald-50 border border-emerald-100 rounded-full flex items-center justify-center mx-auto">
+              <Shield className="w-8 h-8 text-emerald-600" />
+            </div>
+            <div className="space-y-2">
+              <h3 className="text-lg font-black text-neutral-900 uppercase tracking-wide">Deployment Provisioned</h3>
+              <p className="text-xs text-[#737373] leading-relaxed">
+                Your store instance <span className="font-mono text-neutral-950 font-bold">/{registeredSlug}</span> is provisioned. Access is locked pending manual activation approval of your subscription plan ({subscriptionPlan}).
+              </p>
+            </div>
+            <div className="bg-[#FAFAFA] border border-[#F5F5F0] p-4 rounded-xl text-left space-y-2">
+              <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block">Next Steps</span>
+              <p className="text-[10px] text-[#737373] leading-relaxed">
+                1. Contact HighP support at billing@highp.com to activate your node.<br />
+                2. Once approved, use the Staff Login link to access your dashboard.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <button 
+                onClick={() => {
+                  setShowSuccessModal(false);
+                  navigate(`/${registeredSlug}/login`);
+                }}
+                className="flex-1 py-3 bg-[#5C0E1E] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+              >
+                Go to Staff Login
+              </button>
+              <button 
+                onClick={() => setShowSuccessModal(false)}
+                className="px-5 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* NAVIGATION HEADER */}
       <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#F5F5F0]">
         <div className="max-w-7xl mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
           
@@ -153,7 +197,7 @@ export default function PlatformHome() {
               <span className="font-black text-white text-xs">HP</span>
             </div>
             <div>
-              <span className="font-black text-sm tracking-tight text-neutral-950 block">HighP Platform</span>
+              <span className="font-black text-sm tracking-tight text-neutral-955 block">HighP Platform</span>
               <span className="text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">Enterprise Cloud</span>
             </div>
           </div>
@@ -165,9 +209,6 @@ export default function PlatformHome() {
           </div>
 
           <div className="flex items-center gap-4">
-            <a href="#" className="hidden sm:block text-[11px] font-black uppercase tracking-wider text-[#737373] hover:text-neutral-900 transition-colors">
-              Sign In
-            </a>
             <a href="#register" className="text-[11px] font-black uppercase tracking-widest px-5 py-2.5 bg-[#5C0E1E] hover:bg-[#3F0712] text-white rounded-xl transition-all shadow-sm shadow-[#5C0E1E]/15">
               Deploy Free
             </a>
@@ -175,9 +216,7 @@ export default function PlatformHome() {
         </div>
       </nav>
 
-      {/* ══════════════════════════════════════════════════
-          HERO LAYOUT
-      ══════════════════════════════════════════════════ */}
+      {/* HERO LAYOUT */}
       <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-16 pb-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-center">
 
@@ -265,6 +304,28 @@ export default function PlatformHome() {
                     </div>
                   </div>
 
+                  {/* SUBSCRIPTION PLAN DROPDOWN */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
+                      Select Subscription Plan
+                    </label>
+                    <div className="relative">
+                      <CreditCard className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+                      <select 
+                        value={subscriptionPlan}
+                        onChange={e => setSubscriptionPlan(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-10 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/50 focus:bg-white transition-all font-semibold appearance-none cursor-pointer"
+                      >
+                        <option value="basic">Basic Plan - 4,999 INR / month</option>
+                        <option value="pro">Pro Scale Plan - 9,999 INR / month</option>
+                        <option value="enterprise">Custom Enterprise Plan - 24,999 INR / month</option>
+                      </select>
+                      <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs font-bold text-neutral-400">
+                        ▼
+                      </div>
+                    </div>
+                  </div>
+
                   {/* COMPANY & SLUG */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -274,7 +335,7 @@ export default function PlatformHome() {
                         <input
                           type="text" name="name" required
                           placeholder="e.g. Taste N Park"
-                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-neutral-350 focus:bg-white transition-all font-semibold"
                           value={formData.name} onChange={handleInputChange}
                         />
                       </div>
@@ -286,7 +347,7 @@ export default function PlatformHome() {
                         <input
                           type="text" name="slug" required
                           placeholder="tastenpark"
-                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-[#5C0E1E] font-mono pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-bold tracking-wider"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-[#5C0E1E] font-mono pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-neutral-350 focus:bg-white transition-all font-bold tracking-wider"
                           value={formData.slug} onChange={handleInputChange}
                         />
                       </div>
@@ -302,7 +363,7 @@ export default function PlatformHome() {
                         <input
                           type="email" name="email" required
                           placeholder="admin@brand.com"
-                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-neutral-350 focus:bg-white transition-all font-semibold"
                           value={formData.email} onChange={handleInputChange}
                         />
                       </div>
@@ -314,7 +375,7 @@ export default function PlatformHome() {
                         <input
                           type="password" name="password" required
                           placeholder="••••••••"
-                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-medium"
+                          className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 pl-10 pr-3 py-2.5 text-xs rounded-xl focus:outline-none focus:border-neutral-350 focus:bg-white transition-all font-medium"
                           value={formData.password} onChange={handleInputChange}
                         />
                       </div>
@@ -327,7 +388,7 @@ export default function PlatformHome() {
                     <input
                       type="text" name="tagline"
                       placeholder="e.g. Gourmet Artisan Kitchen"
-                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#5C0E1E]/40 focus:bg-white transition-all font-semibold italic"
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-neutral-350 focus:bg-white transition-all font-semibold italic"
                       value={formData.tagline} onChange={handleInputChange}
                     />
                   </div>
@@ -343,7 +404,7 @@ export default function PlatformHome() {
                         Provisioning Workspace...
                       </>
                     ) : (
-                      <>Deploy Free Instance <ArrowRight className="w-4 h-4" /></>
+                      <>Deploy Instance <ArrowRight className="w-4 h-4" /></>
                     )}
                   </button>
                 </form>
@@ -355,15 +416,13 @@ export default function PlatformHome() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          BUSINESS VERTICALS
-      ══════════════════════════════════════════════════ */}
+      {/* BUSINESS VERTICALS */}
       <section className="bg-[#F5F5F0] border-y border-neutral-200/50 py-20" id="solutions">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
           
           <div className="text-center max-w-xl mx-auto mb-16 space-y-3">
             <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">Architectural Presets</p>
-            <h2 className="text-3xl font-black tracking-tight text-neutral-950">
+            <h2 className="text-3xl font-black tracking-tight text-neutral-955 font-sans">
               Adapts to any business model.
             </h2>
             <p className="text-[#737373] text-xs leading-relaxed">
@@ -397,15 +456,13 @@ export default function PlatformHome() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          CAPABILITIES MODULES
-      ══════════════════════════════════════════════════ */}
+      {/* CAPABILITIES MODULES */}
       <section className="py-20 bg-white" id="modules">
         <div className="max-w-7xl mx-auto px-6 lg:px-10">
 
           <div className="max-w-xl mb-16 space-y-3">
             <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">Platform capabilities</p>
-            <h2 className="text-3xl font-black tracking-tight text-neutral-950">
+            <h2 className="text-3xl font-black tracking-tight text-neutral-955 font-sans">
               Completely integrated infrastructure.
             </h2>
             <p className="text-[#737373] text-xs leading-relaxed">
@@ -434,15 +491,13 @@ export default function PlatformHome() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          FAQ SECTION
-      ══════════════════════════════════════════════════ */}
+      {/* FAQ SECTION */}
       <section className="bg-[#FAFAFA] border-t border-[#F5F5F0] py-20">
         <div className="max-w-4xl mx-auto px-6">
           
           <div className="text-center mb-12">
             <p className="text-[10px] font-black text-[#5C0E1E] uppercase tracking-widest">FAQ</p>
-            <h2 className="text-2xl font-black tracking-tight text-neutral-950 mt-1">Frequently Asked Questions</h2>
+            <h2 className="text-2xl font-black tracking-tight text-neutral-955 mt-1 font-sans">Frequently Asked Questions</h2>
           </div>
 
           <div className="space-y-4">
@@ -470,9 +525,7 @@ export default function PlatformHome() {
         </div>
       </section>
 
-      {/* ══════════════════════════════════════════════════
-          FOOTER
-      ══════════════════════════════════════════════════ */}
+      {/* FOOTER */}
       <footer className="bg-white border-t border-[#F5F5F0] py-10 px-6 lg:px-10">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-3">

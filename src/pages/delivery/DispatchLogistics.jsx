@@ -62,7 +62,7 @@ export default function DispatchLogistics() {
     try {
       await axios.patch(`http://localhost:5000/api/orders/${orderId}/status`, { status: 'completed' });
       setDeliveryQueue(deliveryQueue.filter(order => order._id !== orderId));
-      alert("📦 Shipment logged and completed.");
+      alert("Shipment logged and completed.");
     } catch (err) {
       alert("Failed to update status.");
     }
