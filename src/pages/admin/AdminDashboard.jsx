@@ -195,6 +195,7 @@ export default function AdminDashboard() {
               { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
               { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
               { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
+              { to: `/${storeSlug}/admin/staff`, label: "Staff" },
               { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
               { to: `/${storeSlug}/delivery`, label: adminLabels.delivery },
             ].map(({ to, label, active }) => (
@@ -446,10 +447,11 @@ export default function AdminDashboard() {
         {/* ─── WORKSPACE SHORTCUT GRID ─────────────────── */}
         <div>
           <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest mb-4">Quick Access Operations Desk</p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-4">
             {[
               { to: `/${storeSlug}/admin/inventory`, icon: ShoppingBag, label: "Inventory", count: `${products.length} items`, iconBg: "bg-blue-50", iconColor: "text-blue-600" },
-              { to: `/${storeSlug}/admin/analytics`, icon: BarChart3, label: "Analytics", count: "Ledger report", iconBg: theme.lightBg, iconColor: theme.primary },
+              { to: `/${storeSlug}/admin/analytics`, icon: BarChart3, label: "Analytics", count: "Ledger report", iconBg: "bg-indigo-50", iconColor: "text-indigo-600" },
+              { to: `/${storeSlug}/admin/staff`, icon: Users2, label: "Staff Roster", count: "Manage users", iconBg: theme.lightBg, iconColor: theme.primary },
               { to: `/${storeSlug}/kitchen`, icon: ChefHat, label: adminLabels.kds, count: `${activeOrders} active`, iconBg: "bg-orange-50", iconColor: "text-orange-600" },
               { to: `/${storeSlug}/delivery`, icon: Bike, label: adminLabels.delivery, count: "Dispatch board", iconBg: "bg-sky-50", iconColor: "text-sky-600" },
               { to: `/${storeSlug}/login`, icon: ShieldCheck, label: "Staff Login", count: "Role access", iconBg: "bg-violet-50", iconColor: "text-violet-600" },

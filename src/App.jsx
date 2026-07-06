@@ -14,6 +14,7 @@ import UnifiedLogin from "./pages/shared/UnifiedLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import InventoryManagement from "./pages/admin/InventoryManagement";
 import AnalyticsMetrics from "./pages/admin/AnalyticsMetrics";
+import StaffManagement from "./pages/admin/StaffManagement";
 import LiveKDSFeed from "./pages/kitchen/LiveKDSFeed";
 import DispatchLogistics from "./pages/delivery/DispatchLogistics";
 
@@ -44,6 +45,7 @@ export default function App() {
           {/* Admin sub-pages */}
           <Route path="admin/inventory" element={<InventoryManagement />} />
           <Route path="admin/analytics" element={<AnalyticsMetrics />} />
+          <Route path="admin/staff" element={<StaffManagement />} />
 
           {/* Kitchen Display Screen KDS (e.g. localhost:5174/tastenpark/kitchen) */}
           <Route path="kitchen" element={<LiveKDSFeed />} />
