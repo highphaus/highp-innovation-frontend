@@ -68,15 +68,15 @@ export default function InventoryManagement() {
     <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-neutral-800 selection:text-white">
       
       {/* HEADER */}
-      <div className="bg-neutral-900 text-white px-6 py-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5">
+      <div className="bg-neutral-900 text-white px-4 sm:px-6 py-4 flex items-center justify-between shadow-md gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+          <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 flex-shrink-0">
             <ShoppingBag className="w-4 h-4 text-white" />
           </div>
-          <span className="font-black text-xs uppercase tracking-wider">{storeSlug} — Catalog Workspace</span>
+          <span className="font-black text-[10px] sm:text-xs uppercase tracking-wider truncate">{storeSlug} — Catalog Workspace</span>
         </div>
-        <Link to={`/${storeSlug}/admin`} className="flex items-center gap-1.5 text-xs font-bold text-neutral-400 hover:text-white transition-colors bg-neutral-800 px-3.5 py-2 rounded-xl">
-          <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
+        <Link to={`/${storeSlug}/admin`} className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-neutral-400 hover:text-white transition-colors bg-neutral-800 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex-shrink-0">
+          <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
         </Link>
       </div>
 

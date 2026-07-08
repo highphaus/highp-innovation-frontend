@@ -3,7 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import {
   TrendingUp, ClipboardList, Users2, Landmark,
   ArrowUpRight, RefreshCw, ShoppingBag, ChefHat,
-  Bike, BarChart3, ShieldCheck, Store, BookOpen, Scissors, Droplets, Dumbbell, Wrench
+  Bike, BarChart3, ShieldCheck, Store, BookOpen, Scissors, Droplets, Dumbbell, Wrench,
+  Menu, X
 } from "lucide-react";
 import axios from "axios";
 import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
@@ -121,6 +122,7 @@ export default function AdminDashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState(null);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const fetchAll = () => {
     setLoading(true);
@@ -228,13 +230,48 @@ export default function AdminDashboard() {
             </button>
             <Link
               to={`/${storeSlug}`}
-              className={`flex items-center gap-1.5 text-[10px] font-black ${theme.primary} ${theme.lightBg} hover:bg-neutral-100 px-3 py-1.5 rounded-lg transition-all`}
+              className={`hidden xs:flex items-center gap-1.5 text-[10px] font-black ${theme.primary} ${theme.lightBg} hover:bg-neutral-100 px-3 py-1.5 rounded-lg transition-all`}
             >
               <Store className="w-3 h-3" /> Storefront <ArrowUpRight className="w-2.5 h-2.5" />
             </Link>
+            
+            {/* Mobile Nav Toggle */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 hover:bg-[#F5F5F0] rounded-lg transition-colors text-[#737373] hover:text-neutral-900"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-4.5 h-4.5" /> : <Menu className="w-4.5 h-4.5" />}
+            </button>
           </div>
         </div>
       </header>
+
+      {/* MOBILE NAV DROPDOWN */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-white border-b border-[#F0EEEB] px-6 py-3 space-y-1.5 animate-fade-down shadow-sm">
+          {[
+            { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
+            { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
+            { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
+            { to: `/${storeSlug}/admin/staff`, label: "Staff" },
+            { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
+            { to: `/${storeSlug}/delivery`, label: adminLabels.delivery },
+          ].map(({ to, label, active }) => (
+            <Link
+              key={to} to={to}
+              onClick={() => setMobileMenuOpen(false)}
+              className={`block px-3 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                active
+                  ? `${theme.bg} text-white`
+                  : "text-[#737373] hover:text-neutral-900 hover:bg-[#F5F5F0]"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
+      )}
 
       {/* ─── MAIN CONTENT ────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-6 lg:px-10 py-8 space-y-8">

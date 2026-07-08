@@ -101,14 +101,14 @@ export default function ProductView() {
 
         {/* DETAILS PANEL */}
         <div className="flex flex-col justify-between">
-          <div className="bg-white border border-[#F5F5F0] rounded-2xl p-8 shadow-sm mb-6 flex-1 space-y-6">
+          <div className="bg-white border border-[#F5F5F0] rounded-2xl p-5 sm:p-8 shadow-sm mb-6 flex-1 space-y-6">
             
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
               <div>
                 <span className={`text-[9px] font-black ${theme.primary} uppercase tracking-widest block mb-1`}>{details.productLabel}</span>
                 <h1 className="text-xl font-black text-neutral-900 leading-snug">{product.name}</h1>
               </div>
-              <div className="text-right">
+              <div className="text-left sm:text-right">
                 <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block mb-1">Standard</span>
                 <span className="text-xl font-black text-neutral-955 block">₹{product.price}</span>
               </div>

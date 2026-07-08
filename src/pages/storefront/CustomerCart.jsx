@@ -118,40 +118,45 @@ export default function CustomerCart() {
           ) : (
             <div className="space-y-4">
               {cart.map(item => (
-                <div key={item._id} className="bg-white border border-[#F5F5F0] rounded-2xl p-5 flex items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
-                  {item.image ? (
-                    <img src={item.image} alt={item.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-[#F5F5F0]" />
-                  ) : (
-                    <div className="w-14 h-14 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-350 border border-[#F5F5F0] flex-shrink-0">
-                      <ShoppingCart className="w-5 h-5" />
+                <div key={item._id} className="bg-white border border-[#F5F5F0] rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 shadow-sm hover:shadow-md transition-shadow">
+                  <div className="flex items-center gap-4 flex-1">
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} className="w-14 h-14 rounded-xl object-cover flex-shrink-0 border border-[#F5F5F0]" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-xl bg-neutral-50 flex items-center justify-center text-neutral-350 border border-[#F5F5F0] flex-shrink-0">
+                        <ShoppingCart className="w-5 h-5" />
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-black text-sm text-neutral-900 leading-snug">{item.name}</p>
+                      <p className="text-[9px] font-black text-[#737373] uppercase tracking-widest mt-1">₹{item.price} each</p>
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-black text-sm text-neutral-900 leading-snug">{item.name}</p>
-                    <p className="text-[9px] font-black text-[#737373] uppercase tracking-widest mt-1">₹{item.price} each</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <button 
-                      onClick={() => updateQty(item._id, -1)} 
-                      className="w-7 h-7 rounded-lg bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 flex items-center justify-center transition-colors active:scale-90"
-                    >
-                      <Minus className="w-3 h-3 text-neutral-700" />
-                    </button>
-                    <span className="text-xs font-black w-6 text-center">{item.quantity}</span>
-                    <button 
-                      onClick={() => updateQty(item._id, 1)} 
-                      className="w-7 h-7 rounded-lg bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 flex items-center justify-center transition-colors active:scale-90"
-                    >
-                      <Plus className="w-3 h-3 text-neutral-700" />
-                    </button>
-                    <button 
-                      onClick={() => removeItem(item._id)} 
-                      className={`w-7 h-7 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center ml-1 transition-all`}
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  
+                  <div className="flex items-center justify-between sm:justify-end gap-6 pt-3 sm:pt-0 border-t sm:border-t-0 border-[#F5F5F0]">
+                    <div className="flex items-center gap-2">
+                      <button 
+                        onClick={() => updateQty(item._id, -1)} 
+                        className="w-7 h-7 rounded-lg bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 flex items-center justify-center transition-colors active:scale-90"
+                      >
+                        <Minus className="w-3 h-3 text-neutral-700" />
+                      </button>
+                      <span className="text-xs font-black w-6 text-center">{item.quantity}</span>
+                      <button 
+                        onClick={() => updateQty(item._id, 1)} 
+                        className="w-7 h-7 rounded-lg bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 flex items-center justify-center transition-colors active:scale-90"
+                      >
+                        <Plus className="w-3 h-3 text-neutral-700" />
+                      </button>
+                      <button 
+                        onClick={() => removeItem(item._id)} 
+                        className="w-7 h-7 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 flex items-center justify-center ml-1 transition-all"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <span className="text-sm font-black text-neutral-900 w-16 text-right">₹{item.price * item.quantity}</span>
                   </div>
-                  <span className="text-sm font-black text-neutral-900 w-16 text-right">₹{item.price * item.quantity}</span>
                 </div>
               ))}
             </div>

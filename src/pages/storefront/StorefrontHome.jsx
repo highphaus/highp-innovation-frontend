@@ -382,7 +382,7 @@ export default function Storefront() {
           </div>
 
           {/* Search bar */}
-          <div className="relative md:w-72">
+          <div className="relative w-full md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
             <input 
               type="text" 
@@ -476,7 +476,7 @@ export default function Storefront() {
       )}
 
       {/* QUICK DEV JUMP DOCK */}
-      <div className="fixed bottom-4 left-4 z-40 bg-neutral-950/90 backdrop-blur-md border border-neutral-800 p-2.5 rounded-2xl flex gap-3 text-[10px] uppercase font-black text-neutral-400 tracking-wider shadow-xl">
+      <div className="fixed bottom-4 left-4 z-40 bg-neutral-950/90 backdrop-blur-md border border-neutral-800 p-2.5 rounded-2xl hidden sm:flex gap-3 text-[10px] uppercase font-black text-neutral-400 tracking-wider shadow-xl">
         <span className="text-white border-r border-neutral-800 pr-2 self-center">Dev:</span>
         <Link to={`/${storeSlug}`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900">Store</Link>
         <Link to={`/${storeSlug}/admin`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-emerald-400">Admin</Link>
