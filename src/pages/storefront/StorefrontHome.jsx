@@ -450,7 +450,14 @@ export default function Storefront() {
             The target store catalog is temporarily unreachable.
           </p>
           <Link to="/" className="px-5 py-3 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center transition-all shadow-sm">
-            Return to Platfo  return (
+            Return to Platform Hub
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  return (
     <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white relative">
       
       {/* ⚠️ PENDING ACTIVATION BANNER NOTICE */}
