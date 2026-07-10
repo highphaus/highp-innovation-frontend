@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   TrendingUp, ClipboardList, Users2, Landmark,
   ArrowUpRight, RefreshCw, ShoppingBag, ChefHat,
@@ -29,7 +29,7 @@ export function getVerticalAdminLabels(softwareType) {
 }
 
 /* ─── Inline Sparkline (SVG line chart) ──────────────────── */
-function SparklineChart({ data, color = "#5C0E1E", height = 40 }) {
+function SparklineChart({ data, color = "#D03D56", height = 40 }) {
   const max = Math.max(...data);
   const min = Math.min(...data);
   const range = max - min || 1;
@@ -117,12 +117,21 @@ function StatusBadge({ status }) {
 /* ─── MAIN DASHBOARD ──────────────────────────────────────── */
 export default function AdminDashboard() {
   const { storeSlug } = useParams();
+  const navigate = useNavigate();
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lastSync, setLastSync] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const token = localStorage.getItem(`token_${storeSlug}`);
+    const role = localStorage.getItem(`role_${storeSlug}`);
+    if (!token || role !== "admin") {
+      navigate(`/${storeSlug}/login`);
+    }
+  }, [storeSlug, navigate]);
 
   const fetchAll = () => {
     setLoading(true);
@@ -163,7 +172,7 @@ export default function AdminDashboard() {
   if (loading) return (
     <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center">
       <div className="text-center space-y-3">
-        <div className={`w-8 h-8 border-2 border-neutral-200 border-t-[#5C0E1E] rounded-full animate-spin mx-auto`} style={{ borderTopColor: theme.colorCode }} />
+        <div className={`w-8 h-8 border-2 border-neutral-200 border-t-[#D03D56] rounded-full animate-spin mx-auto`} style={{ borderTopColor: theme.colorCode }} />
         <p className="text-[10px] font-black text-[#737373] uppercase tracking-widest animate-pulse">
           Syncing Operational Metrics...
         </p>
@@ -196,6 +205,8 @@ export default function AdminDashboard() {
             {[
               { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
               { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
+              { to: `/${storeSlug}/admin/prices`, label: "Prices" },
+              { to: `/${storeSlug}/admin/campaigns`, label: "Campaigns" },
               { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
               { to: `/${storeSlug}/admin/staff`, label: "Staff" },
               { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
@@ -253,6 +264,8 @@ export default function AdminDashboard() {
           {[
             { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
             { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
+            { to: `/${storeSlug}/admin/prices`, label: "Prices" },
+            { to: `/${storeSlug}/admin/campaigns`, label: "Campaigns" },
             { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
             { to: `/${storeSlug}/admin/staff`, label: "Staff" },
             { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
@@ -275,6 +288,13 @@ export default function AdminDashboard() {
 
       {/* ─── MAIN CONTENT ────────────────────────────────── */}
       <main className="max-w-7xl mx-auto px-6 lg:px-10 py-8 space-y-8">
+
+        {/* ⚠️ PENDING ACTIVATION BANNER NOTICE */}
+        {storeData && !storeData.isApproved && (
+          <div className="bg-amber-500 text-white text-center py-2.5 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 rounded-2xl">
+            <span>⚠️ Workspace Pending Activation. Please contact billing@highp.com to activate your node.</span>
+          </div>
+        )}
 
         {/* PAGE TITLE */}
         <div className="flex items-end justify-between border-b border-[#F0EEEB] pb-5">
@@ -445,9 +465,13 @@ export default function AdminDashboard() {
               {orders.length > 0 ? (
                 orders.slice(0, 10).map((order, i) => (
                   <div key={order._id || i} className="p-4 hover:bg-[#FAFAFA] transition-colors">
-                    <div className="flex items-center justify-between mb-1">
-                      <h4 className="text-[11px] font-bold text-neutral-900">{order.customerName}</h4>
-                      <span className="text-[11px] font-black text-neutral-950">₹{order.totalAmount}</span>
+                    <div className="flex items-start justify-between mb-1">
+                      <div>
+                        <h4 className="text-[11px] font-bold text-neutral-900">{order.customerName}</h4>
+                        {order.phone && <p className="text-[9px] text-[#737373] font-mono mt-0.5">📞 {order.phone}</p>}
+                        {order.address && <p className="text-[9px] text-neutral-500 font-semibold mt-0.5 max-w-[200px] truncate" title={order.address}>📍 {order.address}</p>}
+                      </div>
+                      <span className="text-[11px] font-black text-neutral-955">₹{order.totalAmount}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-[9px] font-mono text-[#737373]">

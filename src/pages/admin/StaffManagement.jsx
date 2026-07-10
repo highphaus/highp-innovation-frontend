@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Users2, Plus, Trash2, ShieldCheck, ArrowLeft, Loader2, Mail, Phone, Briefcase } from "lucide-react";
 import axios from "axios";
 import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
@@ -19,6 +19,16 @@ function getSuggestedRoles(softwareType) {
 
 export default function StaffManagement() {
   const { storeSlug } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem(`token_${storeSlug}`);
+    const role = localStorage.getItem(`role_${storeSlug}`);
+    if (!token || role !== "admin") {
+      navigate(`/${storeSlug}/login`);
+    }
+  }, [storeSlug, navigate]);
+
   const [staff, setStaff] = useState([]);
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -81,17 +91,27 @@ export default function StaffManagement() {
     <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-neutral-800 selection:text-white">
       
       {/* HEADER */}
-      <div className="bg-neutral-900 text-white px-4 sm:px-6 py-4 flex items-center justify-between shadow-md gap-3">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 flex-shrink-0">
-            <Users2 className="w-4 h-4 text-white" />
+      <header className="sticky top-0 z-40 bg-white border-b border-[#F0EEEB] px-6 lg:px-10 py-4 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-7 h-7 ${theme.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <Users2 className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <span className="font-black text-xs uppercase tracking-widest text-neutral-900 block truncate">
+                {storeData?.name || storeSlug}
+              </span>
+              <span className="text-[9px] text-[#737373] font-mono block">Employee Registry · /{storeSlug}</span>
+            </div>
           </div>
-          <span className="font-black text-[10px] sm:text-xs uppercase tracking-wider truncate">{storeSlug} — Staff Workspace</span>
+          <Link 
+            to={`/${storeSlug}/admin`} 
+            className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-neutral-900 transition-colors border border-[#F0EEEB] bg-[#FAFAFA] hover:bg-neutral-50 px-3.5 py-2 rounded-xl flex-shrink-0 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
+          </Link>
         </div>
-        <Link to={`/${storeSlug}/admin`} className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-neutral-400 hover:text-white transition-colors bg-neutral-800 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex-shrink-0">
-          <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
-        </Link>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
         
@@ -100,7 +120,7 @@ export default function StaffManagement() {
           <div className="bg-white border border-[#F5F5F0] rounded-2xl p-6 shadow-sm sticky top-6 space-y-5">
             <div>
               <h2 className={`font-black text-sm uppercase tracking-widest ${theme.primary} flex items-center gap-2`}>
-                <Plus className="w-4.5 h-4.5" /> Register Staff / User
+                <Plus className="w-4.5 h-4.5" /> Register Employee / Associate
               </h2>
               <div className={`h-0.5 w-8 ${theme.bg} mt-2 rounded-full`} />
             </div>
@@ -110,7 +130,7 @@ export default function StaffManagement() {
             
             <form onSubmit={handleAdd} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Staff Full Name</label>
+                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Employee Full Name</label>
                 <input 
                   required 
                   type="text" 
@@ -171,7 +191,7 @@ export default function StaffManagement() {
                     <span>Registering...</span>
                   </>
                 ) : (
-                  <span>Register Staff Member</span>
+                  <span>Register Employee / Associate</span>
                 )}
               </button>
             </form>
@@ -182,17 +202,17 @@ export default function StaffManagement() {
         <div className="lg:col-span-2">
           <div className="flex items-center justify-between mb-5 ml-1">
             <h2 className="font-black text-[10px] uppercase tracking-widest text-[#737373]">
-              Staff Directory & Roster ({staff.length})
+              Associate Directory & Roster ({staff.length})
             </h2>
           </div>
 
           {loading ? (
-            <div className="text-center py-20 text-[#737373] text-sm animate-pulse">Syncing staff directory...</div>
+            <div className="text-center py-20 text-[#737373] text-sm animate-pulse">Syncing associate directory...</div>
           ) : staff.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 bg-white border border-[#F5F5F0] rounded-2xl text-[#737373] shadow-sm">
               <Users2 className="w-12 h-12 mb-3 stroke-[1.2]" />
-              <p className="text-sm font-semibold">No registered staff members found.</p>
-              <p className="text-xs mt-1">Add users or staff inside the registration panel.</p>
+              <p className="text-sm font-semibold">No registered associates found.</p>
+              <p className="text-xs mt-1">Add associates or employees inside the registration panel.</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">

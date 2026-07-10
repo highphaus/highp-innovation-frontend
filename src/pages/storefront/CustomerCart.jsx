@@ -3,6 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, CheckCircle, Loader2, User, CreditCard } from "lucide-react";
 import axios from "axios";
 import { getTheme, getVerticalDetails } from "./StorefrontHome";
+import CustomerAuthModal from "../../components/CustomerAuthModal";
 
 export default function CustomerCart() {
   const { storeSlug } = useParams();
@@ -12,9 +13,41 @@ export default function CustomerCart() {
     catch { return []; }
   });
   const [storeData, setStoreData] = useState(null);
-  const [customerName, setCustomerName] = useState("");
+
+  const [customerUser, setCustomerUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`customerUser_${storeSlug}`)) || null;
+    } catch {
+      return null;
+    }
+  });
+
+  const [customerName, setCustomerName] = useState(customerUser ? customerUser.name : "");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  
   const [submitting, setSubmitting] = useState(false);
   const [placed, setPlaced] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+
+  // Sync customer info and fetch profile if logged in
+  useEffect(() => {
+    if (customerUser) {
+      setCustomerName(customerUser.name);
+      setCustomerPhone(customerUser.phone || "");
+      const token = localStorage.getItem(`customerToken_${storeSlug}`);
+      axios.get("http://localhost:5000/api/customers/me", {
+        headers: { Authorization: `Bearer ${token}` }
+      }).then(res => {
+        setCustomerPhone(res.data.phone || "");
+        setCustomerAddress(res.data.address || "");
+      }).catch(() => {});
+    } else {
+      setCustomerName("");
+      setCustomerPhone("");
+      setCustomerAddress("");
+    }
+  }, [customerUser, storeSlug]);
 
   useEffect(() => {
     axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
@@ -31,24 +64,44 @@ export default function CustomerCart() {
 
   const removeItem = (id) => setCart(prev => prev.filter(item => item._id !== id));
 
-  const totalAmount = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const subtotalAmount = cart.reduce((s, i) => s + i.price * i.quantity, 0);
+  const storeDeliveryFee = storeData?.deliveryFee !== undefined ? storeData.deliveryFee : 40;
+  const storeCodEnabled = storeData?.codEnabled !== false;
+  const storeUpiId = storeData?.upiId || "";
+  const grandTotal = subtotalAmount + storeDeliveryFee;
 
   const handleCheckout = async (e) => {
     e.preventDefault();
-    if (!customerName.trim()) return;
+    if (!customerName.trim() || !customerPhone.trim() || !customerAddress.trim()) {
+      alert("Please fill in all checkout fields.");
+      return;
+    }
     setSubmitting(true);
     try {
       await axios.post("http://localhost:5000/api/orders", {
         storeSlug,
         customerName: customerName.trim(),
+        phone: customerPhone.trim(),
+        address: customerAddress.trim(),
+        customerId: customerUser ? (customerUser.id || customerUser._id) : null,
         items: cart.map(i => ({ 
           productId: i._id, 
           name: i.name, 
           quantity: i.quantity, 
           price: i.price 
         })),
-        totalAmount
+        totalAmount: grandTotal
       });
+
+      // Redirect customer to store's WhatsApp with order details
+      const cleanPhone = (storeData?.whatsappNumber || "").replace(/[^0-9]/g, "");
+      if (cleanPhone) {
+        const itemsList = cart.map(item => `- ${item.name} x ${item.quantity} (₹${item.price * item.quantity})`).join("\n");
+        const message = `Hello! I would like to place an order at ${storeData?.name || storeSlug}:\n\n*Order Details:*\n${itemsList}\n\n*Delivery Fee:* ₹${storeDeliveryFee}\n*Total Amount:* ₹${grandTotal}\n\n*Delivery Details:*\n- *Name:* ${customerName.trim()}\n- *Phone:* ${customerPhone.trim()}\n- *Address:* ${customerAddress.trim()}\n\nThank you!`;
+        const whatsappUrl = `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, "_blank");
+      }
+
       setCart([]);
       localStorage.removeItem(`cart_${storeSlug}`);
       setPlaced(true);
@@ -175,62 +228,132 @@ export default function CustomerCart() {
               <div className="space-y-3.5 text-xs text-[#737373]">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span className="font-bold text-neutral-900">₹{totalAmount}</span>
+                  <span className="font-bold text-neutral-900">₹{subtotalAmount}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Service Tax / GST</span>
-                  <span className="font-bold text-neutral-950">Calculated</span>
+                  <span>Delivery Fee</span>
+                  <span className="font-bold text-neutral-950">
+                    {storeDeliveryFee === 0 ? (
+                      <span className="text-emerald-600">Free</span>
+                    ) : (
+                      `₹${storeDeliveryFee}`
+                    )}
+                  </span>
                 </div>
                 <div className="h-px bg-[#F5F5F0]" />
                 <div className="flex justify-between items-center text-sm font-black text-neutral-900 pt-1.5">
-                  <span>Total Amount</span>
-                  <span className="text-lg font-black text-neutral-950">₹{totalAmount}</span>
+                  <span>Grand Total</span>
+                  <span className="text-lg font-black text-neutral-950">₹{grandTotal}</span>
                 </div>
               </div>
 
-              <form onSubmit={handleCheckout} className="space-y-4">
-                <div>
-                  <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Your Name</label>
-                  <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
-                    <input 
+              {!customerUser ? (
+                <div className="bg-[#F7EBEF] border border-[#F0EEEB] rounded-2xl p-5 text-center space-y-4 shadow-sm animate-fade-up">
+                  <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mx-auto shadow-sm">
+                    <User className="w-5 h-5 text-[#D03D56]" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-black uppercase text-neutral-900 tracking-wider">Authentication Required</h4>
+                    <p className="text-[10px] text-[#737373] leading-relaxed">
+                      Register or sign in to complete checkout, track status live, and view order logs.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setAuthModalOpen(true)}
+                    className="w-full py-2.5 bg-[#D03D56] hover:bg-[#3F0712] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-md active:scale-95 cursor-pointer"
+                  >
+                    Authenticate Account
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleCheckout} className="space-y-4">
+                  {/* Name */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Your Name</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+                      <input 
+                        required 
+                        type="text" 
+                        placeholder="e.g. Shamsaifudheen" 
+                        value={customerName}
+                        onChange={e => setCustomerName(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Phone */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+                      <input 
+                        required 
+                        type="tel" 
+                        placeholder="e.g. +91 98765 43210" 
+                        value={customerPhone}
+                        onChange={e => setCustomerPhone(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Delivery Address */}
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Delivery Address</label>
+                    <textarea 
                       required 
-                      type="text" 
-                      placeholder="e.g. Shamsaifudheen" 
-                      value={customerName}
-                      onChange={e => setCustomerName(e.target.value)}
-                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-10 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-905" 
+                      rows={3}
+                      placeholder="Enter building, flat, street details..." 
+                      value={customerAddress}
+                      onChange={e => setCustomerAddress(e.target.value)}
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900 resize-none" 
                     />
                   </div>
-                </div>
 
-                <div className="p-3.5 bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl flex items-center gap-3">
-                  <CreditCard className="w-4 h-4 text-[#737373]" />
-                  <div>
-                    <span className="text-[9px] font-black uppercase text-[#737373] block tracking-wider">Payment Node</span>
-                    <span className="text-[10px] font-bold text-neutral-800 block">Cash on Delivery / On-site Payment</span>
+                  <div className="p-3.5 bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl flex items-center gap-3">
+                    <CreditCard className="w-4 h-4 text-[#737373]" />
+                    <div>
+                      <span className="text-[9px] font-black uppercase text-[#737373] block tracking-wider">Payment Method</span>
+                      <span className="text-[10px] font-bold text-neutral-800 block">
+                        {storeCodEnabled ? "Cash on Delivery" : ""}
+                        {storeCodEnabled && storeUpiId ? " / " : ""}
+                        {storeUpiId ? `UPI: ${storeUpiId}` : (!storeCodEnabled ? "Online Payment" : "")}
+                      </span>
+                    </div>
                   </div>
-                </div>
 
-                <button 
-                  type="submit" 
-                  disabled={submitting}
-                  className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md disabled:opacity-50`}
-                >
-                  {submitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Processing...</span>
-                    </>
-                  ) : (
-                    <span>Confirm & Book</span>
-                  )}
-                </button>
-              </form>
+                  <button 
+                    type="submit" 
+                    disabled={submitting}
+                    className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md disabled:opacity-50 cursor-pointer`}
+                  >
+                    {submitting ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      <span>Confirm & Book</span>
+                    )}
+                  </button>
+                </form>
+              )}
             </div>
           </div>
         )}
       </div>
+
+      {/* AUTH CUSTOMERS MODAL */}
+      <CustomerAuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+        storeSlug={storeSlug} 
+        theme={theme} 
+        onAuthSuccess={(user) => setCustomerUser(user)}
+      />
     </div>
   );
 }

@@ -1,31 +1,34 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ShoppingCart, Loader2, AlertCircle, Sparkles, Star, Search, Filter } from "lucide-react";
+import { ShoppingCart, Loader2, AlertCircle, Sparkles, Star, Search, Filter, User, Mail, Lock, Phone, ShieldCheck, RefreshCw, Store, ArrowRight } from "lucide-react";
 import axios from "axios";
+import CustomerAuthModal from "../../components/CustomerAuthModal";
+import OrderHistoryDrawer from "../../components/OrderHistoryDrawer";
+import CustomerProfileDrawer from "../../components/CustomerProfileDrawer";
 
 // ─── THEME RESOLVER FOR SOFTWARE VERTICALS ─────────────────
 export function getTheme(storeData) {
   const defaults = {
-    primary: "text-[#5C0E1E]",
-    bg: "bg-[#5C0E1E]",
+    primary: "text-[#D03D56]",
+    bg: "bg-[#D03D56]",
     hover: "hover:bg-[#3F0712]",
-    border: "border-[#5C0E1E]/15",
-    lightBg: "bg-[#5C0E1E]/8",
-    glow: "shadow-[#5C0E1E]/15",
-    colorCode: "#5C0E1E"
+    border: "border-[#D03D56]/15",
+    lightBg: "bg-[#D03D56]/8",
+    glow: "shadow-[#D03D56]/15",
+    colorCode: "#D03D56"
   };
   if (!storeData) return defaults;
 
   const type = storeData.softwareType || "restaurant";
   const map = {
     restaurant: {
-      primary: "text-[#5C0E1E]",
-      bg: "bg-[#5C0E1E]",
+      primary: "text-[#D03D56]",
+      bg: "bg-[#D03D56]",
       hover: "hover:bg-[#3F0712]",
-      border: "border-[#5C0E1E]/15",
-      lightBg: "bg-[#5C0E1E]/8",
-      glow: "shadow-[#5C0E1E]/15",
-      colorCode: "#5C0E1E"
+      border: "border-[#D03D56]/15",
+      lightBg: "bg-[#D03D56]/8",
+      glow: "shadow-[#D03D56]/15",
+      colorCode: "#D03D56"
     },
     retail: {
       primary: "text-blue-600",
@@ -199,11 +202,153 @@ export function matchCategory(productName, category, softwareType) {
   return keywords.some(keyword => name.includes(keyword));
 }
 
+const storeCategoryLabels = {
+  restaurant: "Restaurant",
+  bakery: "Bakery",
+  restaurant_bakery: "Restaurant & Bakery",
+  cafe: "Café",
+  fastfood: "Fast Food / Street Food",
+  juice_bar: "Juice Bar",
+  sweets_shop: "Sweets & Mithai",
+  ice_cream: "Ice Cream Parlour",
+  grocery: "Grocery & Kirana",
+  retail: "Retail Shop",
+  pharmacy: "Pharmacy",
+  electronics: "Electronics Store",
+  clothing: "Clothing & Apparel",
+  stationery: "Stationery & Books",
+  salon: "Salon & Spa",
+  gym: "Gym & Fitness",
+  water: "Water Delivery",
+  workshop: "Workshop / Classes",
+  repair: "Repair Services",
+  other: "Store",
+};
+
 export default function Storefront() {
   const { storeSlug } = useParams();
 
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
+  const [customerUser, setCustomerUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`customerUser_${storeSlug}`)) || null;
+    } catch {
+      return null;
+    }
+  });
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
+  const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+
+  useEffect(() => {
+    const syncUser = () => {
+      try {
+        setCustomerUser(JSON.parse(localStorage.getItem(`customerUser_${storeSlug}`)) || null);
+      } catch {}
+    };
+    window.addEventListener("storage", syncUser);
+    return () => window.removeEventListener("storage", syncUser);
+  }, [storeSlug]);
+
+  const [authSignUp, setAuthSignUp] = useState(false);
+  const [authStep, setAuthStep] = useState(1); // 1 = details, 2 = OTP
+  const [authForm, setAuthForm] = useState({ name: "", email: "", phone: "" });
+  const [authOtp, setAuthOtp] = useState(["", "", "", "", "", ""]);
+  const [authLoading, setAuthLoading] = useState(false);
+  const [authError, setAuthError] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  const startResendCooldown = () => {
+    setResendCooldown(30);
+    const interval = setInterval(() => {
+      setResendCooldown(prev => {
+        if (prev <= 1) { clearInterval(interval); return 0; }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleSendOTP = async (e) => {
+    e.preventDefault();
+    if (authSignUp && !authForm.name.trim()) {
+      setAuthError("Please enter your name.");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    try {
+      await axios.post("http://localhost:5000/api/customers/send-otp", {
+        storeSlug,
+        email:   authForm.email.trim(),
+        purpose: authSignUp ? "register" : "login",
+        name:    authForm.name.trim()
+      });
+      setAuthStep(2);
+      startResendCooldown();
+    } catch (err) {
+      setAuthError(err.response?.data?.message || "Failed to send verification code.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    const otpValue = authOtp.join("");
+    if (otpValue.length < 6) {
+      setAuthError("Please enter the complete 6-digit OTP.");
+      return;
+    }
+    setAuthLoading(true);
+    setAuthError("");
+    const url = authSignUp 
+      ? "http://localhost:5000/api/customers/register" 
+      : "http://localhost:5000/api/customers/login";
+
+    const payload = authSignUp
+      ? { storeSlug, otp: otpValue, ...authForm }
+      : { storeSlug, email: authForm.email.trim(), otp: otpValue };
+
+    try {
+      const res = await axios.post(url, payload);
+      localStorage.setItem(`customerToken_${storeSlug}`, res.data.token);
+      localStorage.setItem(`customerUser_${storeSlug}`, JSON.stringify(res.data.customer));
+      setCustomerUser(res.data.customer);
+    } catch (err) {
+      setAuthError(err.response?.data?.message || "Incorrect code. Please try again.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (resendCooldown > 0) return;
+    setAuthError("");
+    setAuthLoading(true);
+    try {
+      await axios.post("http://localhost:5000/api/customers/send-otp", {
+        storeSlug,
+        email:   authForm.email.trim(),
+        purpose: authSignUp ? "register" : "login",
+        name:    authForm.name.trim()
+      });
+      setAuthOtp(["", "", "", "", "", ""]);
+      startResendCooldown();
+    } catch (err) {
+      setAuthError(err?.response?.data?.message || "Failed to resend OTP.");
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignOut = () => {
+    localStorage.removeItem(`customerToken_${storeSlug}`);
+    localStorage.removeItem(`customerUser_${storeSlug}`);
+    setCustomerUser(null);
+    setUserMenuOpen(false);
+  };
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -304,142 +449,194 @@ export default function Storefront() {
           <p className="text-[#737373] text-xs leading-relaxed mb-6">
             The target store catalog is temporarily unreachable.
           </p>
-          <Link to="/" className="px-5 py-3 bg-[#5C0E1E] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center transition-all shadow-sm">
-            Return to Platform Hub
-          </Link>
+          <Link to="/" className="px-5 py-3 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center transition-all shadow-sm">
+            Return to Platfo  return (
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white relative">
+      
+      {/* ⚠️ PENDING ACTIVATION BANNER NOTICE */}
+      {storeData && !storeData.isApproved && (
+        <div className="bg-amber-500 text-white text-center py-2.5 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
+          <span>⚠️ Workspace Pending Activation. Custom setups are in sandbox mode.</span>
+        </div>
+      )}
+
+      {/* SOLID BRAND HEADER BANNER */}
+      <div className={`${theme.bg} text-white pt-8 pb-12 px-6 shadow-sm transition-all relative`}>
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full overflow-hidden bg-white/20 flex items-center justify-center text-white font-black shadow-sm flex-shrink-0">
+              {storeData.logoUrl ? (
+                <img src={storeData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+              ) : (
+                <Store className="w-6 h-6 text-white" />
+              )}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-xl font-bold text-white tracking-tight truncate leading-tight">
+                {storeData.name}
+              </h1>
+              <p className="text-[10px] text-white/85 font-bold uppercase tracking-wider mt-0.5">
+                {storeCategoryLabels[softwareType] || "Store"} · {products.length} product{products.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+          </div>
+
+          {/* Right actions: Cart & Profile */}
+          <div className="flex items-center gap-3 relative">
+            <Link 
+              to={`/${storeSlug}/cart`} 
+              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white relative shadow-sm transition-all hover:scale-105 active:scale-95"
+            >
+              <ShoppingCart className="w-5 h-5 text-white" />
+              {cartCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-white text-[#D03D56] text-[8.5px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md">
+                  {cartCount}
+                </span>
+              )}
+            </Link>
+
+            {customerUser ? (
+              <div className="relative">
+                <button 
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="w-10 h-10 rounded-full bg-white/20 border border-white/10 text-white font-black text-xs flex items-center justify-center hover:bg-white/30 cursor-pointer shadow-sm transition-all"
+                >
+                  {customerUser.name.charAt(0).toUpperCase()}
+                </button>
+                
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-[#F0EEEB] rounded-2xl shadow-xl p-2 z-50 animate-fade-up text-neutral-900">
+                      <div className="px-3.5 py-2.5 border-b border-[#F5F5F0]">
+                        <p className="text-[10px] font-black text-neutral-955 truncate">{customerUser.name}</p>
+                        <p className="text-[9px] text-[#737373] truncate mt-0.5">{customerUser.email}</p>
+                      </div>
+                      <Link 
+                        to={`/${storeSlug}/profile`}
+                        onClick={() => setUserMenuOpen(false)}
+                        className="block w-full text-left px-3.5 py-2 text-[10px] font-bold text-neutral-700 hover:text-neutral-955 hover:bg-[#FAFAFA] rounded-xl transition-colors"
+                      >
+                        My Dashboard
+                      </Link>
+                      <button 
+                        onClick={handleSignOut}
+                        className="w-full text-left px-3.5 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ) : (
+              <button 
+                onClick={() => setAuthModalOpen(true)}
+                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <User className="w-5 h-5 text-white" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    );
-  }
 
-  return (
-    <div className={`min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white`}>
-      
-      {/* BRAND HEADER BAR */}
-      <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-[#F5F5F0] px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center gap-2">
-          <span className="text-lg font-black tracking-tight uppercase text-neutral-955">
-            {storeData.name}
-          </span>
-          <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded bg-neutral-100 ${theme.primary} tracking-wider`}>
-            {softwareType}
-          </span>
+      {/* OVERLAPPING SEARCH BAR */}
+      <div className="max-w-2xl mx-auto -mt-6 px-4 relative z-10">
+        <div className="relative flex items-center bg-white border border-[#F0EEEB] rounded-full shadow-lg px-4.5 py-3 w-full hover:border-neutral-300 transition-all">
+          <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-neutral-400" />
+          <input 
+            type="text" 
+            placeholder="Search products..."
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            className="w-full bg-transparent pl-8 pr-2 text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none"
+          />
         </div>
+      </div>
 
-        <div className="flex items-center gap-4">
-          <Link 
-            to={`/${storeSlug}/cart`} 
-            className="relative p-2.5 text-neutral-600 hover:text-neutral-900 transition-colors bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl"
-          >
-            <ShoppingCart className="w-4 h-4" />
-            {cartCount > 0 && (
-              <span className={`absolute -top-1.5 -right-1.5 ${theme.bg} text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md`}>
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </nav>
+      {/* Category List */}
+      <div className="max-w-2xl mx-auto px-4 mt-6 overflow-x-auto py-1 scrollbar-none flex items-center gap-1.5">
+        {categories.map((cat) => {
+          const isActive = selectedCategory === cat;
+          return (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
+                isActive 
+                  ? `${theme.bg} text-white shadow-sm` 
+                  : "bg-white border border-[#F0EEEB] hover:bg-neutral-50 text-neutral-600 shadow-sm"
+              }`}
+            >
+              {cat}
+            </button>
+          );
+        })}
+      </div>
 
-      {/* MARKETING HERO HEADER */}
-      <header className="bg-white border-b border-[#F5F5F0] py-16 px-6 text-center relative overflow-hidden">
-        <div className="relative z-10 max-w-2xl mx-auto space-y-4">
-          <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full ${theme.lightBg} border ${theme.border} text-[10px] font-black ${theme.primary} uppercase tracking-wider`}>
-            <Sparkles className={`w-3.5 h-3.5 ${theme.primary}`} /> High Performance {softwareType} Engine
-          </div>
-          <h1 className="text-4xl sm:text-5xl font-black text-neutral-955 tracking-tight leading-tight">
-            Welcome to <span className={`italic font-light ${theme.primary} mr-1`} style={{ fontFamily: "'Georgia', serif" }}>{storeData.name}</span>
-          </h1>
-          <p className="text-[#737373] text-xs sm:text-sm max-w-md mx-auto leading-relaxed">
-            {storeData.tagline || details.welcomeSubtitle}
-          </p>
-          <div className={`w-10 h-0.5 mx-auto ${theme.bg} rounded-full`} />
-        </div>
-      </header>
-
-      {/* FILTER & SEARCH */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-white border border-[#F5F5F0] p-4 rounded-2xl shadow-sm">
-          
-          {/* Category List */}
-          <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-            {categories.map((cat) => {
-              const isActive = selectedCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setSelectedCategory(cat)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                    isActive 
-                      ? `${theme.bg} text-white shadow-sm` 
-                      : "bg-[#FAFAFA] border border-[#F5F5F0] hover:bg-neutral-100 text-neutral-600"
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Search bar */}
-          <div className="relative w-full md:w-72">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input 
-              type="text" 
-              placeholder={`Search ${details.productLabel.toLowerCase()}s...`}
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl pl-9 pr-4 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900"
-            />
-          </div>
-        </div>
-
-        {/* PRODUCTS CATALOG GRID */}
+      {/* PRODUCTS CATALOG LIST */}
+      <div className="max-w-4xl mx-auto px-4 pt-4">
         {filteredProducts.length === 0 ? (
-          <div className="text-center py-20 bg-white border border-[#F5F5F0] rounded-2xl shadow-sm">
-            <p className="text-neutral-400 font-bold text-xs uppercase tracking-wider">No matching {details.productLabel.toLowerCase()}s found</p>
+          <div className="flex flex-col items-center justify-center py-20 text-center bg-white border border-[#F0EEEB] rounded-3xl mt-6 shadow-sm">
+            <div className="w-16 h-16 bg-[#FAFAFA] border border-[#F0EEEB] rounded-2xl flex items-center justify-center text-neutral-400 mb-4 shadow-sm">
+              <Store className="w-8 h-8 text-neutral-450" />
+            </div>
+            <p className="text-sm font-bold text-neutral-500">No products found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
             {filteredProducts.map((product) => (
               <div 
                 key={product._id} 
-                className="bg-white border border-[#F5F5F0] rounded-2xl overflow-hidden flex flex-col justify-between transition-all hover:shadow-md hover:-translate-y-0.5 group shadow-sm"
+                className="bg-white border border-[#F0EEEB] rounded-2xl p-4.5 flex gap-5 items-center justify-between shadow-sm hover:shadow-[0_8px_24px_rgba(92,14,30,0.04)] transition-all group"
               >
-                <Link to={`/${storeSlug}/product/${product._id}`} className="block relative overflow-hidden aspect-video bg-[#FAFAFA]">
-                  <img 
-                    src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"} 
-                    alt={product.name} 
-                    className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500" 
-                  />
-                  <div className="absolute top-3 right-3 bg-white/95 backdrop-blur px-2 py-0.5 rounded flex items-center gap-1 shadow-sm border border-[#F5F5F0]">
-                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                    <span className="text-[9px] font-black text-neutral-800">4.9</span>
+                {/* LEFT: DISH SPECS */}
+                <div className="flex-1 min-w-0 pr-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100/50">
+                      Fresh
+                    </span>
+                    <div className="flex items-center gap-0.5">
+                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                      <span className="text-[9px] font-black text-neutral-800">4.9</span>
+                    </div>
                   </div>
-                </Link>
+                  
+                  <Link to={`/${storeSlug}/product/${product._id}`} className="block">
+                    <h3 className={`text-sm font-black text-neutral-900 leading-snug truncate hover:${theme.primary} transition-colors uppercase tracking-tight`}>
+                      {product.name}
+                    </h3>
+                  </Link>
 
-                <div className="p-5 flex flex-col flex-1 justify-between">
-                  <div className="mb-4">
-                    <Link to={`/${storeSlug}/product/${product._id}`} className="block">
-                      <h3 className={`text-sm font-black text-neutral-905 hover:${theme.primary} transition-colors leading-snug`}>
-                        {product.name}
-                      </h3>
-                    </Link>
-                    <p className="text-[#737373] text-[11px] leading-relaxed line-clamp-2 mt-1.5">
-                      {product.description || `Fresh premium ${details.productLabel.toLowerCase()} prepared carefully for wellness and convenience.`}
-                    </p>
-                  </div>
+                  <p className="text-[#737373] text-[10px] sm:text-[11px] leading-relaxed line-clamp-2 mt-1 font-bold">
+                    {product.description || `Fresh premium ${details.productLabel.toLowerCase()} prepared carefully for wellness and convenience.`}
+                  </p>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-[#F5F5F0]">
-                    <span className="text-base font-black text-neutral-900">₹{product.price}</span>
-                    <button
-                      onClick={() => addToCart(product)}
-                      className={`${theme.bg} ${theme.hover} text-white px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all active:scale-95 shadow-sm`}
-                    >
-                      {details.actionLabel}
-                    </button>
+                  <div className="text-xs font-black text-neutral-950 mt-2.5">
+                    ₹{product.price}
                   </div>
                 </div>
+
+                {/* RIGHT: IMAGE FRAME & OVERLAID BUTTON */}
+                <div className="relative flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28">
+                  <Link to={`/${storeSlug}/product/${product._id}`} className="block w-full h-full rounded-2xl overflow-hidden border border-[#F0EEEB] bg-[#FAFAFA]">
+                    <img 
+                      src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"} 
+                      alt={product.name} 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
+                    />
+                  </Link>
+
+                  {/* ZOMATO / SWIGGY STYLE OVERLAID ADD BUTTON */}
+                  <button
+                    onClick={() => addToCart(product)}
+                    className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-white border border-[#F0EEEB] hover:border-[#D03D56]/50 text-[#D03D56] font-black text-[9px] uppercase tracking-widest px-4 py-2 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer whitespace-nowrap"
+                  >
+                    <span>ADD</span> <span className="font-light text-xs leading-none">+</span>
+                  </button>
+                </div>
+
               </div>
             ))}
           </div>
@@ -483,6 +680,29 @@ export default function Storefront() {
         <Link to={`/${storeSlug}/kitchen`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-orange-400">Queue</Link>
         <Link to={`/${storeSlug}/delivery`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-sky-400">Logistics</Link>
       </div>
+
+      {/* AUTH & DRAWER CUSTOMERS MODALS */}
+      <CustomerAuthModal 
+        isOpen={authModalOpen} 
+        onClose={() => setAuthModalOpen(false)} 
+        storeSlug={storeSlug} 
+        theme={theme} 
+        onAuthSuccess={(user) => setCustomerUser(user)}
+      />
+
+      <OrderHistoryDrawer 
+        isOpen={historyDrawerOpen} 
+        onClose={() => setHistoryDrawerOpen(false)} 
+        storeSlug={storeSlug} 
+        theme={theme}
+      />
+
+      <CustomerProfileDrawer
+        isOpen={profileDrawerOpen}
+        onClose={() => setProfileDrawerOpen(false)}
+        storeSlug={storeSlug}
+        theme={theme}
+      />
     </div>
   );
 }

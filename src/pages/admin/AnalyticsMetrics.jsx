@@ -1,11 +1,21 @@
 import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { TrendingUp, ShoppingBag, ClipboardList, ArrowLeft, IndianRupee, Package, Clock, ShieldCheck, Activity } from "lucide-react";
 import axios from "axios";
 import { getTheme } from "../storefront/StorefrontHome";
 
 export default function AnalyticsMetrics() {
   const { storeSlug } = useParams();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const token = localStorage.getItem(`token_${storeSlug}`);
+    const role = localStorage.getItem(`role_${storeSlug}`);
+    if (!token || role !== "admin") {
+      navigate(`/${storeSlug}/login`);
+    }
+  }, [storeSlug, navigate]);
+
   const [orders, setOrders] = useState([]);
   const [products, setProducts] = useState([]);
   const [storeData, setStoreData] = useState(null);
@@ -41,20 +51,30 @@ export default function AnalyticsMetrics() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#5C0E1E] selection:text-white">
+    <div className="min-h-screen bg-[#FAFAFA] font-sans pb-20 selection:bg-[#D03D56] selection:text-white">
       
       {/* HEADER */}
-      <div className="bg-neutral-900 text-white px-4 sm:px-6 py-4 flex items-center justify-between shadow-md gap-3">
-        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-          <div className="w-7 h-7 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 flex-shrink-0">
-            <TrendingUp className="w-4 h-4 text-white" />
+      <header className="sticky top-0 z-40 bg-white border-b border-[#F0EEEB] px-6 lg:px-10 py-4 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className={`w-7 h-7 ${theme.bg} rounded-lg flex items-center justify-center flex-shrink-0`}>
+              <TrendingUp className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <span className="font-black text-xs uppercase tracking-widest text-neutral-900 block truncate">
+                {storeData?.name || storeSlug}
+              </span>
+              <span className="text-[9px] text-[#737373] font-mono block">Analytics Suite · /{storeSlug}</span>
+            </div>
           </div>
-          <span className="font-black text-[10px] sm:text-xs uppercase tracking-wider truncate">{storeSlug} — Analytics Suite</span>
+          <Link 
+            to={`/${storeSlug}/admin`} 
+            className="flex items-center gap-1.5 text-xs font-bold text-neutral-600 hover:text-neutral-900 transition-colors border border-[#F0EEEB] bg-[#FAFAFA] hover:bg-neutral-50 px-3.5 py-2 rounded-xl flex-shrink-0 shadow-sm"
+          >
+            <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
+          </Link>
         </div>
-        <Link to={`/${storeSlug}/admin`} className="flex items-center gap-1.5 text-[10px] sm:text-xs font-bold text-neutral-400 hover:text-white transition-colors bg-neutral-800 px-2.5 py-1.5 sm:px-3.5 sm:py-2 rounded-xl flex-shrink-0">
-          <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
-        </Link>
-      </div>
+      </header>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8">
         {loading ? (
