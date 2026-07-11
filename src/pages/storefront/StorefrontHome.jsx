@@ -1,6 +1,10 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ShoppingCart, Loader2, AlertCircle, Sparkles, Star, Search, Filter, User, Mail, Lock, Phone, ShieldCheck, RefreshCw, Store, ArrowRight } from "lucide-react";
+import {
+  ShoppingCart, Loader2, AlertCircle, Sparkles, Star, Search, Filter, User,
+  Mail, Lock, Phone, ShieldCheck, RefreshCw, Store, ArrowRight, Clock, CheckCircle2,
+  ChevronDown, MessageCircle, MapPin, Heart, Plus, ChevronRight, Check
+} from "lucide-react";
 import axios from "axios";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
 import OrderHistoryDrawer from "../../components/OrderHistoryDrawer";
@@ -103,7 +107,7 @@ export function getVerticalDetails(softwareType) {
       categories: ["All", "Apparel", "Electronics", "Wellness", "Home"],
       actionLabel: "Add to Basket",
       productLabel: "Product",
-      welcomeSubtitle: "Discover curated premium items sourced directly to verify authentic quality.",
+      welcomeSubtitle: "Curated premium items sourced directly to verify authentic quality.",
       taglineDefault: "Premium Retail Hub"
     },
     workshop: {
@@ -132,7 +136,7 @@ export function getVerticalDetails(softwareType) {
       actionLabel: "Buy Membership",
       productLabel: "Tier",
       welcomeSubtitle: "Unlock unlimited gym tier gates, trainers access, and auto-renew fitness passes.",
-      taglineDefault: "State-of-the-art Fitness Node"
+      taglineDefault: "Fitness Node"
     },
     repair: {
       categories: ["All", "Appliance", "Electronics", "Plumbing", "Electrical"],
@@ -154,7 +158,7 @@ export function matchCategory(productName, category, softwareType) {
 
   const mapping = {
     restaurant: {
-      mains: ["burger", "sandwich", "smash", "pizza", "pasta", "rice", "chicken", "salad", "bowl", "roll", "taco", "dosa", "roti", "curry", "paneer"],
+      mains: ["burger", "sandwich", "smash", "pizza", "pasta", "rice", "chicken", "salad", "bowl", "roll", "taco", "dosa", "roti", "curry", "paneer", "alfham", "shawarma"],
       sides: ["fries", "salad", "chips", "nuggets", "rings", "sauce", "dip", "samosa"],
       beverages: ["latte", "coffee", "tea", "drink", "juice", "soda", "water", "shake", "coke", "brew", "lassi"],
       desserts: ["cheesecake", "tart", "cake", "sweet", "ice", "cookie", "brownie", "muffin", "donut", "gulab", "halwa"]
@@ -241,6 +245,24 @@ export default function Storefront() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
+  
+  const [selectedProduct, setSelectedProduct] = useState(null); // Product Details modal
+  const [productModalQty, setProductModalQty] = useState(1);
+  const [scrolled, setScrolled] = useState(false);
+  const [openFaq, setOpenFaq] = useState(null);
+  const [likedProducts, setLikedProducts] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
+    } catch { return []; }
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 40);
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   useEffect(() => {
     const syncUser = () => {
@@ -252,103 +274,6 @@ export default function Storefront() {
     return () => window.removeEventListener("storage", syncUser);
   }, [storeSlug]);
 
-  const [authSignUp, setAuthSignUp] = useState(false);
-  const [authStep, setAuthStep] = useState(1); // 1 = details, 2 = OTP
-  const [authForm, setAuthForm] = useState({ name: "", email: "", phone: "" });
-  const [authOtp, setAuthOtp] = useState(["", "", "", "", "", ""]);
-  const [authLoading, setAuthLoading] = useState(false);
-  const [authError, setAuthError] = useState("");
-  const [resendCooldown, setResendCooldown] = useState(0);
-
-  const startResendCooldown = () => {
-    setResendCooldown(30);
-    const interval = setInterval(() => {
-      setResendCooldown(prev => {
-        if (prev <= 1) { clearInterval(interval); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  const handleSendOTP = async (e) => {
-    e.preventDefault();
-    if (authSignUp && !authForm.name.trim()) {
-      setAuthError("Please enter your name.");
-      return;
-    }
-    setAuthLoading(true);
-    setAuthError("");
-    try {
-      await axios.post("http://localhost:5000/api/customers/send-otp", {
-        storeSlug,
-        email:   authForm.email.trim(),
-        purpose: authSignUp ? "register" : "login",
-        name:    authForm.name.trim()
-      });
-      setAuthStep(2);
-      startResendCooldown();
-    } catch (err) {
-      setAuthError(err.response?.data?.message || "Failed to send verification code.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleVerifyOTP = async (e) => {
-    e.preventDefault();
-    const otpValue = authOtp.join("");
-    if (otpValue.length < 6) {
-      setAuthError("Please enter the complete 6-digit OTP.");
-      return;
-    }
-    setAuthLoading(true);
-    setAuthError("");
-    const url = authSignUp 
-      ? "http://localhost:5000/api/customers/register" 
-      : "http://localhost:5000/api/customers/login";
-
-    const payload = authSignUp
-      ? { storeSlug, otp: otpValue, ...authForm }
-      : { storeSlug, email: authForm.email.trim(), otp: otpValue };
-
-    try {
-      const res = await axios.post(url, payload);
-      localStorage.setItem(`customerToken_${storeSlug}`, res.data.token);
-      localStorage.setItem(`customerUser_${storeSlug}`, JSON.stringify(res.data.customer));
-      setCustomerUser(res.data.customer);
-    } catch (err) {
-      setAuthError(err.response?.data?.message || "Incorrect code. Please try again.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleResendOTP = async () => {
-    if (resendCooldown > 0) return;
-    setAuthError("");
-    setAuthLoading(true);
-    try {
-      await axios.post("http://localhost:5000/api/customers/send-otp", {
-        storeSlug,
-        email:   authForm.email.trim(),
-        purpose: authSignUp ? "register" : "login",
-        name:    authForm.name.trim()
-      });
-      setAuthOtp(["", "", "", "", "", ""]);
-      startResendCooldown();
-    } catch (err) {
-      setAuthError(err?.response?.data?.message || "Failed to resend OTP.");
-    } finally {
-      setAuthLoading(false);
-    }
-  };
-
-  const handleSignOut = () => {
-    localStorage.removeItem(`customerToken_${storeSlug}`);
-    localStorage.removeItem(`customerUser_${storeSlug}`);
-    setCustomerUser(null);
-    setUserMenuOpen(false);
-  };
   const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
@@ -369,12 +294,9 @@ export default function Storefront() {
     } catch { return 0; }
   });
 
-  useEffect(() => {
-    setLoading(true);
-    setError(false);
-
+  // Fetch store and products
+  const fetchStoreAndProducts = () => {
     const slug = (storeSlug || "").toLowerCase().trim();
-
     Promise.all([
       axios.get(`http://localhost:5000/api/stores/${slug}`),
       axios.get(`http://localhost:5000/api/products/${slug}`)
@@ -390,6 +312,12 @@ export default function Storefront() {
         setError(true);
         setLoading(false);
       });
+  };
+
+  useEffect(() => {
+    setLoading(true);
+    setError(false);
+    fetchStoreAndProducts();
   }, [storeSlug]);
 
   useEffect(() => {
@@ -397,26 +325,60 @@ export default function Storefront() {
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter(p => 
-        p.name.toLowerCase().includes(q) || 
+      result = result.filter(p =>
+        p.name.toLowerCase().includes(q) ||
         (p.description && p.description.toLowerCase().includes(q))
       );
     }
 
     if (selectedCategory !== "All" && storeData) {
-      result = result.filter(p => matchCategory(p.name, selectedCategory, storeData.softwareType));
+      if (useCustomCats) {
+        // Exact match on product.category field
+        result = result.filter(p => (p.category || "").toLowerCase() === selectedCategory.toLowerCase());
+      } else {
+        result = result.filter(p => matchCategory(p.name, selectedCategory, storeData.softwareType));
+      }
     }
 
     setFilteredProducts(result);
-  }, [selectedCategory, searchQuery, products, storeData]);
+  }, [selectedCategory, searchQuery, products, storeData, useCustomCats]);
 
-  const addToCart = (product) => {
+  // Inject dynamic JSON-LD Schema for SEO
+  useEffect(() => {
+    if (storeData) {
+      const existingScript = document.getElementById("jsonld-schema");
+      if (existingScript) existingScript.remove();
+
+      const schema = {
+        "@context": "https://schema.org",
+        "@type": "Restaurant",
+        "name": storeData.name,
+        "image": storeData.logoUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+        "telephone": storeData.phone || "+91 99999 99999",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": storeData.address || "Main Street",
+          "addressLocality": storeData.location || "City",
+          "addressCountry": "IN"
+        },
+        "priceRange": "₹₹"
+      };
+
+      const script = document.createElement("script");
+      script.id = "jsonld-schema";
+      script.type = "application/ld+json";
+      script.innerHTML = JSON.stringify(schema);
+      document.head.appendChild(script);
+    }
+  }, [storeData]);
+
+  const addToCart = (product, quantitySelected = 1) => {
     const existing = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
     const idx = existing.findIndex(i => i._id === product._id);
     if (idx > -1) {
-      existing[idx].quantity += 1;
+      existing[idx].quantity += quantitySelected;
     } else {
-      existing.push({ ...product, quantity: 1 });
+      existing.push({ ...product, quantity: quantitySelected });
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
     
@@ -426,31 +388,54 @@ export default function Storefront() {
     setCartTotal(totalAmt);
   };
 
+  const toggleLike = (productId) => {
+    setLikedProducts(prev => {
+      const next = prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId];
+      localStorage.setItem(`likes_${storeSlug}`, JSON.stringify(next));
+      return next;
+    });
+  };
+
   const softwareType = storeData?.softwareType || "restaurant";
   const details = getVerticalDetails(softwareType);
   const theme = getTheme(storeData);
-  const categories = details.categories;
+  
+  // Use owner-defined custom categories if present, else vertical defaults
+  const defaultCategories = details.categories;
+  const customCats = storeData?.customCategories?.length > 0 ? storeData.customCategories : null;
+  const categories = customCats ? ["All", ...customCats] : defaultCategories;
+  const useCustomCats = !!customCats;
+
+  // Compute delay
+  const prepTimeOffset = storeData?.busyModeActive ? (storeData.busyModeDuration || 0) : 0;
+  const standardPrepTime = 20 + prepTimeOffset;
+
+  const isNonVeg = (name = "", desc = "") => {
+    const checkString = `${name} ${desc}`.toLowerCase();
+    const nonVegKeywords = ["chicken", "beef", "fish", "meat", "pork", "mutton", "egg", "shawarma", "alfham", "kebab", "wings", "tikka"];
+    return nonVegKeywords.some(kw => checkString.includes(kw));
+  };
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] text-[#737373]">
-        <Loader2 className={`w-8 h-8 animate-spin ${theme.primary} mb-3`} />
-        <p className="text-[10px] uppercase font-black tracking-widest animate-pulse">Syncing Storefront Menu...</p>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-white text-neutral-400">
+        <Loader2 className="w-7 h-7 animate-spin text-neutral-600 mb-3" />
+        <p className="text-[10px] uppercase font-bold tracking-wider animate-pulse">Syncing catalog...</p>
       </div>
     );
   }
 
   if (error || !storeData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] p-4 text-center">
-        <div className="bg-white border border-[#F5F5F0] p-8 rounded-2xl shadow-lg max-w-sm">
-          <AlertCircle className="w-10 h-10 text-red-600 mx-auto mb-4" />
-          <h2 className="text-base font-black text-neutral-900 uppercase tracking-wide mb-2">Store Offline</h2>
-          <p className="text-[#737373] text-xs leading-relaxed mb-6">
+      <div className="min-h-screen flex items-center justify-center bg-neutral-50 p-4 text-center">
+        <div className="bg-white border border-neutral-200 p-8 rounded-2xl shadow-sm max-w-sm">
+          <AlertCircle className="w-10 h-10 text-neutral-400 mx-auto mb-4" />
+          <h2 className="text-sm font-bold text-neutral-900 uppercase tracking-wide mb-2">Catalog Offline</h2>
+          <p className="text-neutral-500 text-xs leading-relaxed mb-6">
             The target store catalog is temporarily unreachable.
           </p>
-          <Link to="/" className="px-5 py-3 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center transition-all shadow-sm">
-            Return to Platform Hub
+          <Link to="/" className="px-5 py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-[10px] font-bold uppercase tracking-wider block text-center transition-all">
+            Return to Hub
           </Link>
         </div>
       </div>
@@ -458,45 +443,44 @@ export default function Storefront() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white relative">
+    <div className="min-h-screen bg-neutral-50 text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white relative">
       
-      {/* ⚠️ PENDING ACTIVATION BANNER NOTICE */}
-      {storeData && !storeData.isApproved && (
-        <div className="bg-amber-500 text-white text-center py-2.5 px-4 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2">
-          <span>⚠️ Workspace Pending Activation. Custom setups are in sandbox mode.</span>
+      {/* 🚨 BUSY MODE GLOBAL ALERTS */}
+      {storeData.busyModeActive && (
+        <div className="bg-amber-500 text-white text-center py-2.5 px-4 text-[10px] font-bold uppercase tracking-widest flex items-center justify-center gap-2 relative z-50">
+          <Clock className="w-3.5 h-3.5" />
+          <span>
+            {storeData.busyModeMessage || `We're currently busy. Estimated preparation times have been extended by ${storeData.busyModeDuration} minutes.`}
+          </span>
         </div>
       )}
 
-      {/* SOLID BRAND HEADER BANNER */}
-      <div className={`${theme.bg} text-white pt-8 pb-12 px-6 shadow-sm transition-all relative`}>
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full overflow-hidden bg-white/20 flex items-center justify-center text-white font-black shadow-sm flex-shrink-0">
+      {/* ─── PREMIUM STICKY NAVBAR ─── */}
+      <header className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
+        scrolled ? "py-3.5 shadow-md" : "py-4"
+      }`} style={{ backgroundColor: theme.colorCode || "#2563eb" }}>
+        <div className="max-w-4xl mx-auto px-5 flex items-center justify-between">
+          {/* Logo / Brand */}
+          <Link to={`/${storeSlug}`} className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
               {storeData.logoUrl ? (
                 <img src={storeData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
-                <Store className="w-6 h-6 text-white" />
+                <Store className="w-4 h-4 text-white" />
               )}
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-bold text-white tracking-tight truncate leading-tight">
-                {storeData.name}
-              </h1>
-              <p className="text-[10px] text-white/85 font-bold uppercase tracking-wider mt-0.5">
-                {storeCategoryLabels[softwareType] || "Store"} · {products.length} product{products.length !== 1 ? 's' : ''}
-              </p>
+            <div>
+              <span className="font-bold text-xs uppercase tracking-wider text-white block font-manrope">{storeData.name}</span>
+              <span className="text-[8px] text-white/75 font-bold uppercase tracking-widest block">{storeCategoryLabels[softwareType] || "Store"}</span>
             </div>
-          </div>
+          </Link>
 
-          {/* Right actions: Cart & Profile */}
-          <div className="flex items-center gap-3 relative">
-            <Link 
-              to={`/${storeSlug}/cart`} 
-              className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white relative shadow-sm transition-all hover:scale-105 active:scale-95"
-            >
-              <ShoppingCart className="w-5 h-5 text-white" />
+          {/* Right Section: Actions */}
+          <div className="flex items-center gap-3">
+            <Link to={`/${storeSlug}/cart`} className="relative w-9 h-9 border border-white/20 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors">
+              <ShoppingCart className="w-4 h-4 text-white" />
               {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-white text-[#D03D56] text-[8.5px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center shadow-md">
+                <span className="absolute -top-1.5 -right-1.5 bg-white text-neutral-900 text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-numbers shadow-sm">
                   {cartCount}
                 </span>
               )}
@@ -504,32 +488,25 @@ export default function Storefront() {
 
             {customerUser ? (
               <div className="relative">
-                <button 
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="w-10 h-10 rounded-full bg-white/20 border border-white/10 text-white font-black text-xs flex items-center justify-center hover:bg-white/30 cursor-pointer shadow-sm transition-all"
-                >
+                <button onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="w-9 h-9 rounded-xl border border-white/20 text-white font-bold text-xs flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer bg-transparent">
                   {customerUser.name.charAt(0).toUpperCase()}
                 </button>
                 
                 {userMenuOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-48 bg-white border border-[#F0EEEB] rounded-2xl shadow-xl p-2 z-50 animate-fade-up text-neutral-900">
-                      <div className="px-3.5 py-2.5 border-b border-[#F5F5F0]">
-                        <p className="text-[10px] font-black text-neutral-955 truncate">{customerUser.name}</p>
-                        <p className="text-[9px] text-[#737373] truncate mt-0.5">{customerUser.email}</p>
+                    <div className="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-xl shadow-lg p-1.5 z-50 text-neutral-900">
+                      <div className="px-3 py-2 border-b border-neutral-100">
+                        <p className="text-[10px] font-black text-neutral-800 truncate">{customerUser.name}</p>
+                        <p className="text-[9px] text-neutral-400 truncate mt-0.5">{customerUser.email}</p>
                       </div>
-                      <Link 
-                        to={`/${storeSlug}/profile`}
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block w-full text-left px-3.5 py-2 text-[10px] font-bold text-neutral-700 hover:text-neutral-955 hover:bg-[#FAFAFA] rounded-xl transition-colors"
-                      >
-                        My Dashboard
+                      <Link to={`/${storeSlug}/profile`} onClick={() => setUserMenuOpen(false)}
+                        className="block w-full text-left px-3 py-2 text-[10px] font-bold text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50 rounded-lg transition-colors">
+                        My Orders
                       </Link>
-                      <button 
-                        onClick={handleSignOut}
-                        className="w-full text-left px-3.5 py-2 text-[10px] font-bold text-red-600 hover:bg-red-50 rounded-xl transition-colors cursor-pointer"
-                      >
+                      <button onClick={handleSignOut}
+                        className="w-full text-left px-3 py-2 text-[10px] font-bold text-red-500 hover:bg-red-50 rounded-lg transition-colors cursor-pointer">
                         Sign Out
                       </button>
                     </div>
@@ -537,140 +514,205 @@ export default function Storefront() {
                 )}
               </div>
             ) : (
-              <button 
-                onClick={() => setAuthModalOpen(true)}
-                className="w-10 h-10 bg-white/20 hover:bg-white/30 rounded-full flex items-center justify-center text-white shadow-sm transition-all hover:scale-105 active:scale-95 cursor-pointer"
-              >
-                <User className="w-5 h-5 text-white" />
+              <button onClick={() => setAuthModalOpen(true)}
+                className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer bg-transparent">
+                <User className="w-4 h-4 text-white" />
               </button>
             )}
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* OVERLAPPING SEARCH BAR */}
-      <div className="max-w-2xl mx-auto -mt-6 px-4 relative z-10">
-        <div className="relative flex items-center bg-white border border-[#F0EEEB] rounded-full shadow-lg px-4.5 py-3 w-full hover:border-neutral-300 transition-all">
-          <Search className="absolute left-4.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-neutral-400" />
-          <input 
-            type="text" 
-            placeholder="Search products..."
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            className="w-full bg-transparent pl-8 pr-2 text-sm text-neutral-800 placeholder-neutral-400 focus:outline-none"
-          />
-        </div>
-      </div>
+      {/* ─── DYNAMIC HOMEPAGE CONTENT ─── */}
+      <main className="pt-28 space-y-10">
 
-      {/* Category List */}
-      <div className="max-w-2xl mx-auto px-4 mt-6 overflow-x-auto py-1 scrollbar-none flex items-center gap-1.5">
-        {categories.map((cat) => {
-          const isActive = selectedCategory === cat;
-          return (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap ${
-                isActive 
-                  ? `${theme.bg} text-white shadow-sm` 
-                  : "bg-white border border-[#F0EEEB] hover:bg-neutral-50 text-neutral-600 shadow-sm"
-              }`}
-            >
-              {cat}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* PRODUCTS CATALOG LIST */}
-      <div className="max-w-4xl mx-auto px-4 pt-4">
-        {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center bg-white border border-[#F0EEEB] rounded-3xl mt-6 shadow-sm">
-            <div className="w-16 h-16 bg-[#FAFAFA] border border-[#F0EEEB] rounded-2xl flex items-center justify-center text-neutral-400 mb-4 shadow-sm">
-              <Store className="w-8 h-8 text-neutral-450" />
+        {/* 2. POPULAR CATEGORIES TABBED LIST */}
+        <section id="catalog-start" className="max-w-2xl mx-auto px-4 space-y-4">
+          <div className="flex justify-between items-end">
+            <div>
+              <p className="text-[9px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Categories</p>
+              <h3 className="text-sm font-bold text-neutral-800 font-manrope">Explore Culinary Offerings</h3>
             </div>
-            <p className="text-sm font-bold text-neutral-500">No products found</p>
           </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-            {filteredProducts.map((product) => (
-              <div 
-                key={product._id} 
-                className="bg-white border border-[#F0EEEB] rounded-2xl p-4.5 flex gap-5 items-center justify-between shadow-sm hover:shadow-[0_8px_24px_rgba(92,14,30,0.04)] transition-all group"
-              >
-                {/* LEFT: DISH SPECS */}
-                <div className="flex-1 min-w-0 pr-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-100/50">
-                      Fresh
-                    </span>
-                    <div className="flex items-center gap-0.5">
-                      <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                      <span className="text-[9px] font-black text-neutral-800">4.9</span>
+          <div className="overflow-x-auto py-1 scrollbar-none flex items-center gap-1.5">
+            {categories.map((cat) => {
+              const isActive = selectedCategory === cat;
+              return (
+                <button key={cat} onClick={() => setSelectedCategory(cat)}
+                  className={`px-4.5 py-2 rounded-full text-xs font-bold transition-all whitespace-nowrap border ${
+                    isActive 
+                      ? "bg-neutral-900 border-neutral-950 text-white shadow-sm" 
+                      : "bg-white border-neutral-200 hover:bg-neutral-50 text-neutral-600 shadow-sm"
+                  }`}>
+                  {cat}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        {/* 3. DYNAMIC SEARCH ACCORDION */}
+        <section className="max-w-2xl mx-auto px-4">
+          <div className="relative flex items-center bg-white border border-neutral-200 rounded-xl shadow-sm px-4.5 py-3 w-full hover:border-neutral-300 transition-all">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+            <input type="text" placeholder="Search menu catalog..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent pl-6 pr-2 text-xs font-semibold text-neutral-800 placeholder-neutral-400 focus:outline-none" />
+          </div>
+        </section>
+
+        {/* 4. PRODUCT CATALOG GRID */}
+        <section className="max-w-4xl mx-auto px-4">
+          {filteredProducts.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-neutral-200 rounded-2xl">
+              <ShoppingCart className="w-8 h-8 text-neutral-300 mb-2" />
+              <p className="text-xs font-bold text-neutral-400">No matching dishes cataloged</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {filteredProducts.map((product) => {
+                const isItemNonVeg = isNonVeg(product.name, product.description);
+                const liked = likedProducts.includes(product._id);
+                return (
+                  <div key={product._id}
+                    className="group bg-white border border-neutral-200 rounded-2xl p-4 flex gap-4 items-center justify-between shadow-sm hover:shadow-md transition-all">
+                    
+                    {/* Left: Metadata specs */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        {/* Veg / Non-Veg Indicator */}
+                        <span className={`w-3.5 h-3.5 border flex items-center justify-center flex-shrink-0 ${isItemNonVeg ? "border-red-655 text-red-600" : "border-emerald-600"}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${isItemNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
+                        </span>
+                        
+                        <div className="flex items-center gap-0.5 text-neutral-500">
+                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                          <span className="text-[10px] font-bold text-neutral-700">4.8</span>
+                        </div>
+
+                        <div className="flex items-center gap-1 text-[10px] text-neutral-400">
+                          <Clock className="w-2.5 h-2.5" />
+                          <span className="font-numbers">{standardPrepTime} mins</span>
+                        </div>
+                      </div>
+
+                      <button onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
+                        className="block text-left group">
+                        <h4 className="text-xs font-black text-neutral-900 leading-snug truncate group-hover:text-neutral-600 transition-colors uppercase tracking-tight">
+                          {product.name}
+                        </h4>
+                      </button>
+
+                      <p className="text-neutral-400 text-[10px] leading-relaxed line-clamp-2 mt-1 font-semibold">
+                        {product.description || "Gourmet freshly curated dish prepared with local organic ingredients."}
+                      </p>
+
+                      <div className="text-xs font-bold text-neutral-800 mt-2.5 font-numbers">
+                        Rs.{product.price}
+                      </div>
                     </div>
+
+                    {/* Right: Picture & Add overlay */}
+                    <div className="relative flex-shrink-0 w-24 h-24">
+                      <button onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
+                        className="block w-full h-full rounded-xl overflow-hidden border border-neutral-200/80 bg-neutral-50">
+                        <img src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"}
+                          alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
+                      </button>
+
+                      {/* Favorite Liked Heart */}
+                      <button onClick={() => toggleLike(product._id)}
+                        className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-white/80 hover:bg-white text-neutral-400 hover:text-red-500 transition-colors shadow-sm">
+                        <Heart className={`w-3 h-3 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+                      </button>
+
+                      <button onClick={() => addToCart(product)}
+                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white border border-neutral-250 hover:border-neutral-400 text-neutral-800 font-bold text-[9px] uppercase tracking-wider px-3.5 py-1.5 rounded-lg shadow-sm active:scale-95 transition-all whitespace-nowrap">
+                        Add +
+                      </button>
+                    </div>
+
                   </div>
-                  
-                  <Link to={`/${storeSlug}/product/${product._id}`} className="block">
-                    <h3 className={`text-sm font-black text-neutral-900 leading-snug truncate hover:${theme.primary} transition-colors uppercase tracking-tight`}>
-                      {product.name}
-                    </h3>
-                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </section>
 
-                  <p className="text-[#737373] text-[10px] sm:text-[11px] leading-relaxed line-clamp-2 mt-1 font-bold">
-                    {product.description || `Fresh premium ${details.productLabel.toLowerCase()} prepared carefully for wellness and convenience.`}
-                  </p>
-
-                  <div className="text-xs font-black text-neutral-950 mt-2.5">
-                    ₹{product.price}
-                  </div>
+        {/* 5. TESTIMONIALS SLIDER SECTION */}
+        <section className="max-w-4xl mx-auto px-4 py-6 border-t border-neutral-200">
+          <div className="text-center space-y-1 mb-8">
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Testimonials</p>
+            <h3 className="text-sm font-bold text-neutral-800 font-manrope">Consumer Feedback</h3>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+            {[
+              { name: "Rahul S.", rating: 5, text: "The Chicken Alfham was cooked perfectly. Tastes authentic and preparation timing estimates were spot on." },
+              { name: "Meera K.", rating: 5, text: "Extremely fast ordering system. It opened WhatsApp and order got confirmed instantly." },
+              { name: "Anish P.", rating: 4, text: "Excellent packing, clean food, and amazing quality. Highly recommended storefront." }
+            ].map((t, idx) => (
+              <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-3">
+                <div className="flex gap-0.5">
+                  {[...Array(t.rating)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />)}
                 </div>
-
-                {/* RIGHT: IMAGE FRAME & OVERLAID BUTTON */}
-                <div className="relative flex-shrink-0 w-24 h-24 sm:w-28 sm:h-28">
-                  <Link to={`/${storeSlug}/product/${product._id}`} className="block w-full h-full rounded-2xl overflow-hidden border border-[#F0EEEB] bg-[#FAFAFA]">
-                    <img 
-                      src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"} 
-                      alt={product.name} 
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" 
-                    />
-                  </Link>
-
-                  {/* ZOMATO / SWIGGY STYLE OVERLAID ADD BUTTON */}
-                  <button
-                    onClick={() => addToCart(product)}
-                    className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 bg-white border border-[#F0EEEB] hover:border-[#D03D56]/50 text-[#D03D56] font-black text-[9px] uppercase tracking-widest px-4 py-2 rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1 cursor-pointer whitespace-nowrap"
-                  >
-                    <span>ADD</span> <span className="font-light text-xs leading-none">+</span>
-                  </button>
-                </div>
-
+                <p className="text-neutral-500 text-[11px] leading-relaxed italic">"{t.text}"</p>
+                <p className="text-[10px] font-bold text-neutral-800">— {t.name}</p>
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </section>
 
-      {/* FLOATING ACTION BOTTOM TRAY FOR CART PREVIEW */}
+        {/* 6. FAQ DROPDOWN ACCORDION */}
+        <section className="max-w-2xl mx-auto px-4 py-4 border-t border-neutral-200">
+          <div className="text-center space-y-1 mb-6">
+            <p className="text-[9px] font-bold text-neutral-400 uppercase tracking-widest">Support Desk</p>
+            <h3 className="text-sm font-bold text-neutral-800 font-manrope">Frequently Asked Questions</h3>
+          </div>
+          <div className="space-y-2.5">
+            {[
+              { q: "How does WhatsApp order validation work?", a: "When checkout completes, we build a direct structured summary containing items and address coordinates, opening WhatsApp instantly to dispatch confirmation." },
+              { q: "Is home delivery available for all distances?", a: "We support local radius deliveries based on catalog options. Specific fee overrides apply automatically based on address variables." },
+              { q: "What is Busy Mode?", a: "If the kitchen operations team reports high order volumes, we dynamically extend estimates across all dish listings automatically to keep expectations clean." }
+            ].map((item, idx) => {
+              const isOpen = openFaq === idx;
+              return (
+                <div key={idx} className="bg-white border border-neutral-200 rounded-xl overflow-hidden">
+                  <button onClick={() => setOpenFaq(isOpen ? null : idx)}
+                    className="w-full px-5 py-4 flex justify-between items-center text-xs font-bold text-neutral-800 hover:bg-neutral-50 transition-colors">
+                    <span>{item.q}</span>
+                    <ChevronDown className={`w-4 h-4 text-neutral-400 transition-transform ${isOpen ? "rotate-180" : ""}`} />
+                  </button>
+                  {isOpen && (
+                    <div className="px-5 pb-4 pt-1 text-[11px] text-neutral-500 leading-relaxed border-t border-neutral-100">
+                      {item.a}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
+      </main>
+
+      {/* ─── FLOATING ACTION BOTTOM TRAY FOR CART PREVIEW ─── */}
       {cartCount > 0 && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 animate-fade-up">
-          <Link 
-            to={`/${storeSlug}/cart`} 
-            className="flex items-center justify-between bg-neutral-900 text-white px-5 py-3.5 rounded-2xl shadow-xl hover:bg-neutral-800 transition-all hover:scale-[1.01]"
-          >
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4 animate-fade-up">
+          <Link to={`/${storeSlug}/cart`}
+            className="flex items-center justify-between bg-neutral-900 text-white px-5 py-3.5 rounded-2xl shadow-xl hover:bg-neutral-800 transition-all hover:scale-[1.01]">
             <div className="flex items-center gap-3">
               <div className="relative bg-white/10 p-2 rounded-xl">
                 <ShoppingCart className="w-4 h-4 text-white" />
-                <span className={`absolute -top-1 -right-1 ${theme.bg} text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center`}>
+                <span className="absolute -top-1 -right-1 bg-emerald-600 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-numbers">
                   {cartCount}
                 </span>
               </div>
               <div>
-                <span className="text-[10px] text-neutral-400 uppercase font-black tracking-wider block">Selected Items</span>
-                <span className="text-xs font-bold text-white block">{cartCount} Item{cartCount > 1 ? 's' : ''} added</span>
+                <span className="text-[10px] text-neutral-400 uppercase font-bold tracking-wider block">Cart items</span>
+                <span className="text-xs font-bold text-white block">{cartCount} items selected</span>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm font-black text-white">₹{cartTotal}</span>
+              <span className="text-sm font-black text-white font-numbers">Rs.{cartTotal}</span>
               <span className="text-[10px] font-black uppercase bg-white text-black px-3 py-1.5 rounded-lg tracking-wider">
                 Checkout
               </span>
@@ -679,37 +721,81 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* QUICK DEV JUMP DOCK */}
-      <div className="fixed bottom-4 left-4 z-40 bg-neutral-950/90 backdrop-blur-md border border-neutral-800 p-2.5 rounded-2xl hidden sm:flex gap-3 text-[10px] uppercase font-black text-neutral-400 tracking-wider shadow-xl">
-        <span className="text-white border-r border-neutral-800 pr-2 self-center">Dev:</span>
-        <Link to={`/${storeSlug}`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900">Store</Link>
-        <Link to={`/${storeSlug}/admin`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-emerald-400">Admin</Link>
-        <Link to={`/${storeSlug}/kitchen`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-orange-400">Queue</Link>
-        <Link to={`/${storeSlug}/delivery`} className="hover:text-white transition-colors py-1 px-2 rounded-lg bg-neutral-900 text-sky-400">Logistics</Link>
-      </div>
+      {/* ─── FLAGSHIP PRODUCT DETAILS DIALOG MODAL ─── */}
+      {selectedProduct && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center bg-black/55 backdrop-blur-sm p-0 sm:p-4">
+          <div className="fixed inset-0" onClick={() => setSelectedProduct(null)} />
+          <div className="relative bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-2xl overflow-hidden shadow-2xl z-10 animate-fade-up border border-neutral-100 max-h-[85vh] sm:max-h-none overflow-y-auto">
+            {/* Top Close bar */}
+            <div className="p-4 border-b border-neutral-100 flex justify-between items-center bg-white sticky top-0 z-20">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">Dish Profile</span>
+              <button onClick={() => setSelectedProduct(null)}
+                className="w-7 h-7 rounded-full bg-neutral-100 hover:bg-neutral-250 flex items-center justify-center text-neutral-500 transition-colors">
+                ✕
+              </button>
+            </div>
+
+            {/* Product image */}
+            <div className="h-48 w-full bg-neutral-100 relative">
+              <img src={selectedProduct.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"}
+                alt={selectedProduct.name} className="w-full h-full object-cover" />
+              <div className="absolute bottom-3 left-3 bg-white/95 px-2.5 py-1 rounded-lg flex items-center gap-1 text-[10px] font-bold text-neutral-800 shadow">
+                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                <span>4.8 (85 ratings)</span>
+              </div>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <div>
+                <h4 className="text-base font-black text-neutral-900 leading-tight uppercase tracking-tight">{selectedProduct.name}</h4>
+                <p className="text-[10px] text-neutral-400 font-bold uppercase mt-1">Rs.{selectedProduct.price} per unit</p>
+              </div>
+
+              <p className="text-[11px] text-neutral-500 leading-relaxed">
+                {selectedProduct.description || "Gourmet freshly curated dish prepared with local organic ingredients to guarantee delicious experience and quality nutrition."}
+              </p>
+
+              {/* Specs */}
+              <div className="grid grid-cols-2 gap-3 text-[10px] text-[#737373] pt-1">
+                <div className="bg-neutral-50 p-2.5 rounded-lg border border-neutral-100">
+                  <span className="block text-neutral-400 uppercase tracking-widest text-[8px] font-bold">Prep Time</span>
+                  <span className="font-bold text-neutral-800 font-numbers">{standardPrepTime} Mins</span>
+                </div>
+                <div className="bg-neutral-50 p-2.5 rounded-lg border border-neutral-100">
+                  <span className="block text-neutral-400 uppercase tracking-widest text-[8px] font-bold">Dietary Status</span>
+                  <span className="font-bold text-neutral-800">{isNonVeg(selectedProduct.name, selectedProduct.description) ? "Non-Vegetarian" : "Vegetarian"}</span>
+                </div>
+              </div>
+
+              {/* Quantity Picker & Add to Cart button */}
+              <div className="flex items-center gap-3 pt-3 border-t border-neutral-100">
+                <div className="flex items-center rounded-xl border border-neutral-250 bg-neutral-50 h-10 px-1">
+                  <button onClick={() => setProductModalQty(q => Math.max(1, q - 1))}
+                    className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-150">
+                    <Minus className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="w-7 text-center text-xs font-bold text-neutral-800 font-numbers">{productModalQty}</span>
+                  <button onClick={() => setProductModalQty(q => q + 1)}
+                    className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-150">
+                    <Plus className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                <button onClick={() => { addToCart(selectedProduct, productModalQty); setSelectedProduct(null); }}
+                  className="flex-1 py-3 text-white text-[10px] font-bold uppercase tracking-wider rounded-xl transition-all shadow-md text-center"
+                  style={{ backgroundColor: theme.colorCode }}>
+                  Add to basket &middot; Rs.{selectedProduct.price * productModalQty}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* AUTH & DRAWER CUSTOMERS MODALS */}
-      <CustomerAuthModal 
-        isOpen={authModalOpen} 
-        onClose={() => setAuthModalOpen(false)} 
-        storeSlug={storeSlug} 
-        theme={theme} 
-        onAuthSuccess={(user) => setCustomerUser(user)}
-      />
-
-      <OrderHistoryDrawer 
-        isOpen={historyDrawerOpen} 
-        onClose={() => setHistoryDrawerOpen(false)} 
-        storeSlug={storeSlug} 
-        theme={theme}
-      />
-
-      <CustomerProfileDrawer
-        isOpen={profileDrawerOpen}
-        onClose={() => setProfileDrawerOpen(false)}
-        storeSlug={storeSlug}
-        theme={theme}
-      />
+      <CustomerAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} storeSlug={storeSlug} theme={theme} onAuthSuccess={(user) => setCustomerUser(user)} />
+      <OrderHistoryDrawer isOpen={historyDrawerOpen} onClose={() => setHistoryDrawerOpen(false)} storeSlug={storeSlug} theme={theme} />
+      <CustomerProfileDrawer isOpen={profileDrawerOpen} onClose={() => setProfileDrawerOpen(false)} storeSlug={storeSlug} theme={theme} />
     </div>
   );
 }

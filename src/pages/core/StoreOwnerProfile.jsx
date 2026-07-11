@@ -6,7 +6,8 @@ import {
   Share2, ArrowUpRight, HelpCircle, FileText, Sparkles,
   CheckCircle, AlertCircle, Search, Filter, Download,
   Megaphone, Wallet, Truck, Image, Tag, Percent, Globe, Upload, Camera, Clock,
-  Database, Link2, FileSpreadsheet, Play, Trash2, AlertTriangle, Loader2, Plus, TrendingUp, Users2, RefreshCw, LogOut
+  Database, Link2, FileSpreadsheet, Play, Trash2, AlertTriangle, Loader2, Plus, TrendingUp, Users2, RefreshCw, LogOut,
+  MessageCircle, Grid3X3
 } from "lucide-react";
 import axios from "axios";
 
@@ -78,6 +79,7 @@ export default function StoreOwnerProfile() {
   const [newOrderAlerts, setNewOrderAlerts] = useState(true);
   const [soundAlertsEnabled, setSoundAlertsEnabled] = useState(true);
   const [vibrationAlertsEnabled, setVibrationAlertsEnabled] = useState(true);
+  const [checkoutMode, setCheckoutMode] = useState("website");
 
   // Nested Settings sub-tab state
   const [settingsSubTab, setSettingsSubTab] = useState("general"); // general, billing, payments, shipping, checkout, banners
@@ -220,6 +222,7 @@ export default function StoreOwnerProfile() {
       setCodEnabled(res.data.codEnabled !== false);
       setDeliveryFee(res.data.deliveryFee !== undefined ? res.data.deliveryFee : 40);
       setSelfPickup(res.data.selfPickup !== false);
+      setCheckoutMode(res.data.checkoutMode || "website");
 
       // Set default category from store type (using inline map)
       const categoryMap = {
@@ -640,7 +643,8 @@ export default function StoreOwnerProfile() {
         codEnabled,
         deliveryFee,
         selfPickup,
-        upiId
+        upiId,
+        checkoutMode
       });
       setStoreData(res.data);
       setSuccessMsg("Store profile updated successfully!");
@@ -2246,16 +2250,54 @@ export default function StoreOwnerProfile() {
                 )}
 
                 {settingsSubTab === "checkout" && (
-                  <div className="space-y-4">
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
                     <div>
-                      <h3 className="text-sm font-black text-neutral-955 uppercase">Checkout Fields</h3>
-                      <p className="text-[10px] text-neutral-450 font-bold uppercase tracking-widest mt-0.5">Customize customer checkout requirements.</p>
+                      <h3 className="text-sm font-black text-neutral-955 uppercase font-manrope">Checkout Channel Settings</h3>
+                      <p className="text-[10px] text-neutral-450 font-bold uppercase tracking-widest mt-0.5">Control where customers place their orders.</p>
                     </div>
-                    <div className="h-px bg-[#F5F5F0]" />
-                    <p className="text-xs text-neutral-500 font-medium leading-relaxed">
-                      Customers browse catalog items and submit formatted baskets directly to your WhatsApp line. Custom checkout configurations will sync automatically.
-                    </p>
-                  </div>
+                    <div className="h-px bg-neutral-100" />
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <button type="button" onClick={() => setCheckoutMode("website")}
+                        className={`p-5 rounded-2xl border transition-all text-left flex flex-col justify-between min-h-[120px] cursor-pointer ${
+                          checkoutMode === "website" ? "border-neutral-900 bg-neutral-50" : "border-neutral-200 bg-white"
+                        }`}>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-bold text-neutral-900">Standard Website Checkout</span>
+                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${checkoutMode === "website" ? "bg-neutral-900 border-neutral-900" : "border-neutral-300"}`}>
+                            {checkoutMode === "website" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-neutral-450 mt-3 leading-relaxed">
+                          Customers complete orders directly on your storefront site, logging UTR reference or cash parameters.
+                        </p>
+                      </button>
+
+                      <button type="button" onClick={() => setCheckoutMode("whatsapp")}
+                        className={`p-5 rounded-2xl border transition-all text-left flex flex-col justify-between min-h-[120px] cursor-pointer ${
+                          checkoutMode === "whatsapp" ? "border-emerald-600 bg-emerald-50/15" : "border-neutral-200 bg-white"
+                        }`}>
+                        <div className="flex items-center justify-between w-full">
+                          <span className="text-xs font-bold text-emerald-800 flex items-center gap-1.5">
+                            <MessageCircle className="w-4 h-4" /> WhatsApp Redirect Checkout
+                          </span>
+                          <span className={`w-4 h-4 rounded-full border flex items-center justify-center ${checkoutMode === "whatsapp" ? "bg-emerald-600 border-emerald-600" : "border-neutral-300"}`}>
+                            {checkoutMode === "whatsapp" && <span className="w-1.5 h-1.5 rounded-full bg-white" />}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-neutral-455 mt-3 leading-relaxed">
+                          Orders automatically redirect to WhatsApp, packaging items list, map links, and payment options into formatted messages.
+                        </p>
+                      </button>
+                    </div>
+
+                    <button
+                      type="submit" disabled={updating}
+                      className="py-3 px-6 bg-[#D03D56] hover:bg-[#a02240] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-sm cursor-pointer"
+                    >
+                      {updating ? "Saving..." : "Save Settings"}
+                    </button>
+                  </form>
                 )}
 
                 {settingsSubTab === "banners" && (
@@ -2283,35 +2325,35 @@ export default function StoreOwnerProfile() {
           {activeTab === "balance" && (
             <div className="space-y-6 animate-fade-up">
               <div>
-                <h1 className="text-2xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-950 uppercase font-manrope">
                   Balance &amp; Payouts
                 </h1>
-                <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest mt-0.5">
+                <p className="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-0.5">
                   Track your earnings, withdrawals, and bank account details
                 </p>
               </div>
 
               {/* Balance Hero Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-                <div className="bg-gradient-to-br from-[#D03D56] to-[#a02240] rounded-3xl p-6 text-white shadow-lg col-span-1 sm:col-span-1 flex flex-col justify-between min-h-[140px]">
+                <div className="bg-[#111111] rounded-3xl p-6 text-white shadow-lg col-span-1 sm:col-span-1 flex flex-col justify-between min-h-[140px]">
                   <div>
-                    <span className="text-[9px] font-black uppercase tracking-widest opacity-75">Available Balance</span>
-                    <p className="text-3xl font-black mt-1">₹{(salesTotal * 0.82).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    <span className="text-[9px] font-bold opacity-70 block mt-1">After 18% platform commission</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Available Balance</span>
+                    <p className="text-3xl font-black mt-1 font-numbers">₹{(salesTotal * 0.82).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    <span className="text-[9px] font-medium opacity-50 block mt-1">After 18% platform commission</span>
                   </div>
                   <button 
                     onClick={() => setShowWithdrawModal(true)}
-                    className="mt-4 px-5 py-2.5 bg-white text-[#D03D56] font-black text-[10px] uppercase tracking-widest rounded-xl hover:bg-neutral-50 cursor-pointer transition-all active:scale-95 shadow-sm"
+                    className="mt-4 px-5 py-2.5 bg-white text-neutral-900 hover:bg-neutral-100 font-black text-[10px] uppercase tracking-widest rounded-xl cursor-pointer transition-all active:scale-95 shadow-sm text-center"
                   >
                     Withdraw Funds
                   </button>
                 </div>
 
-                <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                   <div>
-                    <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest">Total Earned</span>
-                    <p className="text-2xl font-black text-neutral-900 mt-1">₹{(salesTotal || 0).toLocaleString('en-IN')}</p>
-                    <span className="text-[9px] text-neutral-400 font-bold block mt-1">Gross revenue all time</span>
+                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Total Earned</span>
+                    <p className="text-2xl font-black text-neutral-900 mt-1 font-numbers">₹{(salesTotal || 0).toLocaleString('en-IN')}</p>
+                    <span className="text-[9px] text-neutral-450 font-bold block mt-1">Gross revenue all time</span>
                   </div>
                   <div className="mt-3 flex items-center gap-1.5">
                     <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
@@ -2319,15 +2361,15 @@ export default function StoreOwnerProfile() {
                   </div>
                 </div>
 
-                <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm flex flex-col justify-between">
+                <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm flex flex-col justify-between">
                   <div>
-                    <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest">Pending Clearance</span>
-                    <p className="text-2xl font-black text-neutral-900 mt-1">
+                    <span className="text-[9px] font-black text-neutral-400 uppercase tracking-widest">Pending Clearance</span>
+                    <p className="text-2xl font-black text-neutral-900 mt-1 font-numbers">
                       ₹{(ordersList.filter(o => o.status === "pending" || o.status === "preparing")
                           .reduce((sum, o) => sum + (o.totalAmount || 0), 0) * 0.82)
                           .toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </p>
-                    <span className="text-[9px] text-neutral-400 font-bold block mt-1">From {ordersList.filter(o => o.status === "pending" || o.status === "preparing").length} active orders</span>
+                    <span className="text-[9px] text-neutral-455 font-bold block mt-1">From {ordersList.filter(o => o.status === "pending" || o.status === "preparing").length} active orders</span>
                   </div>
                   <div className="mt-3 flex items-center gap-1.5">
                     <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -2337,43 +2379,43 @@ export default function StoreOwnerProfile() {
               </div>
 
               {/* Transaction History */}
-              <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm space-y-5">
+              <div className="bg-white border border-neutral-200 rounded-3xl p-6 shadow-sm space-y-5">
                 <div className="flex justify-between items-center">
                   <div>
-                    <h3 className="text-xs font-black uppercase tracking-widest text-neutral-955">Transaction History</h3>
+                    <h3 className="text-xs font-black uppercase tracking-widest text-neutral-900 font-manrope">Transaction History</h3>
                     <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">Recent order payment logs</p>
                   </div>
                   <button 
                     onClick={handleExportOrders}
-                    className="px-4 py-2 border border-[#F0EEEB] hover:border-[#D03D56]/40 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-700 cursor-pointer flex items-center gap-1.5 transition-all"
+                    className="px-4 py-2 border border-neutral-200 hover:border-neutral-350 rounded-xl text-[9px] font-black uppercase tracking-widest text-neutral-700 cursor-pointer flex items-center gap-1.5 transition-all"
                   >
                     <Download className="w-3 h-3" /> Export CSV
                   </button>
                 </div>
-                <div className="h-px bg-[#F5F5F0]" />
+                <div className="h-px bg-neutral-100" />
 
                 {ordersList.length === 0 ? (
                   <div className="text-center py-16 text-neutral-400 text-xs">No transactions recorded yet.</div>
                 ) : (
                   <div className="space-y-2.5">
                     {ordersList.slice(0, 15).map(order => (
-                      <div key={order._id} className="flex items-center justify-between p-4 bg-[#FAFAFA] border border-[#F0EEEB] rounded-2xl hover:border-neutral-200 transition-all">
+                      <div key={order._id} className="flex items-center justify-between p-4 bg-[#FAFAFA] border border-neutral-200 rounded-2xl hover:border-neutral-350 transition-all">
                         <div className="min-w-0">
                           <span className="text-xs font-black text-neutral-900 block truncate">{order.customerName}</span>
-                          <span className="text-[9px] text-neutral-400 font-bold block mt-0.5">
+                          <span className="text-[9px] text-neutral-400 font-bold block mt-0.5 font-numbers">
                             {order.items.length} item{order.items.length > 1 ? "s" : ""} · {new Date(order.createdAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
                           </span>
                         </div>
                         <div className="flex items-center gap-4 flex-shrink-0">
                           <span className={`px-2.5 py-1 rounded-full text-[9px] font-black uppercase tracking-wider border ${
-                            order.status === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                            order.status === "preparing" ? "bg-blue-50 text-blue-700 border-blue-200" :
-                            order.status === "cancelled" ? "bg-red-50 text-red-700 border-red-200" :
-                            "bg-amber-50 text-amber-700 border-amber-200"
+                            order.status === "completed" ? "bg-emerald-50 text-emerald-700 border-emerald-250" :
+                            order.status === "preparing" ? "bg-blue-50 text-blue-700 border-blue-250" :
+                            order.status === "cancelled" ? "bg-red-50 text-red-700 border-red-250" :
+                            "bg-amber-50 text-amber-700 border-amber-250"
                           }`}>{order.status}</span>
                           <div className="text-right">
-                            <span className="text-xs font-black text-neutral-900 block">₹{(order.totalAmount || 0).toLocaleString('en-IN')}</span>
-                            <span className="text-[9px] text-emerald-600 font-black block">
+                            <span className="text-xs font-black text-neutral-900 block font-numbers">₹{(order.totalAmount || 0).toLocaleString('en-IN')}</span>
+                            <span className="text-[9px] text-emerald-600 font-black block font-numbers">
                               +₹{((order.totalAmount || 0) * 0.82).toLocaleString('en-IN', { maximumFractionDigits: 0 })} net
                             </span>
                           </div>
