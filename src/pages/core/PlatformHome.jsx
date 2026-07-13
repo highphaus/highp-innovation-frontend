@@ -23,14 +23,14 @@ export default function PlatformHome() {
 
       {/* 1. STICKY HEADER NAVIGATION (TOWNCART STYLE) */}
       <nav className="sticky top-0 z-40 bg-white/95 border-b border-[#F0EEEB] h-16 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 h-full flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-[#D03D56] rounded-xl flex items-center justify-center">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 h-full flex items-center justify-between gap-2">
+          <Link to="/" className="flex items-center gap-2 sm:gap-3 min-w-0">
+            <div className="w-8 h-8 bg-[#D03D56] rounded-xl flex items-center justify-center shrink-0">
               <span className="font-black text-white text-xs">HP</span>
             </div>
-            <div>
-              <span className="font-black text-sm tracking-tight text-neutral-955 block">HighP Platform</span>
-              <span className="text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">Enterprise Cloud</span>
+            <div className="min-w-0">
+              <span className="font-black text-[11px] sm:text-sm tracking-tight text-neutral-955 block truncate">HighP Platform</span>
+              <span className="text-[8px] sm:text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">Enterprise Cloud</span>
             </div>
           </Link>
 
@@ -40,13 +40,13 @@ export default function PlatformHome() {
             <a href="#pricing" className="hover:text-[#D03D56] transition-colors">Pricing</a>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Link to="/admin" className="text-[10px] font-black uppercase tracking-widest text-neutral-600 hover:text-neutral-950 transition-colors">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <Link to="/admin" className="hidden sm:inline-flex text-[10px] font-black uppercase tracking-widest text-neutral-600 hover:text-neutral-950 transition-colors">
               Platform Admin
             </Link>
             <Link 
               to="/login" 
-              className="text-[10px] font-black uppercase tracking-widest px-4.5 py-2.5 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-xl transition-all shadow-sm active:scale-95"
+              className="inline-flex items-center justify-center text-[10px] font-black uppercase tracking-widest px-3 py-2 sm:px-4.5 sm:py-2.5 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-xl transition-all shadow-sm active:scale-95"
             >
               Sign In
             </Link>
@@ -55,14 +55,14 @@ export default function PlatformHome() {
       </nav>
 
       {/* 2. HERO SECTION (TOWNCART STYLE) */}
-      <section className="max-w-7xl mx-auto px-6 lg:px-10 pt-20 pb-24 text-center space-y-6">
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-12 sm:pt-20 pb-16 sm:pb-24 text-center space-y-6">
         <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#F7EBEF] text-[#D03D56] border border-[#D03D56]/10 animate-fade-in">
           <span className="w-1.5 h-1.5 rounded-full bg-[#D03D56] animate-pulse" />
           <span className="text-[9px] font-black uppercase tracking-widest">No coding required · 100% free to start</span>
         </div>
 
         <div className="space-y-4 max-w-3xl mx-auto">
-          <h1 className="text-4xl sm:text-6xl font-black tracking-tight text-neutral-950 leading-[1.05] uppercase">
+          <h1 className="text-3xl sm:text-5xl lg:text-6xl font-black tracking-tight text-neutral-950 leading-[1.05] uppercase">
             Create Your Online Store
             <br />
             <span className="italic font-light text-[#D03D56]" style={{ fontFamily: "'Playfair Display', serif" }}>
@@ -77,12 +77,12 @@ export default function PlatformHome() {
         <div className="pt-4 space-y-4">
           <Link 
             to="/login" 
-            className="inline-flex items-center gap-2 px-8 py-4 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 hover:translate-y-[-1px] cursor-pointer"
+            className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 hover:translate-y-[-1px] cursor-pointer"
           >
             Create a Free Store <ArrowRight className="w-4 h-4" />
           </Link>
           
-          <div className="flex items-center justify-center gap-6 text-[9px] text-[#737373] font-black uppercase tracking-widest pt-2">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 sm:gap-6 text-[9px] text-[#737373] font-black uppercase tracking-widest pt-2">
             <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-[#D03D56]" /> Free Forever</span>
             <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-[#D03D56]" /> Orders via WhatsApp</span>
             <span className="flex items-center gap-1.5"><CheckCircle className="w-3.5 h-3.5 text-[#D03D56]" /> Instant Setup</span>
@@ -91,8 +91,8 @@ export default function PlatformHome() {
       </section>
 
       {/* 3. CORE FEATURES SECTION - ALTERNATING (TOWNCART STYLE) */}
-      <section className="bg-white border-y border-[#F0EEEB] py-24" id="features">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 space-y-28">
+      <section className="bg-white border-y border-[#F0EEEB] py-16 sm:py-20 lg:py-24" id="features">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 space-y-16 sm:space-y-24 lg:space-y-28">
           
           {/* Alternating Block 1 */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
@@ -211,8 +211,8 @@ export default function PlatformHome() {
       </section>
 
       {/* 4. WHY SELLERS LOVE THIS (TOWNCART STYLE) */}
-      <section className="bg-[#FAFAFA] py-24" id="how-it-works">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 space-y-16">
+      <section className="bg-[#FAFAFA] py-16 sm:py-20 lg:py-24" id="how-it-works">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 space-y-12 sm:space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-2">
             <p className="text-[10px] font-black text-[#D03D56] uppercase tracking-widest">Sellers First</p>
             <h2 className="text-2xl sm:text-3xl font-black text-neutral-950 uppercase">Why Sellers Choose HighP</h2>
@@ -242,8 +242,8 @@ export default function PlatformHome() {
       </section>
 
       {/* 5. TESTIMONIALS SECTION (TOWNCART STYLE) */}
-      <section className="bg-white border-y border-[#F0EEEB] py-24">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 space-y-16">
+      <section className="bg-white border-y border-[#F0EEEB] py-16 sm:py-20 lg:py-24">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 space-y-12 sm:space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-2">
             <p className="text-[10px] font-black text-[#D03D56] uppercase tracking-widest">Testimonials</p>
             <h2 className="text-2xl sm:text-3xl font-black text-neutral-950 uppercase">Loved by Sellers Everywhere</h2>
@@ -274,8 +274,8 @@ export default function PlatformHome() {
       </section>
 
       {/* 6. PRICING SECTION (TOWNCART STYLE) */}
-      <section className="bg-white border-b border-[#F0EEEB] py-24" id="pricing">
-        <div className="max-w-7xl mx-auto px-6 lg:px-10 space-y-16">
+      <section className="bg-white border-b border-[#F0EEEB] py-16 sm:py-20 lg:py-24" id="pricing">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 space-y-12 sm:space-y-16">
           <div className="text-center max-w-xl mx-auto space-y-2">
             <p className="text-[10px] font-black text-[#D03D56] uppercase tracking-widest">Pricing Plan</p>
             <h2 className="text-2xl sm:text-3xl font-black text-neutral-955 uppercase">Simple, Transparent Pricing</h2>
@@ -337,21 +337,21 @@ export default function PlatformHome() {
       </section>
 
       {/* 7. BOTTOM CALL TO ACTION */}
-      <section className="bg-[#FAFAFA] py-24 text-center space-y-6">
+      <section className="bg-[#FAFAFA] py-16 sm:py-20 lg:py-24 text-center space-y-6">
         <div className="space-y-3 max-w-xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-black text-neutral-950 uppercase leading-none">Start Your Free Store Today</h2>
           <p className="text-neutral-500 text-xs sm:text-sm leading-relaxed font-bold">Get your storefront live and start receiving orders immediately.</p>
         </div>
         <Link 
           to="/login" 
-          className="inline-flex items-center gap-2 px-8 py-4 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
+          className="inline-flex w-full sm:w-auto items-center justify-center gap-2 px-6 py-3 sm:px-8 sm:py-4 bg-[#D03D56] hover:bg-[#3F0712] text-white rounded-2xl text-xs font-black uppercase tracking-widest transition-all shadow-md active:scale-95 cursor-pointer"
         >
           Create Your Store Now <ArrowRight className="w-4 h-4" />
         </Link>
       </section>
 
       {/* 8. FOOTER (TOWNCART STYLE) */}
-      <footer className="bg-white border-t border-[#F0EEEB] py-16 px-6 lg:px-10">
+      <footer className="bg-white border-t border-[#F0EEEB] py-16 px-4 sm:px-6 lg:px-10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-10">
           <div className="space-y-3">
             <div className="flex items-center gap-3">
