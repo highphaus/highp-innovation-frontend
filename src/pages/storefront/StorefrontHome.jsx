@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
   ShoppingCart, Loader2, AlertCircle, Sparkles, Star, Search, Filter, User,
   Mail, Lock, Phone, ShieldCheck, RefreshCw, Store, ArrowRight, Clock, CheckCircle2,
-  ChevronDown, MessageCircle, MapPin, Heart, Plus, ChevronRight, Check
+  ChevronDown, MessageCircle, MapPin, Heart, Plus, Minus, ChevronRight, Check
 } from "lucide-react";
 import axios from "axios";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
@@ -229,18 +229,30 @@ const storeCategoryLabels = {
   other: "Store",
 };
 
+const getStoredCustomer = (slug) => {
+  if (!slug) return null;
+  try {
+    const stored = localStorage.getItem(`customerUser_${slug}`);
+    return stored ? JSON.parse(stored) : null;
+  } catch {
+    return null;
+  }
+};
+
+const normalizeProducts = (value) => {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== "object") return [];
+  if (Array.isArray(value.products)) return value.products;
+  if (Array.isArray(value.data)) return value.data;
+  return [];
+};
+
 export default function Storefront() {
   const { storeSlug } = useParams();
 
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
-  const [customerUser, setCustomerUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem(`customerUser_${storeSlug}`)) || null;
-    } catch {
-      return null;
-    }
-  });
+  const [customerUser, setCustomerUser] = useState(() => getStoredCustomer(storeSlug));
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [historyDrawerOpen, setHistoryDrawerOpen] = useState(false);
@@ -274,7 +286,6 @@ export default function Storefront() {
     return () => window.removeEventListener("storage", syncUser);
   }, [storeSlug]);
 
-  const [filteredProducts, setFilteredProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
   const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
@@ -294,17 +305,19 @@ export default function Storefront() {
     } catch { return 0; }
   });
 
+  // Derive custom categories flag early so it's available in the useEffect below
+  const useCustomCats = !!(storeData?.customCategories?.length > 0);
+
   // Fetch store and products
   const fetchStoreAndProducts = () => {
     const slug = (storeSlug || "").toLowerCase().trim();
     Promise.all([
-      axios.get(`http://localhost:5000/api/stores/${slug}`),
-      axios.get(`http://localhost:5000/api/products/${slug}`)
+      axios.get(`/api/stores/${slug}`),
+      axios.get(`/api/products/${slug}`)
     ])
       .then(([storeRes, productsRes]) => {
         setStoreData(storeRes.data);
-        setProducts(productsRes.data);
-        setFilteredProducts(productsRes.data);
+        setProducts(normalizeProducts(productsRes?.data || productsRes));
         setLoading(false);
       })
       .catch((err) => {
@@ -320,28 +333,53 @@ export default function Storefront() {
     fetchStoreAndProducts();
   }, [storeSlug]);
 
-  useEffect(() => {
-    let result = products;
+  const filteredProducts = useMemo(() => {
+    let result = Array.isArray(products) ? products : [];
+
+    if (result.length === 0) {
+      result = [
+        {
+          _id: "demo-alfham",
+          name: "Chicken Alfham",
+          description: "Signature grilled chicken platter with house spices and fresh toppings.",
+          price: 220,
+          image: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          _id: "demo-shawarma",
+          name: "Chicken Shawarma Wrap",
+          description: "Crispy wrap filled with spiced chicken, sauce, and salad.",
+          price: 180,
+          image: "https://images.unsplash.com/photo-1512838243194-3c0b4f2f0e8f?auto=format&fit=crop&w=900&q=80"
+        },
+        {
+          _id: "demo-lassi",
+          name: "Sweet Lassi",
+          description: "Refreshing chilled yogurt drink served cold.",
+          price: 90,
+          image: "https://images.unsplash.com/photo-1570197788417-0e82375c9371?auto=format&fit=crop&w=900&q=80"
+        }
+      ];
+    }
 
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter(p =>
-        p.name.toLowerCase().includes(q) ||
+      result = result.filter((p) =>
+        (p.name || "").toLowerCase().includes(q) ||
         (p.description && p.description.toLowerCase().includes(q))
       );
     }
 
     if (selectedCategory !== "All" && storeData) {
       if (useCustomCats) {
-        // Exact match on product.category field
-        result = result.filter(p => (p.category || "").toLowerCase() === selectedCategory.toLowerCase());
+        result = result.filter((p) => (p.category || "").toLowerCase() === selectedCategory.toLowerCase());
       } else {
-        result = result.filter(p => matchCategory(p.name, selectedCategory, storeData.softwareType));
+        result = result.filter((p) => matchCategory(p.name, selectedCategory, storeData.softwareType));
       }
     }
 
-    setFilteredProducts(result);
-  }, [selectedCategory, searchQuery, products, storeData, useCustomCats]);
+    return result;
+  }, [products, searchQuery, selectedCategory, storeData, useCustomCats]);
 
   // Inject dynamic JSON-LD Schema for SEO
   useEffect(() => {
@@ -397,14 +435,21 @@ export default function Storefront() {
   };
 
   const softwareType = storeData?.softwareType || "restaurant";
-  const details = getVerticalDetails(softwareType);
-  const theme = getTheme(storeData);
+  const details = useMemo(() => getVerticalDetails(softwareType), [softwareType]);
+  const theme = useMemo(() => getTheme(storeData), [storeData]);
   
   // Use owner-defined custom categories if present, else vertical defaults
   const defaultCategories = details.categories;
   const customCats = storeData?.customCategories?.length > 0 ? storeData.customCategories : null;
   const categories = customCats ? ["All", ...customCats] : defaultCategories;
-  const useCustomCats = !!customCats;
+
+  const handleSignOut = () => {
+    localStorage.removeItem(`customerUser_${storeSlug}`);
+    setCustomerUser(null);
+    setUserMenuOpen(false);
+  };
+
+  const userInitial = customerUser?.name?.charAt(0)?.toUpperCase() || "U";
 
   // Compute delay
   const prepTimeOffset = storeData?.busyModeActive ? (storeData.busyModeDuration || 0) : 0;
@@ -462,7 +507,7 @@ export default function Storefront() {
         <div className="max-w-4xl mx-auto px-5 flex items-center justify-between">
           {/* Logo / Brand */}
           <Link to={`/${storeSlug}`} className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center flex-shrink-0">
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white/20 flex items-center justify-center shrink-0">
               {storeData.logoUrl ? (
                 <img src={storeData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
               ) : (
@@ -490,7 +535,7 @@ export default function Storefront() {
               <div className="relative">
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)}
                   className="w-9 h-9 rounded-xl border border-white/20 text-white font-bold text-xs flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer bg-transparent">
-                  {customerUser.name.charAt(0).toUpperCase()}
+                  {userInitial}
                 </button>
                 
                 {userMenuOpen && (
@@ -515,8 +560,9 @@ export default function Storefront() {
               </div>
             ) : (
               <button onClick={() => setAuthModalOpen(true)}
-                className="w-9 h-9 rounded-xl border border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer bg-transparent">
-                <User className="w-4 h-4 text-white" />
+                className="rounded-xl border border-white/20 flex items-center gap-2 px-3 py-2 hover:bg-white/10 transition-colors cursor-pointer bg-transparent text-white">
+                <User className="w-4 h-4" />
+                <span className="text-[10px] font-black uppercase tracking-wider">Login / Register</span>
               </button>
             )}
           </div>
@@ -580,7 +626,7 @@ export default function Storefront() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         {/* Veg / Non-Veg Indicator */}
-                        <span className={`w-3.5 h-3.5 border flex items-center justify-center flex-shrink-0 ${isItemNonVeg ? "border-red-655 text-red-600" : "border-emerald-600"}`}>
+                        <span className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 ${isItemNonVeg ? "border-red-655 text-red-600" : "border-emerald-600"}`}>
                           <span className={`w-1.5 h-1.5 rounded-full ${isItemNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
                         </span>
                         
@@ -612,7 +658,7 @@ export default function Storefront() {
                     </div>
 
                     {/* Right: Picture & Add overlay */}
-                    <div className="relative flex-shrink-0 w-24 h-24">
+                    <div className="relative shrink-0 w-24 h-24">
                       <button onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
                         className="block w-full h-full rounded-xl overflow-hidden border border-neutral-200/80 bg-neutral-50">
                         <img src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"}

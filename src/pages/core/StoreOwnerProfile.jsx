@@ -2291,6 +2291,28 @@ export default function StoreOwnerProfile() {
                       </button>
                     </div>
 
+                    {/* ── WHATSAPP NUMBER MISSING WARNING ── */}
+                    {checkoutMode === "whatsapp" && !whatsappNumber.replace(/[^0-9]/g, "") && (
+                      <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 flex items-start gap-3">
+                        <div className="w-7 h-7 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                          <MessageCircle className="w-3.5 h-3.5 text-amber-600" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-amber-800">⚠️ WhatsApp number missing</p>
+                          <p className="text-[10px] text-amber-700 mt-1 leading-relaxed">
+                            You have selected WhatsApp checkout but your WhatsApp number is not set. Customers will not be able to complete orders until you add your number.
+                          </p>
+                          <button
+                            type="button"
+                            onClick={() => setSettingsSubTab("general")}
+                            className="mt-2 text-[10px] font-black text-amber-800 underline underline-offset-2 cursor-pointer hover:text-amber-900"
+                          >
+                            → Go to General Settings to add your WhatsApp number
+                          </button>
+                        </div>
+                      </div>
+                    )}
+
                     <button
                       type="submit" disabled={updating}
                       className="py-3 px-6 bg-[#D03D56] hover:bg-[#a02240] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all shadow-sm cursor-pointer"

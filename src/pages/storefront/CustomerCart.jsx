@@ -108,16 +108,28 @@ export default function CustomerCart() {
       return;
     }
 
-    if (checkoutMethod === "website" && paymentMethod === "upi") {
+    // Validate WhatsApp number is configured when checkout mode is WhatsApp
+    if (checkoutMethod === "whatsapp") {
+      const cleanPhone = (storeData?.whatsappNumber || "").replace(/[^0-9]/g, "");
+      if (!cleanPhone) {
+        alert("This store has not configured a WhatsApp number yet. Please contact the store owner.");
+        return;
+      }
+      // Open the WhatsApp tab HERE (synchronous, direct user gesture)
+      // so browsers don't block it as a popup.
+      // We store a reference and update the URL after the order is saved.
+      const waTab = window.open("about:blank", "_blank");
+      executeSubmitOrder({ paymentStatus: "pending", paymentReference: "", waTab });
+    } else if (checkoutMethod === "website" && paymentMethod === "upi") {
       // Trigger the interactive payment verification screen
       setShowWebsiteUpiPayment(true);
     } else {
-      // Proceed directly to submit standard COD or WhatsApp order
+      // Proceed directly to submit standard COD order
       executeSubmitOrder({ paymentStatus: "pending", paymentReference: "" });
     }
   };
 
-  const executeSubmitOrder = async ({ paymentStatus = "pending", paymentReference = "" }) => {
+  const executeSubmitOrder = async ({ paymentStatus = "pending", paymentReference = "", waTab = null }) => {
     setSubmitting(true);
 
     const cleanPhone = (storeData?.whatsappNumber || "").replace(/[^0-9]/g, "");
@@ -127,11 +139,12 @@ export default function CustomerCart() {
     // Add QR/Pay Link for WhatsApp orders if UPI is selected
     const upiPayLink = paymentMethod === "upi" ? `\n👉 Pay Online: ${getUpiPaymentUri()}` : "";
     
-    const waMessageEarly = `New Order from ${storeData?.name || storeSlug}\n\nItems:\n${itemsList}\n\nSubtotal: Rs.${subtotalAmount}\nTax (5%): Rs.${calculatedTax}\nDelivery: Rs.${storeDeliveryFee}\nTotal: Rs.${grandTotal}\n\nCustomer: 	extsf{${customerName.trim()}}\nPhone: 	extsf{${customerPhone.trim()}}\nAddress: 	extsf{${customerAddress.trim()}}\nDirections: ${mapsLink}\n\nInstructions: ${deliveryInstructions || "None"}\nPayment Method: ${paymentMethod === "cod" ? "Cash on Delivery" : `UPI (${storeUpiId})`}${upiPayLink}\n\nPlease confirm order. Thank you!`;
+    const waMessageEarly = `New Order from ${storeData?.name || storeSlug}\n\nItems:\n${itemsList}\n\nSubtotal: Rs.${subtotalAmount}\nTax (5%): Rs.${calculatedTax}\nDelivery: Rs.${storeDeliveryFee}\nTotal: Rs.${grandTotal}\n\nCustomer: ${customerName.trim()}\nPhone: ${customerPhone.trim()}\nAddress: ${customerAddress.trim()}\nDirections: ${mapsLink}\n\nInstructions: ${deliveryInstructions || "None"}\nPayment Method: ${paymentMethod === "cod" ? "Cash on Delivery" : `UPI (${storeUpiId})`}${upiPayLink}\n\nPlease confirm order. Thank you!`;
     const waUrlEarly = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessageEarly)}` : "";
 
-    if (checkoutMethod === "whatsapp" && waUrlEarly) {
-      window.open(waUrlEarly, "_blank");
+    // If a WhatsApp tab was pre-opened synchronously, redirect it now
+    if (waTab && waUrlEarly) {
+      waTab.location.href = waUrlEarly;
     }
 
     try {
@@ -160,6 +173,11 @@ export default function CustomerCart() {
       const shortId = orderId ? `#${orderId.slice(-6).toUpperCase()}` : "#NEW";
       const finalMsg = waMessageEarly.replace("New Order from", `New Order ${shortId} from`);
       const waUrlFinal = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalMsg)}` : waUrlEarly;
+
+      // Update the already-open WhatsApp tab with the final URL that includes the real order ID
+      if (waTab && waUrlFinal) {
+        try { waTab.location.href = waUrlFinal; } catch (_) {}
+      }
 
       setPlacedOrder({
         id: orderId, shortId,
@@ -536,6 +554,21 @@ export default function CustomerCart() {
                 </div>
               </div>
             </div>
+
+            {/* ── WHATSAPP MISSING NUMBER WARNING ── */}
+            {checkoutMethod === "whatsapp" && !(storeData?.whatsappNumber || "").replace(/[^0-9]/g, "") && (
+              <div className="border border-amber-300 bg-amber-50 rounded-xl p-4 flex items-start gap-3">
+                <div className="w-8 h-8 bg-amber-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <MessageCircle className="w-4 h-4 text-amber-600" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-amber-800">WhatsApp number not configured</p>
+                  <p className="text-[10px] text-amber-700 mt-0.5 leading-relaxed">
+                    The store owner has not added their WhatsApp number yet. Orders cannot be sent via WhatsApp until it is set up in the store settings.
+                  </p>
+                </div>
+              </div>
+            )}
 
             {/* ── CUSTOMER & CHECKOUT DETAILS ── */}
             <div className="border border-neutral-200 rounded-xl bg-white p-5 shadow-sm space-y-4">
