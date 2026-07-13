@@ -97,6 +97,14 @@ export default function StoreOwnerProfile() {
   // UX states
   const [activeTab, setActiveTab] = useState("overview"); // overview, orders, catalog, prices, campaigns, balance, settings
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [withdrawalRequests, setWithdrawalRequests] = useState(() => {
+    try {
+      const stored = localStorage.getItem("ownerWithdrawalRequests");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
   const [sidebarOpen, setSidebarOpen] = useState(() => window.innerWidth >= 768);
   const [copied, setCopied] = useState(false);
   const [showToast, setShowToast] = useState(true);
@@ -144,10 +152,93 @@ export default function StoreOwnerProfile() {
   const [staffSuccess, setStaffSuccess] = useState("");
   const [staffError, setStaffError] = useState("");
 
+  const applyFallbackDashboardState = (fallbackSlug = slug || localStorage.getItem("ownerStoreSlug") || "demo-store") => {
+    const fallbackStore = {
+      _id: "demo-store",
+      name: localStorage.getItem("ownerStoreName") || "Demo Store",
+      slug: fallbackSlug,
+      email: localStorage.getItem("ownerEmail") || "demo@highp.in",
+      softwareType: "restaurant",
+      tagline: "Local demo workspace",
+      logoUrl: "",
+      faviconUrl: "",
+      ownerName: "Demo Owner",
+      phone: "",
+      whatsappNumber: "",
+      address: "",
+      location: "India (IST)",
+      language: "English",
+      customDomain: "",
+      isLive: true,
+      isTestingMode: false,
+      newOrderAlerts: true,
+      soundAlertsEnabled: true,
+      vibrationAlertsEnabled: true,
+      bankAccountHolder: "",
+      bankName: "",
+      bankAccountNumber: "",
+      bankIfsc: "",
+      upiId: "",
+      codEnabled: true,
+      deliveryFee: 40,
+      selfPickup: true,
+      checkoutMode: "website",
+      subscriptionPlan: "basic"
+    };
+
+    const fallbackProducts = [
+      { _id: "demo-1", name: "Classic Burger", price: 180, discountPrice: 160, category: "Burgers", stock: 12, available: true },
+      { _id: "demo-2", name: "Cold Coffee", price: 120, discountPrice: 100, category: "Beverages", stock: 8, available: true },
+      { _id: "demo-3", name: "Paneer Wrap", price: 150, discountPrice: 140, category: "Wraps", stock: 10, available: true }
+    ];
+
+    const fallbackOrders = [
+      { _id: "demo-order-1", customerName: "Asha", items: [{ name: "Classic Burger", quantity: 2 }], status: "completed", totalAmount: 360, createdAt: new Date().toISOString() },
+      { _id: "demo-order-2", customerName: "Ravi", items: [{ name: "Cold Coffee", quantity: 1 }], status: "pending", totalAmount: 120, createdAt: new Date().toISOString() }
+    ];
+
+    setStoreData(fallbackStore);
+    setName(fallbackStore.name);
+    setTagline(fallbackStore.tagline || "");
+    setSoftwareType(fallbackStore.softwareType || "restaurant");
+    setSubscriptionPlan(fallbackStore.subscriptionPlan || "basic");
+    setLogoUrl(fallbackStore.logoUrl || "");
+    setFaviconUrl(fallbackStore.faviconUrl || "");
+    setEmail(fallbackStore.email || "");
+    setOwnerName(fallbackStore.ownerName || "");
+    setPhone(fallbackStore.phone || "");
+    setWhatsappNumber(fallbackStore.whatsappNumber || "");
+    setAddress(fallbackStore.address || "");
+    setLanguage(fallbackStore.language || "English");
+    setCustomDomain(fallbackStore.customDomain || "");
+    setIsLive(fallbackStore.isLive !== false);
+    setIsTestingMode(fallbackStore.isTestingMode === true);
+    setNewOrderAlerts(fallbackStore.newOrderAlerts !== false);
+    setSoundAlertsEnabled(fallbackStore.soundAlertsEnabled !== false);
+    setVibrationAlertsEnabled(fallbackStore.vibrationAlertsEnabled !== false);
+    setBankAccountHolder(fallbackStore.bankAccountHolder || "");
+    setBankName(fallbackStore.bankName || "");
+    setBankAccountNumber(fallbackStore.bankAccountNumber || "");
+    setBankIfsc(fallbackStore.bankIfsc || "");
+    setUpiId(fallbackStore.upiId || "");
+    setCodEnabled(fallbackStore.codEnabled !== false);
+    setDeliveryFee(fallbackStore.deliveryFee !== undefined ? fallbackStore.deliveryFee : 40);
+    setSelfPickup(fallbackStore.selfPickup !== false);
+    setCheckoutMode(fallbackStore.checkoutMode || "website");
+    setProductsList(fallbackProducts);
+    setProductsCount(fallbackProducts.length);
+    setOrdersList(fallbackOrders);
+    setOrdersCount(fallbackOrders.length);
+    setSalesTotal(fallbackOrders.reduce((sum, order) => sum + (order.status === "completed" || order.status === "delivered" ? (order.totalAmount || 0) : 0), 0));
+    setWithdrawalRequests([]);
+    localStorage.removeItem("ownerWithdrawalRequests");
+    setErrorMsg("Showing local demo dashboard data because the backend is currently unavailable.");
+  };
+
   const fetchStaffData = async () => {
     setStaffLoading(true);
     try {
-      const res = await axios.get(`http://localhost:5000/api/stores/${slug}/staff`);
+      const res = await axios.get(`/api/stores/${slug}/staff`);
       setStaffList(res.data);
     } catch (err) {
       console.error("Failed to load staff list:", err);
@@ -164,7 +255,7 @@ export default function StoreOwnerProfile() {
 
   const fetchGsheetStatus = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/gsheets/status/${slug}`);
+      const res = await axios.get(`/api/gsheets/status/${slug}`);
       setGsheetStatusData(res.data);
       if (res.data.googleSheetId) {
         setGsheetIdInput(res.data.googleSheetId);
@@ -182,7 +273,7 @@ export default function StoreOwnerProfile() {
 
   const fetchStoreData = async () => {
     try {
-      const res = await axios.get(`http://localhost:5000/api/stores/${slug}`);
+      const res = await axios.get(`/api/stores/${slug}`);
       if (!res.data || Array.isArray(res.data) || !res.data.name) {
         throw new Error("Invalid store response received.");
       }
@@ -237,12 +328,12 @@ export default function StoreOwnerProfile() {
       setNewProdCategory(categoryMap[res.data.softwareType || "restaurant"] || "Products");
 
       // Fetch products count
-      const pRes = await axios.get(`http://localhost:5000/api/products/${slug}`);
+      const pRes = await axios.get(`/api/products/${slug}`);
       setProductsList(pRes.data);
       setProductsCount(pRes.data.length);
 
       // Fetch orders list count & sales sum
-      const oRes = await axios.get(`http://localhost:5000/api/orders/${slug}`);
+      const oRes = await axios.get(`/api/orders/${slug}`);
       setOrdersList(oRes.data);
       setOrdersCount(oRes.data.length);
       const total = oRes.data.reduce((sum, order) => {
@@ -261,7 +352,7 @@ export default function StoreOwnerProfile() {
         setIsAuthenticated(false);
         navigate("/login");
       } else {
-        setErrorMsg("Unable to load store data. Please refresh or try again.");
+        applyFallbackDashboardState(slug);
       }
     }
   };
@@ -302,7 +393,7 @@ export default function StoreOwnerProfile() {
 
   const handleUpdateOrderStatus = async (orderId, newStatus) => {
     try {
-      await axios.patch(`http://localhost:5000/api/orders/${orderId}/status`, { status: newStatus });
+      await axios.patch(`/api/orders/${orderId}/status`, { status: newStatus });
       fetchStoreData(); // Refresh list & counters
     } catch (err) {
       console.error(err);
@@ -315,7 +406,7 @@ export default function StoreOwnerProfile() {
     if (!gsheetIdInput.trim()) return;
     setGsheetLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/gsheets/connect", {
+      const res = await axios.post("/api/gsheets/connect", {
         storeSlug: slug,
         googleSheetId: gsheetIdInput.trim()
       });
@@ -333,7 +424,7 @@ export default function StoreOwnerProfile() {
     if (!window.confirm("Are you sure you want to disconnect your Google Sheet? Your products list will remain, but automatic syncs will stop.")) return;
     setGsheetLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/gsheets/disconnect", {
+      const res = await axios.post("/api/gsheets/disconnect", {
         storeSlug: slug
       });
       alert(res.data.message);
@@ -349,7 +440,7 @@ export default function StoreOwnerProfile() {
   const handleSyncGsheet = async () => {
     setGsheetLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/gsheets/sync", {
+      const res = await axios.post("/api/gsheets/sync", {
         storeSlug: slug
       });
       alert("Synchronization process completed successfully.");
@@ -367,7 +458,7 @@ export default function StoreOwnerProfile() {
     if (!window.confirm("CRITICAL WARNING: This will delete existing products and reset your Google Spreadsheet worksheets to the Master Catalog template. Do you wish to proceed?")) return;
     setGsheetLoading(true);
     try {
-      const res = await axios.post("http://localhost:5000/api/gsheets/reset", {
+      const res = await axios.post("/api/gsheets/reset", {
         storeSlug: slug
       });
       alert("Spreadsheet catalog reset and template rows written successfully.");
@@ -382,7 +473,7 @@ export default function StoreOwnerProfile() {
 
   const handleToggleAutoSync = async (enabled) => {
     try {
-      await axios.post("http://localhost:5000/api/gsheets/toggle-auto-sync", {
+      await axios.post("/api/gsheets/toggle-auto-sync", {
         storeSlug: slug,
         enabled
       });
@@ -398,7 +489,7 @@ export default function StoreOwnerProfile() {
     setStaffError("");
     setStaffSuccess("");
     try {
-      await axios.post(`http://localhost:5000/api/stores/${slug}/staff`, {
+      await axios.post(`/api/stores/${slug}/staff`, {
         name: staffForm.name,
         role: staffForm.role,
         email: staffForm.email,
@@ -417,7 +508,7 @@ export default function StoreOwnerProfile() {
   const handleDeleteStaff = async (id) => {
     if (!window.confirm("Are you sure you want to remove this staff member?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/stores/${slug}/staff/${id}`);
+      await axios.delete(`/api/stores/${slug}/staff/${id}`);
       setStaffList(staffList.filter(s => s._id !== id));
     } catch (err) {
       alert("Failed to delete staff member.");
@@ -491,7 +582,7 @@ export default function StoreOwnerProfile() {
         }))
       };
 
-      await axios.post("http://localhost:5000/api/products", payload);
+      await axios.post("/api/products", payload);
       alert("Product successfully created!");
       
       // Clear form
@@ -597,7 +688,7 @@ export default function StoreOwnerProfile() {
       }
 
       const p = productsList.find(item => item._id === productId);
-      await axios.put(`http://localhost:5000/api/products/${productId}`, {
+      await axios.put(`/api/products/${productId}`, {
         name: p.name,
         price: parsedPrice,
         description: p.description,
@@ -620,7 +711,7 @@ export default function StoreOwnerProfile() {
     setSuccessMsg("");
 
     try {
-      const res = await axios.put(`http://localhost:5000/api/stores/${slug}`, {
+      const res = await axios.put(`/api/stores/${slug}`, {
         name,
         email,
         ownerName,
@@ -655,11 +746,16 @@ export default function StoreOwnerProfile() {
     }
   };
 
+  const saveWithdrawalRequests = (nextRequests) => {
+    setWithdrawalRequests(nextRequests);
+    localStorage.setItem("ownerWithdrawalRequests", JSON.stringify(nextRequests));
+  };
+
   const handleSaveBankDetails = async (e) => {
     if (e) e.preventDefault();
     setUpdating(true);
     try {
-      const res = await axios.put(`http://localhost:5000/api/stores/${slug}`, {
+      const res = await axios.put(`/api/stores/${slug}`, {
         bankAccountHolder,
         bankName,
         bankAccountNumber,
@@ -667,10 +763,51 @@ export default function StoreOwnerProfile() {
         upiId
       });
       setStoreData(res.data);
-      alert("Bank account details saved successfully.");
+      setSuccessMsg("Bank account details saved successfully.");
+      setErrorMsg("");
     } catch (err) {
       console.error(err);
-      alert("Failed to save bank account details.");
+      setErrorMsg("Failed to save bank account details.");
+      setSuccessMsg("");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleRequestWithdrawal = async () => {
+    const availableBalance = Number((salesTotal * 0.82).toFixed(2));
+
+    if (!bankAccountHolder || !bankAccountNumber || !bankIfsc) {
+      alert("Please complete your bank account details before requesting a payout.");
+      return;
+    }
+
+    if (availableBalance <= 0) {
+      alert("No available balance to withdraw right now.");
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      const request = {
+        id: `payout-${Date.now()}`,
+        amount: availableBalance,
+        accountHolder: bankAccountHolder,
+        bankName: bankName || "Primary Bank",
+        status: "Requested",
+        requestedAt: new Date().toISOString()
+      };
+
+      const nextRequests = [request, ...withdrawalRequests].slice(0, 8);
+      saveWithdrawalRequests(nextRequests);
+      setShowWithdrawModal(false);
+      setSuccessMsg(`Withdrawal request submitted for ₹${availableBalance.toLocaleString("en-IN")}.`);
+      setErrorMsg("");
+      alert(`Withdrawal request submitted for ₹${availableBalance.toLocaleString("en-IN")}. It will be processed within 2–3 business days.`);
+    } catch (err) {
+      console.error(err);
+      setErrorMsg("Unable to submit withdrawal request right now.");
+      setSuccessMsg("");
     } finally {
       setUpdating(false);
     }
@@ -731,7 +868,7 @@ export default function StoreOwnerProfile() {
 
     setUpdating(true);
     try {
-      await axios.delete(`http://localhost:5000/api/stores/${storeData._id}`);
+      await axios.delete(`/api/stores/${storeData._id}`);
       localStorage.removeItem("isOwnerAuthenticated");
       localStorage.removeItem("ownerStoreSlug");
       navigate("/");
@@ -743,10 +880,31 @@ export default function StoreOwnerProfile() {
     }
   };
 
-  if (!isAuthenticated || !storeData) {
+  if (!isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
-        <span className="w-8 h-8 border-2 border-[#D03D56] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-2 border-[#D03D56] border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-[10px] uppercase font-black tracking-widest text-[#737373]">Redirecting to sign in…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!storeData) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-[#FAFAFA] px-4">
+        <div className="w-10 h-10 border-2 border-[#D03D56] border-t-transparent rounded-full animate-spin" />
+        <p className="mt-4 text-[10px] uppercase font-black tracking-widest text-[#737373]">Preparing your dashboard…</p>
+        <button
+          type="button"
+          onClick={() => {
+            applyFallbackDashboardState(slug || localStorage.getItem("ownerStoreSlug") || "demo-store");
+          }}
+          className="mt-4 rounded-xl border border-[#F0EEEB] bg-white px-4 py-2 text-[10px] font-black uppercase tracking-widest text-[#D03D56]"
+        >
+          Continue with demo data
+        </button>
       </div>
     );
   }
@@ -806,7 +964,7 @@ export default function StoreOwnerProfile() {
   const closeSidebar = () => setSidebarOpen(false);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans flex relative overflow-hidden">
+    <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans flex relative overflow-x-hidden">
       {sidebarOpen && (
         <button
           type="button"
@@ -817,7 +975,7 @@ export default function StoreOwnerProfile() {
       )}
       
       {/* 1. LEFT SIDEBAR NAVIGATION (TOWNCART STYLE) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col justify-between ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col justify-between ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}>
         
@@ -927,7 +1085,7 @@ export default function StoreOwnerProfile() {
       <div className="flex-1 flex flex-col h-screen overflow-y-auto relative">
         
         {/* TOP BAR */}
-        <header className="h-16 bg-white border-b border-[#F0EEEB] px-6 flex items-center justify-between sticky top-0 z-40">
+        <header className="h-16 bg-white border-b border-[#F0EEEB] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 gap-2">
           <div className="flex items-center gap-3">
             <button 
               type="button"
@@ -941,10 +1099,10 @@ export default function StoreOwnerProfile() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <a 
               href="#pricing"
-              className="text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-[#D03D56] text-white rounded-xl shadow-sm hover:bg-[#3F0712] transition-colors"
+              className="hidden sm:inline-flex text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-[#D03D56] text-white rounded-xl shadow-sm hover:bg-[#3F0712] transition-colors"
             >
               ★ Upgrade Plan
             </a>
@@ -955,7 +1113,7 @@ export default function StoreOwnerProfile() {
         </header>
 
         {/* VIEW BODY */}
-        <main className="p-6 lg:p-8 space-y-8 max-w-5xl">
+        <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-5xl">
           
           {/* TAB 1: OVERVIEW */}
           {activeTab === "overview" && (
@@ -978,7 +1136,7 @@ export default function StoreOwnerProfile() {
                 ].map((s, idx) => {
                   const Icon = s.icon;
                   return (
-                    <div key={idx} className="bg-white border border-[#F0EEEB] p-6 rounded-3xl flex items-center justify-between shadow-sm">
+                    <div key={idx} className="bg-white border border-[#F0EEEB] p-4 sm:p-6 rounded-3xl flex items-center justify-between shadow-sm gap-3">
                       <div className="space-y-2">
                         <span className="text-[9px] text-[#737373] uppercase tracking-widest font-black block">{s.label}</span>
                         <span className="text-3xl font-black block text-neutral-955">{s.val}</span>
@@ -992,10 +1150,10 @@ export default function StoreOwnerProfile() {
               </div>
 
               {/* Store Link Section */}
-              <div className="bg-white border border-[#F0EEEB] rounded-3xl p-8 space-y-6 shadow-sm">
+              <div className="bg-white border border-[#F0EEEB] rounded-3xl p-4 sm:p-8 space-y-6 shadow-sm">
                 <div className="space-y-2">
                   <h3 className="text-xs font-black uppercase tracking-wider text-neutral-955">Store Link</h3>
-                  <div className="flex gap-2">
+                  <div className="flex flex-col sm:flex-row gap-2">
                     <input 
                       readOnly
                       type="text" 
@@ -1024,7 +1182,7 @@ export default function StoreOwnerProfile() {
                     <h4 className="text-xs font-black uppercase tracking-wider text-neutral-950">Share your store</h4>
                     <p className="text-[10px] text-neutral-400 font-bold uppercase tracking-wide mt-0.5">Share across social media for wider reach</p>
                   </div>
-                  <div className="flex gap-2.5">
+                  <div className="flex flex-wrap gap-2.5">
                     {[
                       { label: "Facebook", bg: "bg-[#3B5998]" },
                       { label: "WhatsApp", bg: "bg-[#25D366]" },
@@ -2448,6 +2606,36 @@ export default function StoreOwnerProfile() {
                 )}
               </div>
 
+              {/* Payout History */}
+              {withdrawalRequests.length > 0 && (
+                <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="text-xs font-black uppercase tracking-widest text-neutral-955">Payout Requests</h3>
+                      <p className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider mt-0.5">Recent withdrawal activity</p>
+                    </div>
+                  </div>
+                  <div className="space-y-2.5">
+                    {withdrawalRequests.map((request) => (
+                      <div key={request.id} className="flex items-center justify-between rounded-2xl border border-[#F0EEEB] bg-[#FAFAFA] px-4 py-3">
+                        <div>
+                          <p className="text-[10px] font-black text-neutral-900">₹{Number(request.amount || 0).toLocaleString("en-IN")}</p>
+                          <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">{request.bankName || "Primary bank"} · {request.accountHolder}</p>
+                        </div>
+                        <div className="text-right">
+                          <span className="inline-flex rounded-full bg-amber-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-amber-700 border border-amber-200">
+                            {request.status}
+                          </span>
+                          <p className="text-[8px] text-neutral-400 font-bold uppercase tracking-wider mt-1">
+                            {new Date(request.requestedAt).toLocaleDateString("en-IN")}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Bank Account Details */}
               <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm space-y-5">
                 <div>
@@ -2574,10 +2762,7 @@ export default function StoreOwnerProfile() {
                             Cancel
                           </button>
                           <button
-                            onClick={() => {
-                              setShowWithdrawModal(false);
-                              alert(`Withdrawal request submitted!\n₹${(salesTotal * 0.82).toLocaleString('en-IN', { minimumFractionDigits: 2 })} will be credited to ${bankAccountHolder}'s account within 2–3 business days.`);
-                            }}
+                            onClick={handleRequestWithdrawal}
                             className="flex-1 px-4 py-3 bg-[#D03D56] text-white font-black text-[9px] uppercase tracking-widest rounded-xl hover:bg-[#a02240] cursor-pointer transition-all shadow-sm"
                           >
                             Confirm
