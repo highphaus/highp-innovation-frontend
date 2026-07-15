@@ -11,6 +11,39 @@ import OrderHistoryDrawer from "../../components/OrderHistoryDrawer";
 import CustomerProfileDrawer from "../../components/CustomerProfileDrawer";
 
 // ─── THEME RESOLVER FOR SOFTWARE VERTICALS ─────────────────
+const foodImagePool = [
+  {
+    keywords: ["chicken", "grill", "grilled", "tikka", "kebab", "bbq", "shawarma", "fry", "fried"],
+    image: "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    keywords: ["fries", "potato", "crisp", "loaded"],
+    image: "https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    keywords: ["biryani", "rice", "pulao", "kuzhimanthi"],
+    image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    keywords: ["fish", "prawns", "seafood", "meen", "karimeen"],
+    image: "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    keywords: ["dosa", "idli", "vada", "breakfast", "appam"],
+    image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    keywords: ["juice", "cool drink", "mango", "smoothie"],
+    image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=900&q=80"
+  }
+];
+
+export function getFoodImage(product) {
+  const text = `${product?.name || ""} ${product?.description || ""}`.toLowerCase();
+  const match = foodImagePool.find((item) => item.keywords.some((keyword) => text.includes(keyword)));
+  return match?.image || "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80";
+}
+
 export function getTheme(storeData) {
   const defaults = {
     primary: "text-[#D03D56]",
@@ -599,84 +632,110 @@ export default function Storefront() {
 
         {/* 3. DYNAMIC SEARCH ACCORDION */}
         <section className="max-w-2xl mx-auto px-4">
-          <div className="relative flex items-center bg-white border border-neutral-200 rounded-xl shadow-sm px-4.5 py-3 w-full hover:border-neutral-300 transition-all">
+          <label htmlFor="catalog-search" className="sr-only">Search menu catalog</label>
+          <div className="relative flex items-center bg-white border border-neutral-200 rounded-xl shadow-sm px-4.5 py-3 w-full hover:border-neutral-300 focus-within:border-neutral-400 focus-within:ring-2 focus-within:ring-neutral-200/50 transition-all">
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
-            <input type="text" placeholder="Search menu catalog..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
-              className="w-full bg-transparent pl-6 pr-2 text-xs font-semibold text-neutral-800 placeholder-neutral-400 focus:outline-none" />
+            <input 
+              id="catalog-search"
+              type="text" 
+              placeholder="Search menu catalog..." 
+              value={searchQuery} 
+              onChange={e => setSearchQuery(e.target.value)}
+              className="w-full bg-transparent pl-6 pr-2 text-xs font-semibold text-neutral-800 placeholder-neutral-400 focus:outline-none" 
+            />
           </div>
         </section>
 
         {/* 4. PRODUCT CATALOG GRID */}
-        <section className="max-w-4xl mx-auto px-4">
+        <section className="max-w-7xl mx-auto px-4">
           {filteredProducts.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center bg-white border border-neutral-200 rounded-2xl">
               <ShoppingCart className="w-8 h-8 text-neutral-300 mb-2" />
               <p className="text-xs font-bold text-neutral-400">No matching dishes cataloged</p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredProducts.map((product) => {
                 const isItemNonVeg = isNonVeg(product.name, product.description);
                 const liked = likedProducts.includes(product._id);
                 return (
                   <div key={product._id}
-                    className="group bg-white border border-neutral-200 rounded-2xl p-4 flex gap-4 items-center justify-between shadow-sm hover:shadow-md transition-all">
-                    
-                    {/* Left: Metadata specs */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        {/* Veg / Non-Veg Indicator */}
-                        <span className={`w-3.5 h-3.5 border flex items-center justify-center shrink-0 ${isItemNonVeg ? "border-red-655 text-red-600" : "border-emerald-600"}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${isItemNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
-                        </span>
-                        
-                        <div className="flex items-center gap-0.5 text-neutral-500">
-                          <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                          <span className="text-[10px] font-bold text-neutral-700">4.8</span>
-                        </div>
+                    className="group flex flex-col overflow-hidden rounded-[28px] border border-neutral-200/80 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]">
+                    <div className="relative">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
+                        className="block w-full text-left"
+                      >
+                        <img
+                          src={getFoodImage(product)}
+                          alt={product.name}
+                          loading="lazy"
+                          className="h-48 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-black/10 to-transparent" />
+                      </button>
 
-                        <div className="flex items-center gap-1 text-[10px] text-neutral-400">
-                          <Clock className="w-2.5 h-2.5" />
-                          <span className="font-numbers">{standardPrepTime} mins</span>
+                      <div className="absolute left-3 top-3 flex items-center gap-2 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-neutral-700 backdrop-blur">
+                        <span className={`h-2 w-2 rounded-full ${isItemNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
+                        {isItemNonVeg ? "Non-Veg" : "Veg"}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => toggleLike(product._id)}
+                        className="absolute right-3 top-3 rounded-full bg-white/90 p-2 text-neutral-500 shadow-sm backdrop-blur transition-all hover:scale-105 hover:text-red-500"
+                        aria-label={liked ? "Remove from favorites" : "Add to favorites"}
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${liked ? "fill-red-500 text-red-500" : ""}`} />
+                      </button>
+
+                      <div className="absolute bottom-3 left-3 flex items-center gap-1.5 rounded-full bg-white/90 px-2.5 py-1 text-[10px] font-semibold text-neutral-700 backdrop-blur">
+                        <Clock className="h-3 w-3" />
+                        {standardPrepTime} mins
+                      </div>
+                    </div>
+
+                    <div className="flex flex-1 flex-col p-4">
+                      <div className="mb-2 flex items-center gap-2">
+                        <span className="rounded-full bg-[#fff5f7] px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#D03D56]">
+                          Popular
+                        </span>
+                        <div className="flex items-center gap-1 text-amber-500">
+                          <Star className="h-3.5 w-3.5 fill-amber-400" />
+                          <span className="text-[11px] font-semibold text-neutral-700">4.8</span>
                         </div>
                       </div>
 
-                      <button onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
-                        className="block text-left group">
-                        <h4 className="text-xs font-black text-neutral-900 leading-snug truncate group-hover:text-neutral-600 transition-colors uppercase tracking-tight">
+                      <button
+                        type="button"
+                        onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
+                        className="text-left"
+                      >
+                        <h4 className="text-sm font-black leading-snug tracking-[-0.01em] text-neutral-900 transition-colors group-hover:text-[#D03D56]">
                           {product.name}
                         </h4>
                       </button>
 
-                      <p className="text-neutral-400 text-[10px] leading-relaxed line-clamp-2 mt-1 font-semibold">
+                      <p className="mt-2 line-clamp-2 text-sm leading-6 text-neutral-500">
                         {product.description || "Gourmet freshly curated dish prepared with local organic ingredients."}
                       </p>
 
-                      <div className="text-xs font-bold text-neutral-800 mt-2.5 font-numbers">
-                        Rs.{product.price}
+                      <div className="mt-4 flex items-center justify-between border-t border-neutral-100 pt-3">
+                        <div>
+                          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400">Price</p>
+                          <p className="font-numbers text-base font-black text-neutral-900">₹{product.price}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => addToCart(product)}
+                          className="inline-flex items-center gap-2 rounded-full bg-[#D03D56] px-3.5 py-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-white shadow-sm transition-all hover:bg-[#a02240] active:scale-95"
+                        >
+                          <ShoppingCart className="h-3.5 w-3.5" />
+                          Add
+                        </button>
                       </div>
                     </div>
-
-                    {/* Right: Picture & Add overlay */}
-                    <div className="relative shrink-0 w-24 h-24">
-                      <button onClick={() => { setSelectedProduct(product); setProductModalQty(1); }}
-                        className="block w-full h-full rounded-xl overflow-hidden border border-neutral-200/80 bg-neutral-50">
-                        <img src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"}
-                          alt={product.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" />
-                      </button>
-
-                      {/* Favorite Liked Heart */}
-                      <button onClick={() => toggleLike(product._id)}
-                        className="absolute top-1.5 right-1.5 p-1 rounded-lg bg-white/80 hover:bg-white text-neutral-400 hover:text-red-500 transition-colors shadow-sm">
-                        <Heart className={`w-3 h-3 ${liked ? "fill-red-500 text-red-500" : ""}`} />
-                      </button>
-
-                      <button onClick={() => addToCart(product)}
-                        className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-white border border-neutral-250 hover:border-neutral-400 text-neutral-800 font-bold text-[9px] uppercase tracking-wider px-3.5 py-1.5 rounded-lg shadow-sm active:scale-95 transition-all whitespace-nowrap">
-                        Add +
-                      </button>
-                    </div>
-
                   </div>
                 );
               })}
@@ -783,7 +842,7 @@ export default function Storefront() {
 
             {/* Product image */}
             <div className="h-48 w-full bg-neutral-100 relative">
-              <img src={selectedProduct.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"}
+              <img src={getFoodImage(selectedProduct)}
                 alt={selectedProduct.name} className="w-full h-full object-cover" />
               <div className="absolute bottom-3 left-3 bg-white/95 px-2.5 py-1 rounded-lg flex items-center gap-1 text-[10px] font-bold text-neutral-800 shadow">
                 <Star className="w-3 h-3 fill-amber-400 text-amber-400" />

@@ -9,15 +9,14 @@ export default function Home() {
   const { role } = useAuth();
 
   return (
-    <main className="flex-1 w-full flex flex-col relative">
+    <main className="flex-1 w-full flex flex-col relative bg-[var(--surface-2)]">
       {role === "customer" && <CustomerDashboard />}
       {role === "driver" && <DriverDashboard />}
       {role === "admin" && <AdminDashboard />}
       {role === "staff" && <StaffDashboard />}
-      
-      {/* Role Switcher Floating Action Button (for simulation purposes only) */}
-      <div className="fixed top-20 right-4 z-[999] bg-white p-2 rounded-xl shadow-lg border border-gray-200 text-xs flex flex-col gap-1">
-        <div className="text-gray-400 font-bold px-2 py-1 uppercase text-[10px]">Mock Auth</div>
+
+      <div className="fixed top-20 right-4 z-50 hidden w-44 flex-col gap-2 rounded-2xl border border-[var(--border)] bg-white/95 p-2.5 shadow-lg backdrop-blur md:flex">
+        <div className="px-2 text-[10px] font-semibold uppercase tracking-[0.25em] text-[var(--text-4)]">Mock Auth</div>
         <RoleSwitcher role="customer" current={role} />
         <RoleSwitcher role="driver" current={role} />
         <RoleSwitcher role="staff" current={role} />
@@ -29,11 +28,15 @@ export default function Home() {
 
 function RoleSwitcher({ role, current }) {
   const { setRole } = useAuth();
+  const isActive = current === role;
+
   return (
     <button
       onClick={() => setRole(role)}
-      className={`px-3 py-1.5 rounded-lg text-left font-medium transition-colors ${
-        current === role ? "bg-orange-100 text-orange-700" : "hover:bg-gray-100 text-gray-600"
+      className={`rounded-xl px-3 py-2 text-left text-sm font-semibold transition-all ${
+        isActive
+          ? "bg-[var(--brand-light)] text-[var(--brand)]"
+          : "text-[var(--text-3)] hover:bg-[var(--surface-2)] hover:text-[var(--text-primary)]"
       }`}
     >
       {role.charAt(0).toUpperCase() + role.slice(1)}

@@ -143,7 +143,7 @@ export default function AdminDashboard() {
     try {
       const duration = parseInt(durationVal) || 0;
       const endTime = activeState ? new Date(Date.now() + duration * 60000) : null;
-      const res = await axios.put(`http://localhost:5000/api/stores/${storeSlug.toLowerCase().trim()}`, {
+      const res = await axios.put(`/api/stores/${storeSlug.toLowerCase().trim()}`, {
         busyModeActive: activeState,
         busyModeDuration: duration,
         busyModeEndTime: endTime,
@@ -169,9 +169,9 @@ export default function AdminDashboard() {
   const fetchAll = () => {
     setLoading(true);
     Promise.all([
-      axios.get(`http://localhost:5000/api/stores/${storeSlug.toLowerCase().trim()}`),
-      axios.get(`http://localhost:5000/api/products/${storeSlug.toLowerCase().trim()}`),
-      axios.get(`http://localhost:5000/api/orders/${storeSlug.toLowerCase().trim()}`),
+      axios.get(`/api/stores/${storeSlug.toLowerCase().trim()}`),
+      axios.get(`/api/products/${storeSlug.toLowerCase().trim()}`),
+      axios.get(`/api/orders/${storeSlug.toLowerCase().trim()}`),
     ])
       .then(([storeRes, productsRes, ordersRes]) => {
         setStoreData(storeRes.data);

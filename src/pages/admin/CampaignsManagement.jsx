@@ -22,7 +22,7 @@ export default function CampaignsManagement() {
 
   useEffect(() => {
     if (storeSlug) {
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+      axios.get(`/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
     }
   }, [storeSlug]);
 

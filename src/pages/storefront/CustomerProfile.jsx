@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
   User, MapPin, ShoppingBag, Award, LogOut, ArrowLeft, Loader2,
   AlertCircle, CheckCircle, Plus, Trash, Phone, Mail, ChevronRight, Sparkles, ShieldCheck
@@ -10,6 +10,7 @@ import { getTheme } from "./StorefrontHome";
 export default function CustomerProfile() {
   const { storeSlug } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
 
   const [customerUser, setCustomerUser] = useState(() => {
     try {
@@ -27,12 +28,15 @@ export default function CustomerProfile() {
   }, [customerUser, storeSlug, navigate]);
 
   const [storeData, setStoreData] = useState(null);
-  const [activeTab, setActiveTab] = useState("info"); // info, addresses, orders, rewards
+  const [activeTab, setActiveTab] = useState(() => {
+    return searchParams.get("tab") || "info";
+  });
 
   // Form Fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
 
@@ -46,20 +50,33 @@ export default function CustomerProfile() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Helper: handle auth errors by clearing stale tokens and redirecting to storefront
+  const handleAuthError = (err) => {
+    const status = err?.response?.status;
+    if (status === 401 || status === 403) {
+      localStorage.removeItem(`customerToken_${storeSlug}`);
+      localStorage.removeItem(`customerUser_${storeSlug}`);
+      setCustomerUser(null);
+      navigate(`/${storeSlug}`);
+    }
+  };
+
   const fetchProfile = async () => {
     setLoadingProfile(true);
     setErrorMsg("");
     const token = localStorage.getItem(`customerToken_${storeSlug}`);
 
     try {
-      const res = await axios.get("http://localhost:5000/api/customers/me", {
+      const res = await axios.get("/api/customers/me", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setName(res.data.name || "");
       setEmail(res.data.email || "");
       setPhone(res.data.phone || "");
+      setAddress(res.data.address || "");
       setAddresses(res.data.addresses || []);
     } catch (err) {
+      handleAuthError(err);
       setErrorMsg("Failed to retrieve profile credentials from the database.");
     } finally {
       setLoadingProfile(false);
@@ -70,11 +87,12 @@ export default function CustomerProfile() {
     setLoadingOrders(true);
     const token = localStorage.getItem(`customerToken_${storeSlug}`);
     try {
-      const res = await axios.get("http://localhost:5000/api/customers/orders", {
+      const res = await axios.get("/api/customers/orders", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(res.data);
-    } catch {
+    } catch (err) {
+      handleAuthError(err);
       console.error("Failed to load historical orders.");
     } finally {
       setLoadingOrders(false);
@@ -83,7 +101,7 @@ export default function CustomerProfile() {
 
   useEffect(() => {
     if (storeSlug) {
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+      axios.get("/api/stores/" + storeSlug).then(r => setStoreData(r.data)).catch(() => {});
       fetchProfile();
       fetchOrders();
     }
@@ -100,19 +118,21 @@ export default function CustomerProfile() {
 
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/customers/profile",
-        { name, phone },
+        "/api/customers/profile",
+        { name, phone, address },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
       const storedUser = JSON.parse(localStorage.getItem(`customerUser_${storeSlug}`) || "{}");
       storedUser.name = res.data.name;
       storedUser.phone = res.data.phone;
+      storedUser.address = res.data.address;
       localStorage.setItem(`customerUser_${storeSlug}`, JSON.stringify(storedUser));
       setCustomerUser(storedUser);
 
       setSuccessMsg("Personal information updated successfully.");
     } catch (err) {
+      handleAuthError(err);
       setErrorMsg("Failed to update profile info.");
     } finally {
       setSaving(false);
@@ -129,14 +149,15 @@ export default function CustomerProfile() {
 
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/customers/profile",
+        "/api/customers/profile",
         { addresses: updatedAddresses },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAddresses(res.data.addresses || []);
       setNewAddrDetail("");
       setSuccessMsg("Address added successfully.");
-    } catch {
+    } catch (err) {
+      handleAuthError(err);
       setErrorMsg("Failed to add new address.");
     } finally {
       setSaving(false);
@@ -150,13 +171,14 @@ export default function CustomerProfile() {
 
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/customers/profile",
+        "/api/customers/profile",
         { addresses: updatedAddresses },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setAddresses(res.data.addresses || []);
       setSuccessMsg("Address deleted successfully.");
-    } catch {
+    } catch (err) {
+      handleAuthError(err);
       setErrorMsg("Failed to delete address.");
     } finally {
       setSaving(false);
@@ -273,13 +295,13 @@ export default function CustomerProfile() {
               {/* ALERTS SYSTEM */}
               {errorMsg && (
                 <div className="p-3.5 bg-red-50 border border-red-100 text-red-800 text-xs font-semibold rounded-2xl flex items-start gap-2.5">
-                  <AlertCircle className="w-4.5 h-4.5 text-red-650 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4.5 h-4.5 text-red-600 flex-shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
                 </div>
               )}
               {successMsg && (
                 <div className="p-3.5 bg-emerald-50 border border-emerald-100 text-emerald-800 text-xs font-semibold rounded-2xl flex items-start gap-2.5 animate-fade-in">
-                  <CheckCircle className="w-4.5 h-4.5 text-emerald-650 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4.5 h-4.5 text-emerald-600 flex-shrink-0 mt-0.5" />
                   <span>{successMsg}</span>
                 </div>
               )}
@@ -330,6 +352,16 @@ export default function CustomerProfile() {
                           value={phone} onChange={e => setPhone(e.target.value)}
                         />
                       </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Default Delivery Address</label>
+                      <textarea
+                        rows={3}
+                        placeholder="Building name, apartment number, street details, area..."
+                        className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-3.5 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-semibold resize-none"
+                        value={address} onChange={e => setAddress(e.target.value)}
+                      />
                     </div>
 
                     <button

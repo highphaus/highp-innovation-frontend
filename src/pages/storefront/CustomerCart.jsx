@@ -50,7 +50,7 @@ export default function CustomerCart() {
       setCustomerName(customerUser.name);
       setCustomerPhone(customerUser.phone || "");
       const token = localStorage.getItem(`customerToken_${storeSlug}`);
-      axios.get("http://localhost:5000/api/customers/me", {
+      axios.get("/api/customers/me", {
         headers: { Authorization: `Bearer ${token}` }
       }).then(res => {
         setCustomerPhone(res.data.phone || "");
@@ -64,7 +64,7 @@ export default function CustomerCart() {
   }, [customerUser, storeSlug]);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => {
+    axios.get(`/api/stores/${storeSlug}`).then(r => {
       setStoreData(r.data);
       if (r.data) {
         if (!r.data.codEnabled && r.data.upiId) {
@@ -148,7 +148,7 @@ export default function CustomerCart() {
     }
 
     try {
-      const orderRes = await axios.post("http://localhost:5000/api/orders", {
+      const orderRes = await axios.post("/api/orders", {
         storeSlug,
         customerName: customerName.trim(),
         phone: customerPhone.trim(),
@@ -303,9 +303,14 @@ export default function CustomerCart() {
           </div>
           <span className="text-xs font-bold uppercase tracking-wider text-neutral-800 font-manrope">Order Confirmed</span>
         </div>
-        <Link to={`/${storeSlug}`} className="text-xs font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
-          <ArrowLeft className="w-3.5 h-3.5" /> Back to Store
-        </Link>
+        <div className="flex items-center gap-4">
+          <Link to={`/${storeSlug}/profile?tab=orders`} className="text-xs font-bold text-neutral-800 hover:underline">
+            View My Orders
+          </Link>
+          <Link to={`/${storeSlug}`} className="text-xs font-medium text-neutral-600 hover:text-neutral-900 flex items-center gap-1">
+            <ArrowLeft className="w-3.5 h-3.5" /> Back to Store
+          </Link>
+        </div>
       </div>
 
       <div className="max-w-xl mx-auto px-4 py-10 space-y-6 animate-fade-up">
@@ -320,9 +325,15 @@ export default function CustomerCart() {
               Estimated Delivery Time: <span className="font-bold text-neutral-800 font-numbers">{placedOrder.estimatedPrepTime} minutes</span>
             </p>
           </div>
-          <div className="inline-flex items-center gap-1.5 bg-white border border-neutral-200 rounded-full px-3 py-1 text-[10px] font-bold text-neutral-700 font-numbers">
-            <Hash className="w-3 h-3 text-neutral-400" />
-            <span>Order ID: {placedOrder.shortId}</span>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <div className="inline-flex items-center gap-1.5 bg-white border border-neutral-200 rounded-full px-3 py-1 text-[10px] font-bold text-neutral-700 font-numbers">
+              <Hash className="w-3 h-3 text-neutral-400" />
+              <span>Order ID: {placedOrder.shortId}</span>
+            </div>
+            <Link to={`/${storeSlug}/profile?tab=orders`}
+              className="px-4 py-1.5 bg-neutral-900 hover:bg-neutral-950 text-white font-bold text-[10px] uppercase tracking-wider rounded-lg transition-colors shadow-sm">
+              Track in Profile Orders ➔
+            </Link>
           </div>
         </div>
 
@@ -595,7 +606,7 @@ export default function CustomerCart() {
                     <p className="text-[10px] text-neutral-400 mt-0.5 leading-relaxed">Sign in or register to place your order and trace status.</p>
                   </div>
                   <button type="button" onClick={() => setAuthModalOpen(true)}
-                    className="w-full py-2 bg-neutral-850 hover:bg-neutral-900 text-white font-semibold text-xs rounded-lg transition-colors cursor-pointer">
+                    className="w-full py-3 bg-neutral-850 hover:bg-neutral-900 active:scale-98 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer">
                     Sign In / Register
                   </button>
                 </div>
@@ -603,32 +614,55 @@ export default function CustomerCart() {
                 <form onSubmit={handleCheckoutFormSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Your Name</label>
-                      <input required type="text" placeholder="Full name"
-                        value={customerName} onChange={e => setCustomerName(e.target.value)}
-                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/20 transition-all" />
+                      <label htmlFor="cart-name" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Your Name</label>
+                      <input 
+                        required 
+                        id="cart-name"
+                        type="text" 
+                        placeholder="Full name"
+                        value={customerName} 
+                        onChange={e => setCustomerName(e.target.value)}
+                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                      />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Phone Number</label>
-                      <input required type="tel" placeholder="+91 98765 43210"
-                        value={customerPhone} onChange={e => setCustomerPhone(e.target.value)}
-                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/20 transition-all" />
+                      <label htmlFor="cart-phone" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Phone Number</label>
+                      <input 
+                        required 
+                        id="cart-phone"
+                        type="tel" 
+                        placeholder="+91 98765 43210"
+                        value={customerPhone} 
+                        onChange={e => setCustomerPhone(e.target.value)}
+                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                      />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Delivery Address</label>
-                    <textarea required rows={3} placeholder="Building name, apartment number, street details, area..."
-                      value={customerAddress} onChange={e => setCustomerAddress(e.target.value)}
-                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/20 transition-all resize-none" />
+                    <label htmlFor="cart-address" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Address</label>
+                    <textarea 
+                      required 
+                      id="cart-address"
+                      rows={3} 
+                      placeholder="Building name, apartment number, street details, area..."
+                      value={customerAddress} 
+                      onChange={e => setCustomerAddress(e.target.value)}
+                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all resize-none font-sans" 
+                    />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="block text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Delivery Instructions</label>
-                    <input type="text" placeholder="e.g. Leave at gate, Ring doorbell..."
-                      value={deliveryInstructions} onChange={e => setDeliveryInstructions(e.target.value)}
-                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:bg-neutral-50/20 transition-all" />
+                    <label htmlFor="cart-instructions" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Instructions</label>
+                    <input 
+                      id="cart-instructions"
+                      type="text" 
+                      placeholder="e.g. Leave at gate, Ring doorbell..."
+                      value={deliveryInstructions} 
+                      onChange={e => setDeliveryInstructions(e.target.value)}
+                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                    />
                   </div>
 
                   <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg flex items-center justify-between text-[11px] text-neutral-600">
@@ -639,17 +673,17 @@ export default function CustomerCart() {
                   </div>
 
                   <button type="submit" disabled={submitting}
-                    className="w-full py-3.5 text-white font-semibold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 transition-colors disabled:opacity-60 cursor-pointer"
+                    className="w-full py-3.5 text-white font-semibold text-xs uppercase tracking-widest rounded-lg flex items-center justify-center gap-2 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer shadow-md"
                     style={{ backgroundColor: checkoutMethod === "whatsapp" ? "#16a34a" : (theme.colorCode || "#2563eb") }}>
                     {submitting ? (
                       <>
-                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                        <span>Processing...</span>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>Processing...</span>
                       </>
                     ) : (
                       <>
-                        {checkoutMethod === "whatsapp" ? <MessageCircle className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
-                        <span>{checkoutMethod === "whatsapp" ? "Confirm & Book via WhatsApp" : "Confirm & Book"}</span>
+                      {checkoutMethod === "whatsapp" ? <MessageCircle className="w-4 h-4" /> : <ArrowRight className="w-4 h-4" />}
+                      <span>{checkoutMethod === "whatsapp" ? "Confirm & Book via WhatsApp" : "Confirm & Book"}</span>
                       </>
                     )}
                   </button>

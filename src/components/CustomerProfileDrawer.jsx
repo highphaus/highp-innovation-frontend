@@ -26,7 +26,7 @@ export default function CustomerProfileDrawer({ isOpen, onClose, storeSlug, them
     const token = localStorage.getItem(`customerToken_${storeSlug}`);
 
     try {
-      const res = await axios.get("http://localhost:5000/api/customers/me", {
+      const res = await axios.get("/api/customers/me", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setName(res.data.name || "");
@@ -49,7 +49,7 @@ export default function CustomerProfileDrawer({ isOpen, onClose, storeSlug, them
 
     try {
       const res = await axios.put(
-        "http://localhost:5000/api/customers/profile",
+        "/api/customers/profile",
         { name, phone, address },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -109,14 +109,14 @@ export default function CustomerProfileDrawer({ isOpen, onClose, storeSlug, them
             <form onSubmit={handleSaveProfile} className="space-y-5">
               {errorMsg && (
                 <div className="p-3 bg-red-50 border border-red-100 rounded-xl flex items-start gap-2.5 text-red-800 text-[11px] font-semibold">
-                  <AlertCircle className="w-4.5 h-4.5 text-red-650 flex-shrink-0 mt-0.5" />
+                  <AlertCircle className="w-4.5 h-4.5 text-red-600 flex-shrink-0 mt-0.5" />
                   <span>{errorMsg}</span>
                 </div>
               )}
 
               {successMsg && (
                 <div className="p-3 bg-emerald-50 border border-emerald-100 rounded-xl flex items-start gap-2.5 text-emerald-800 text-[11px] font-semibold">
-                  <CheckCircle className="w-4.5 h-4.5 text-emerald-655 flex-shrink-0 mt-0.5" />
+                  <CheckCircle className="w-4.5 h-4.5 text-emerald-700 flex-shrink-0 mt-0.5" />
                   <span>{successMsg}</span>
                 </div>
               )}

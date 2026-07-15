@@ -14,24 +14,24 @@ export function Sidebar() {
 
   const navMap = {
     customer: [
-      { name: "Home",    icon: Home },
-      { name: "Menu",    icon: UtensilsCrossed },
-      { name: "Cart",    icon: ShoppingBag, badge: cart.length > 0 ? cart.reduce((s, i) => s + i.quantity, 0) : 0 },
+      { name: "Home", icon: Home },
+      { name: "Menu", icon: UtensilsCrossed },
+      { name: "Cart", icon: ShoppingBag, badge: cart.length > 0 ? cart.reduce((s, i) => s + i.quantity, 0) : 0 },
       { name: "Profile", icon: UserCircle2 },
     ],
     driver: [
-      { name: "Jobs",     icon: Briefcase },
-      { name: "Active",   icon: Truck },
+      { name: "Jobs", icon: Briefcase },
+      { name: "Active", icon: Truck },
       { name: "Earnings", icon: BarChart3 },
     ],
     staff: [
-      { name: "Kitchen",   icon: ChefHat },
+      { name: "Kitchen", icon: ChefHat },
       { name: "Inventory", icon: Package },
     ],
     admin: [
       { name: "Dashboard", icon: LayoutDashboard },
-      { name: "Orders",    icon: ListOrdered },
-      { name: "Products",  icon: PlusSquare },
+      { name: "Orders", icon: ListOrdered },
+      { name: "Products", icon: PlusSquare },
     ],
   };
 
@@ -40,27 +40,24 @@ export function Sidebar() {
   const roleAvatars = { customer: "AS", driver: "DR", staff: "KT", admin: "AD" };
 
   return (
-    <aside className="hidden md:flex flex-col h-screen sticky top-0 shrink-0 w-[220px]" style={{ background: "var(--sidebar-bg)" }}>
-      {/* Logo */}
-      <div className="px-6 py-6 border-b" style={{ borderColor: "#1a1a1a" }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: "var(--brand)" }}>
-            <UtensilsCrossed className="w-4 h-4 text-white" />
+    <aside className="hidden h-screen w-[240px] shrink-0 flex-col sticky top-0 overflow-y-auto overflow-x-hidden border-r border-[var(--border)] bg-[var(--sidebar-bg)] md:flex">
+      <div className="border-b border-[var(--border)] px-6 py-6">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[var(--brand)] shadow-sm">
+            <UtensilsCrossed className="h-5 w-5 text-white" />
           </div>
-          <div>
-            <p className="text-white font-bold text-[15px] leading-none tracking-tight">Taste N Park</p>
-            <p className="text-[11px] mt-0.5" style={{ color: "#555" }}>Premium Bakery</p>
+          <div className="min-w-0">
+            <p className="text-[15px] font-semibold leading-none text-[var(--text-primary)]">Taste N Park</p>
+            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--text-3)]">Premium Bakery</p>
           </div>
         </div>
       </div>
 
-      {/* Role label */}
-      <div className="px-6 pt-5 pb-2">
-        <p className="label-upper" style={{ color: "#444" }}>{roleLabels[role]} Portal</p>
+      <div className="px-6 pb-2 pt-5">
+        <p className="label-upper">{roleLabels[role]} Portal</p>
       </div>
 
-      {/* Nav links */}
-      <nav className="flex flex-col gap-0.5 px-3 flex-1">
+      <nav className="flex flex-1 flex-col gap-1 px-3">
         {links.map((link) => {
           const Icon = link.icon;
           const isActive = activeTab === link.name;
@@ -68,19 +65,13 @@ export function Sidebar() {
             <button
               key={link.name}
               onClick={() => setActiveTab(link.name)}
-              className="flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-150 w-full text-left relative group"
-              style={{
-                background: isActive ? "rgba(232,64,12,0.12)" : "transparent",
-                color: isActive ? "#E8400C" : "var(--sidebar-text)",
-              }}
+              className={`relative flex w-full items-center gap-3 rounded-2xl px-3 py-2.5 text-left transition-all ${isActive ? "bg-[var(--brand-light)] text-[var(--brand)]" : "text-[var(--sidebar-text)] hover:bg-white hover:text-[var(--text-primary)]"}`}
             >
-              {isActive && (
-                <span className="absolute left-0 top-1/2 -translate-y-1/2 w-[3px] h-5 rounded-r-full" style={{ background: "var(--brand)" }} />
-              )}
-              <Icon className="w-[18px] h-[18px] shrink-0" />
+              {isActive && <span className="absolute left-0 top-1/2 h-5 w-[3px] -translate-y-1/2 rounded-r-full bg-[var(--brand)]" />}
+              <Icon className="h-[18px] w-[18px] shrink-0" />
               <span className="text-[13px] font-semibold tracking-[-0.01em]">{link.name}</span>
               {link.badge && link.badge > 0 ? (
-                <span className="ml-auto text-[10px] font-black px-1.5 py-0.5 rounded-full" style={{ background: "var(--brand)", color: "#fff" }}>
+                <span className="ml-auto rounded-full bg-[var(--brand)] px-1.5 py-0.5 text-[10px] font-black text-white">
                   {link.badge}
                 </span>
               ) : null}
@@ -89,19 +80,18 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* User profile footer */}
-      <div className="p-3 border-t" style={{ borderColor: "#1a1a1a" }}>
-        <div className="flex items-center gap-3 px-3 py-3 rounded-xl" style={{ background: "#141414" }}>
-          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-black text-white" style={{ background: "var(--brand)" }}>
+      <div className="border-t border-[var(--border)] p-3">
+        <div className="flex items-center gap-3 rounded-2xl bg-[#161514] px-3 py-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[var(--brand)] text-xs font-black text-white">
             {roleAvatars[role]}
           </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-white text-[13px] font-semibold leading-none truncate">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-[13px] font-semibold leading-none text-white">
               {role === "customer" ? "Alice Smith" : role === "driver" ? "Mark Rider" : role === "staff" ? "Kitchen Team" : "Super Admin"}
             </p>
-            <p className="text-[11px] mt-0.5 truncate" style={{ color: "#555" }}>{roleLabels[role]}</p>
+            <p className="mt-1 truncate text-[11px] text-[#a7a29d]">{roleLabels[role]}</p>
           </div>
-          <LogOut className="w-3.5 h-3.5 shrink-0 opacity-30 hover:opacity-70 transition-opacity cursor-pointer" style={{ color: "#fff" }} />
+          <LogOut className="h-3.5 w-3.5 shrink-0 cursor-pointer text-white/60 transition-opacity hover:text-white" />
         </div>
       </div>
     </aside>

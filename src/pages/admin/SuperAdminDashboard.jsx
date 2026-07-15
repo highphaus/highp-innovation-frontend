@@ -83,7 +83,7 @@ export default function SuperAdminDashboard() {
     setLoadingStores(true);
     setErrorMsg("");
     try {
-      const res = await axios.get("http://localhost:5000/api/stores");
+      const res = await axios.get("/api/stores");
       setStores(res.data);
     } catch (err) {
       setErrorMsg("Failed to query platform store listings.");
@@ -102,7 +102,7 @@ export default function SuperAdminDashboard() {
     setActionLoading(storeId);
     setErrorMsg("");
     try {
-      const res = await axios.patch(`http://localhost:5000/api/stores/${storeId}/approve`, {
+      const res = await axios.patch(`/api/stores/${storeId}/approve`, {
         isApproved: !currentStatus
       });
       setStores(stores.map(s => s._id === storeId ? res.data : s));
@@ -118,7 +118,7 @@ export default function SuperAdminDashboard() {
     setActionLoading(storeId);
     setErrorMsg("");
     try {
-      await axios.delete(`http://localhost:5000/api/stores/${storeId}`);
+      await axios.delete(`/api/stores/${storeId}`);
       setStores(stores.filter(s => s._id !== storeId));
     } catch (err) {
       setErrorMsg("Failed to delete store cluster.");
@@ -136,7 +136,7 @@ export default function SuperAdminDashboard() {
             <div className="w-10 h-10 bg-[#F7EBEF] rounded-2xl flex items-center justify-center mx-auto mb-2">
               <ShieldCheck className="w-5 h-5 text-[#D03D56]" />
             </div>
-            <h2 className="text-xl font-black tracking-tight text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+            <h2 className="text-xl font-black tracking-tight text-neutral-955 uppercase font-manrope">
               HP Super Admin
             </h2>
             <p className="text-[9px] text-[#737373] leading-relaxed uppercase tracking-wider font-bold">

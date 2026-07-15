@@ -1,19 +1,7 @@
-// Metadata and Viewport are Next.js types - unused at runtime in JSX
-import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { BottomNav } from "@/components/ui/BottomNav";
 import { Sidebar } from "@/components/ui/Sidebar";
-
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
 
 export const viewport = {
   width: "device-width",
@@ -23,22 +11,18 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: "Taste N Park",
-  description: "Multi-dashboard app for Taste N Park",
+  title: "HighP Platform",
+  description: "Premium storefront and operations platform for modern local businesses",
 };
-
 
 export default function RootLayout({ children }) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-gray-50 pb-20 md:pb-0">
+    <html lang="en" className="h-full antialiased">
+      <body className="min-h-full flex flex-col bg-(--surface-2) pb-20 md:pb-0">
         <Providers>
-          <div className="flex w-full min-h-screen">
+          <div className="flex min-h-screen w-full">
             <Sidebar />
-            <div className="flex-1 flex flex-col max-w-[100vw] overflow-x-hidden">
+            <div className="flex flex-1 flex-col overflow-x-hidden">
               {children}
             </div>
           </div>

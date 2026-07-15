@@ -12,7 +12,6 @@ export function ModalBox({
   actionText = "Got it",
   onAction
 }) {
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
@@ -25,49 +24,41 @@ export function ModalBox({
   }, [isOpen]);
 
   const icons = {
-    info: <Info className="w-12 h-12 text-blue-500 mb-4" />,
-    success: <CheckCircle2 className="w-12 h-12 text-green-500 mb-4" />,
-    error: <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
+    info: <Info className="mb-4 h-12 w-12 text-blue-500" />,
+    success: <CheckCircle2 className="mb-4 h-12 w-12 text-green-600" />,
+    error: <AlertCircle className="mb-4 h-12 w-12 text-red-500" />
   };
 
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-black/45 backdrop-blur-sm" onClick={onClose} />
+
           <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-            onClick={onClose}
-          />
-          
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={{ type: "spring", damping: 24, stiffness: 280 }}
             className={cn(
-              "relative w-full max-w-sm bg-white rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center",
-              "border border-gray-100"
+              "relative flex w-full max-w-sm flex-col items-center rounded-[28px] border border-[var(--border)] bg-white p-6 text-center shadow-2xl",
+              "bg-[linear-gradient(180deg,#fff_0%,#fffdfb_100%)]"
             )}
-            onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+            onClick={(e) => e.stopPropagation()}
           >
             {icons[type]}
-            <h2 className="text-xl font-bold text-gray-900 mb-2">{title}</h2>
-            <p className="text-gray-500 mb-6 leading-relaxed">{message}</p>
-            
-            <div className="w-full flex gap-3">
-              <button
-                onClick={() => {
-                  if (onAction) onAction();
-                  onClose();
-                }}
-                className="flex-1 bg-gray-900 text-white font-semibold h-12 rounded-2xl active:scale-[0.98] transition-transform flex items-center justify-center"
-              >
-                {actionText}
-              </button>
-            </div>
+            <h2 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">{title}</h2>
+            <p className="mb-6 leading-7 text-[var(--text-3)]">{message}</p>
+
+            <button
+              onClick={() => {
+                if (onAction) onAction();
+                onClose();
+              }}
+              className="flex h-12 w-full items-center justify-center rounded-2xl bg-[var(--text-primary)] px-4 font-semibold text-white transition-transform active:scale-[0.98]"
+            >
+              {actionText}
+            </button>
           </motion.div>
         </div>
       )}

@@ -55,8 +55,8 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     document.getElementById(`otp-cust-modal-${Math.min(paste.length, 5)}`)?.focus();
   };
 
-  const finalizeAuth = (customer) => {
-    localStorage.setItem(`customerToken_${storeSlug}`, `demo-token-${Date.now()}`);
+  const finalizeAuth = (customer, token) => {
+    localStorage.setItem(`customerToken_${storeSlug}`, token || `demo-token-${Date.now()}`);
     localStorage.setItem(`customerUser_${storeSlug}`, JSON.stringify(customer));
 
     if (onAuthSuccess) {
@@ -91,13 +91,12 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     try {
       await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
     } catch (err) {
-      // Keep going even if the backend rejects; the dev fallback OTP still works.
-      console.warn("OTP request failed, using fallback code flow", err);
+      console.warn("OTP request failed; please use the code sent to your email or phone.", err);
     } finally {
       setLoading(false);
     }
 
-    setOtp(["1", "2", "3", "4", "5", "6"]);
+    setOtp(["", "", "", "", "", ""]);
     setStep(2);
     startResendCooldown();
   };
@@ -114,17 +113,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     setLoading(true);
     setErrorMsg("");
 
-    if (otpValue === "123456") {
-      const fallbackCustomer = {
-        id: `demo-${Date.now()}`,
-        name: formData.name.trim() || "Guest Customer",
-        email: formData.email.trim(),
-        phone: formData.phone.trim() || ""
-      };
-      finalizeAuth(fallbackCustomer);
-      setLoading(false);
-      return;
-    }
+
 
     const url = isSignUp 
       ? `${API_BASE_URL}/customers/register`
@@ -142,7 +131,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
         email: formData.email.trim(),
         phone: formData.phone.trim() || ""
       };
-      finalizeAuth(customer);
+      finalizeAuth(customer, res.data.token);
     } catch (err) {
       setErrorMsg(err.response?.data?.message || "Authentication failed. Incorrect code.");
     } finally {
@@ -162,12 +151,12 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
         name: formData.name.trim()
       });
     } catch (err) {
-      console.warn("Resend OTP request failed, using fallback code flow", err);
+      console.warn("Resend OTP request failed; please retry after a moment.", err);
     } finally {
       setLoading(false);
     }
 
-    setOtp(["1", "2", "3", "4", "5", "6"]);
+    setOtp(["", "", "", "", "", ""]);
     startResendCooldown();
   };
 

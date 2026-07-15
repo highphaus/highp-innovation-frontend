@@ -33,7 +33,6 @@ export default function PlatformLogin() {
 
     setStep(2);
     setOtp(["", "", "", "", "", ""]);
-    setInfoMsg("OTP delivery is unavailable locally, so use 123456 to continue.");
     startResendCooldown();
   };
 
@@ -48,22 +47,6 @@ export default function PlatformLogin() {
     setErrorMsg("");
     setInfoMsg("");
     setLoading(true);
-
-    if (otpValue === "123456") {
-      const fallbackSlug = (email.trim().split("@")[0] || "demo-store")
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/(^-|-$)/g, "") || "demo-store";
-
-      localStorage.setItem("isOwnerAuthenticated", "true");
-      localStorage.setItem("ownerStoreSlug", fallbackSlug);
-      localStorage.setItem("ownerEmail", email.trim());
-      localStorage.setItem("ownerStoreName", "Demo Store");
-      localStorage.setItem("ownerAuthToken", "local-dev-token");
-      setLoading(false);
-      navigate("/dashboard");
-      return;
-    }
 
     try {
       const res = await axios.post("/api/stores/login", {
@@ -135,46 +118,40 @@ export default function PlatformLogin() {
     }
 
     setOtp(["", "", "", "", "", ""]);
-    setInfoMsg("Use 123456 if the email delivery is unavailable.");
     startResendCooldown();
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4 sm:p-6 font-sans antialiased">
+    <div className="flex min-h-screen items-center justify-center bg-[var(--surface-2)] p-4 antialiased sm:p-6">
       <div className="w-full max-w-md space-y-6">
-
-        <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 sm:p-8 shadow-lg space-y-6 animate-fade-up">
-
-          {/* Logo */}
-          <div className="text-center space-y-2">
-            <div className="w-12 h-12 bg-[#D03D56] rounded-2xl flex items-center justify-center mx-auto shadow-sm">
-              {step === 1 ? <Store className="w-6 h-6 text-white" /> : <ShieldCheck className="w-6 h-6 text-white" />}
+        <div className="animate-fade-up space-y-6 rounded-[32px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)] sm:p-8">
+          <div className="space-y-2 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] shadow-sm">
+              {step === 1 ? <Store className="h-6 w-6 text-white" /> : <ShieldCheck className="h-6 w-6 text-white" />}
             </div>
-            <h2 className="text-xl font-black tracking-tight text-neutral-900 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
-              HighP Platform
-            </h2>
-            <p className="text-[9px] text-[#737373] uppercase tracking-wider font-bold">
+            <h2 className="text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">HighP Platform</h2>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-3)]">
               {step === 1 ? "Sign in to your store dashboard" : `OTP sent to ${email}`}
             </p>
           </div>
 
           {/* Step indicator */}
           <div className="flex gap-2">
-            {[1, 2].map(s => (
-              <div key={s} className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= s ? "bg-[#D03D56]" : "bg-[#F0EEEB]"}`} />
+            {[1, 2].map((s) => (
+              <div key={s} className={`h-1 flex-1 rounded-full transition-all duration-500 ${step >= s ? "bg-[var(--brand)]" : "bg-[var(--border)]"}`} />
             ))}
           </div>
 
           {/* Error */}
           {errorMsg && (
-            <div className="p-3 bg-red-50 border border-red-100 text-red-700 text-[11px] font-semibold rounded-xl flex items-start gap-2">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <div className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-3 text-[11px] font-semibold text-red-700">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
               <span>{errorMsg}</span>
             </div>
           )}
 
           {infoMsg && (
-            <div className="p-3 bg-amber-50 border border-amber-100 text-amber-700 text-[11px] font-semibold rounded-xl">
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-3 text-[11px] font-semibold text-amber-700">
               {infoMsg}
             </div>
           )}
@@ -183,25 +160,24 @@ export default function PlatformLogin() {
           {step === 1 && (
             <form onSubmit={handleSendOTP} className="space-y-4">
               <div>
-                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
-                  Email Address
-                </label>
+                <label htmlFor="login-email" className="form-label ml-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)]" />
                   <input
                     required
+                    id="login-email"
                     type="email"
                     placeholder="you@example.com"
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                    className="input pl-10 pr-4 text-sm"
                     value={email}
-                    onChange={e => setEmail(e.target.value)}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </div>
               </div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3.5 bg-[#D03D56] hover:bg-[#a02240] active:scale-[0.98] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-60 cursor-pointer"
+                className="btn-primary w-full rounded-2xl px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.24em] disabled:opacity-70"
               >
                 {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><span>Send OTP</span><ArrowRight className="w-3.5 h-3.5" /></>}
               </button>
@@ -212,7 +188,7 @@ export default function PlatformLogin() {
           {step === 2 && (
             <form onSubmit={handleVerifyOTP} className="space-y-5">
               <div>
-                <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-3 ml-1 text-center">
+                <label className="mb-3 ml-1 block text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-3)]">
                   Enter 6-digit verification code
                 </label>
                 <div className="flex gap-2 justify-center flex-wrap" onPaste={handleOtpPaste}>
@@ -226,9 +202,10 @@ export default function PlatformLogin() {
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={`w-10 h-12 sm:w-11 sm:h-13 text-center text-lg font-black border-2 rounded-xl outline-none transition-all bg-[#FAFAFA] ${
-                        digit ? "border-[#D03D56] bg-[#FEF2F4] text-[#D03D56]" : "border-[#F0EEEB] text-neutral-800"
-                      } focus:border-[#D03D56]`}
+                      className={`h-12 w-10 rounded-2xl border-2 bg-[var(--surface)] text-center text-lg font-black transition-all sm:h-13 sm:w-11 ${
+                        digit ? "border-[var(--brand)] bg-[var(--brand-light)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-primary)]"
+                      } focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15`}
+                      aria-label={`OTP Digit ${i + 1}`}
                     />
                   ))}
                 </div>
@@ -237,7 +214,7 @@ export default function PlatformLogin() {
               <button
                 type="submit"
                 disabled={loading || otp.join("").length < 6}
-                className="w-full py-3.5 bg-[#D03D56] hover:bg-[#a02240] active:scale-[0.98] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md disabled:opacity-60 cursor-pointer"
+                className="btn-primary w-full rounded-2xl px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.24em] disabled:opacity-70"
               >
                 {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><ShieldCheck className="w-3.5 h-3.5" /><span>Verify &amp; Sign In</span></>}
               </button>
@@ -250,7 +227,7 @@ export default function PlatformLogin() {
                   type="button"
                   onClick={handleResend}
                   disabled={resendCooldown > 0 || loading}
-                  className="flex items-center gap-1 hover:text-[#D03D56] transition-colors disabled:opacity-50"
+                  className="flex items-center gap-1 transition-colors hover:text-[var(--brand)] disabled:opacity-50"
                 >
                   <RefreshCw className="w-3 h-3" />
                   {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend OTP"}
@@ -260,13 +237,13 @@ export default function PlatformLogin() {
           )}
 
           {/* Footer */}
-          <div className="flex items-center justify-between text-[10px] text-neutral-400 border-t border-[#F5F5F0] pt-4 font-bold">
-            <Link to="/" className="hover:text-neutral-900 transition-colors">← Platform Hub</Link>
-            <Link to="/register" className="hover:text-[#D03D56] transition-colors">Register Store →</Link>
+          <div className="flex items-center justify-between border-t border-[var(--border)] pt-4 text-[10px] font-semibold text-[var(--text-3)]">
+            <Link to="/" className="transition-colors hover:text-[var(--text-primary)]">← Platform Hub</Link>
+            <Link to="/register" className="transition-colors hover:text-[var(--brand)]">Register Store →</Link>
           </div>
         </div>
 
-        <p className="text-center text-[9px] text-neutral-400 font-bold uppercase tracking-widest">
+        <p className="text-center text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--text-4)]">
           Powered by HighP Innovation Platform
         </p>
       </div>

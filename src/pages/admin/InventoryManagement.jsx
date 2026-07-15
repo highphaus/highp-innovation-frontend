@@ -38,7 +38,7 @@ export default function InventoryManagement() {
   const [catSuccess, setCatSuccess] = useState("");
 
   const fetchProducts = () => {
-    axios.get(`http://localhost:5000/api/products/${storeSlug}`)
+    axios.get(`/api/products/${storeSlug}`)
       .then(res => { setProducts(res.data); setLoading(false); })
       .catch(() => setLoading(false));
   };
@@ -46,7 +46,7 @@ export default function InventoryManagement() {
   useEffect(() => {
     if (storeSlug) {
       fetchProducts();
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+      axios.get(`/api/stores/${storeSlug}`)
         .then(r => setStoreData(r.data))
         .catch(() => {});
     }
@@ -69,7 +69,7 @@ export default function InventoryManagement() {
     setError("");
     setSuccess("");
     try {
-      await axios.post("http://localhost:5000/api/products", {
+      await axios.post("/api/products", {
         storeSlug,
         name: form.name,
         price: Number(form.price),
@@ -90,7 +90,7 @@ export default function InventoryManagement() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this catalog item?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/products/${id}`);
+      await axios.delete(`/api/products/${id}`);
       setProducts(products.filter(p => p._id !== id));
     } catch {
       alert("Failed to delete product.");
@@ -116,7 +116,7 @@ export default function InventoryManagement() {
   const handleEdit = async (id) => {
     setEditSubmitting(true);
     try {
-      const res = await axios.put(`http://localhost:5000/api/products/${id}`, {
+      const res = await axios.put(`/api/products/${id}`, {
         name: editForm.name,
         price: Number(editForm.price),
         description: editForm.description,
@@ -137,7 +137,7 @@ export default function InventoryManagement() {
     setCatSaving(true);
     setCatSuccess("");
     try {
-      const res = await axios.put(`http://localhost:5000/api/stores/${storeSlug}`, {
+      const res = await axios.put(`/api/stores/${storeSlug}`, {
         customCategories: customCats
       });
       setStoreData(res.data);

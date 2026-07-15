@@ -24,9 +24,9 @@ export default function AnalyticsMetrics() {
   useEffect(() => {
     if (!storeSlug) return;
     Promise.all([
-      axios.get(`http://localhost:5000/api/orders/${storeSlug}`),
-      axios.get(`http://localhost:5000/api/products/${storeSlug}`),
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+      axios.get(`/api/orders/${storeSlug}`),
+      axios.get(`/api/products/${storeSlug}`),
+      axios.get(`/api/stores/${storeSlug}`)
     ]).then(([ordersRes, productsRes, storeRes]) => {
       setOrders(ordersRes.data);
       setProducts(productsRes.data);

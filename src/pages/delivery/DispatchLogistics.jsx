@@ -48,7 +48,7 @@ export default function DispatchLogistics() {
   const [loading, setLoading] = useState(true);
 
   const fetchDeliveryQueue = () => {
-    axios.get(`http://localhost:5000/api/orders/${storeSlug}?role=delivery`)
+    axios.get(`/api/orders/${storeSlug}?role=delivery`)
       .then(res => {
         setDeliveryQueue(res.data);
         setLoading(false);
@@ -57,7 +57,7 @@ export default function DispatchLogistics() {
   };
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+    axios.get(`/api/stores/${storeSlug}`)
       .then(r => setStoreData(r.data))
       .catch(() => {});
   }, [storeSlug]);
@@ -70,7 +70,7 @@ export default function DispatchLogistics() {
 
   const handleMarkDelivered = async (orderId) => {
     try {
-      await axios.patch(`http://localhost:5000/api/orders/${orderId}/status`, { status: 'completed' });
+      await axios.patch(`/api/orders/${orderId}/status`, { status: 'completed' });
       setDeliveryQueue(deliveryQueue.filter(order => order._id !== orderId));
       alert("Shipment logged and completed.");
     } catch (err) {

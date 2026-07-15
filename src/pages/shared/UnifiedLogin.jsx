@@ -24,7 +24,7 @@ export default function UnifiedLogin() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+    axios.get(`/api/stores/${storeSlug}`)
       .then(r => setStoreData(r.data))
       .catch(() => {});
   }, [storeSlug]);
@@ -37,7 +37,7 @@ export default function UnifiedLogin() {
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      const res = await axios.post("http://localhost:5000/api/stores/login", {
+      const res = await axios.post("/api/stores/login", {
         storeSlug, email, password, loginRole: selectedRole
       });
       localStorage.setItem(`token_${storeSlug}`, res.data.token);
@@ -60,7 +60,7 @@ export default function UnifiedLogin() {
     setSuccessMsg("");
     try {
       // 1. Submit registration payload to backend
-      const res = await axios.post(`http://localhost:5000/api/stores/${storeSlug}/staff`, {
+      const res = await axios.post(`/api/stores/${storeSlug}/staff`, {
         name, role: selectedRole, email, phone
       });
       
@@ -84,7 +84,7 @@ export default function UnifiedLogin() {
           <div className="w-12 h-12 bg-[#D03D56] rounded-2xl flex items-center justify-center mx-auto mb-2 shadow-sm">
             <StoreIcon className="w-6 h-6 text-white" />
           </div>
-          <h2 className="text-xl font-black tracking-tight text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+          <h2 className="text-xl font-black tracking-tight text-neutral-955 uppercase font-manrope">
             {storeData?.name || storeSlug}
           </h2>
           <p className="text-[9px] text-[#737373] leading-relaxed uppercase tracking-wider font-bold">

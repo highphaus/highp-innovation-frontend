@@ -25,7 +25,7 @@ export default function PricesManagement() {
   const [tempPrice, setTempPrice] = useState("");
 
   const fetchProducts = () => {
-    axios.get(`http://localhost:5000/api/products/${storeSlug}`)
+    axios.get(`/api/products/${storeSlug}`)
       .then(res => { setProducts(res.data); setLoading(false); })
       .catch(() => setLoading(false));
   };
@@ -33,7 +33,7 @@ export default function PricesManagement() {
   useEffect(() => {
     if (storeSlug) {
       fetchProducts();
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+      axios.get(`/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
     }
   }, [storeSlug]);
 
@@ -48,7 +48,7 @@ export default function PricesManagement() {
 
     try {
       const p = products.find(item => item._id === productId);
-      await axios.put(`http://localhost:5000/api/products/${productId}`, {
+      await axios.put(`/api/products/${productId}`, {
         name: p.name,
         price: priceVal,
         description: p.description,

@@ -19,7 +19,7 @@ export default function OrderHistoryDrawer({ isOpen, onClose, storeSlug, theme }
     const token = localStorage.getItem(`customerToken_${storeSlug}`);
 
     try {
-      const res = await axios.get("http://localhost:5000/api/customers/orders", {
+      const res = await axios.get("/api/customers/orders", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setOrders(res.data);

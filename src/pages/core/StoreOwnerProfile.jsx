@@ -54,6 +54,10 @@ export default function StoreOwnerProfile() {
   const [editingPriceId, setEditingPriceId] = useState(null);
   const [tempPriceVal, setTempPriceVal] = useState("");
 
+  // Add Product edit mode
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [selectedProductToEdit, setSelectedProductToEdit] = useState("");
+
   // Campaigns tab states
   const [campaignSearchQuery, setCampaignSearchQuery] = useState("");
   const [campaignType, setCampaignType] = useState("campaigns"); // campaigns, promo
@@ -129,10 +133,42 @@ export default function StoreOwnerProfile() {
   const [newProdDietaryInfo, setNewProdDietaryInfo] = useState("");
   const [newProdImage, setNewProdImage] = useState("");
   const [newProdVariants, setNewProdVariants] = useState([]);
+  const [customCategoryInput, setCustomCategoryInput] = useState("");
+  const [customCategories, setCustomCategories] = useState([]);
+  const [customVariantInput, setCustomVariantInput] = useState("");
   
   // Variants quick-add states
   const [variantInputText, setVariantInputText] = useState("");
   const [variantInputUnit, setVariantInputUnit] = useState("KG");
+
+  // Restaurant-specific product fields
+  const [newProdVegType, setNewProdVegType] = useState("veg");       // veg | non-veg | vegan | egg
+  const [newProdPrepTime, setNewProdPrepTime] = useState("");          // minutes
+  const [newProdSpiceLevel, setNewProdSpiceLevel] = useState("none"); // none | mild | medium | hot | extra-hot
+  const [newProdAllergens, setNewProdAllergens] = useState([]);        // ["Nuts", "Dairy", ...]
+  const [newProdAddons, setNewProdAddons] = useState([]);              // [{name, price}]
+  const [newProdAvailSchedule, setNewProdAvailSchedule] = useState("always");
+
+  // Inline catalog edit state
+  const [inlineEditId, setInlineEditId] = useState(null);
+  const [inlineEditName, setInlineEditName] = useState("");
+  const [inlineEditPrice, setInlineEditPrice] = useState("");
+  const [catalogFilter, setCatalogFilter] = useState("all");
+
+  // Settings — operational
+  const [storeIsOpen, setStoreIsOpen] = useState(true);
+  const [minOrderAmount, setMinOrderAmount] = useState(0);
+  const [freeDeliveryAbove, setFreeDeliveryAbove] = useState(0);
+  const [estimatedDeliveryTime, setEstimatedDeliveryTime] = useState("30-45 mins");
+  const [businessHours, setBusinessHours] = useState([
+    { day: "Monday",    isOpen: true, openTime: "09:00", closeTime: "22:00" },
+    { day: "Tuesday",   isOpen: true, openTime: "09:00", closeTime: "22:00" },
+    { day: "Wednesday", isOpen: true, openTime: "09:00", closeTime: "22:00" },
+    { day: "Thursday",  isOpen: true, openTime: "09:00", closeTime: "22:00" },
+    { day: "Friday",    isOpen: true, openTime: "09:00", closeTime: "22:00" },
+    { day: "Saturday",  isOpen: true, openTime: "10:00", closeTime: "23:00" },
+    { day: "Sunday",    isOpen: true, openTime: "10:00", closeTime: "23:00" }
+  ]);
 
   // Google Sheets state variables
   const [gsheetIdInput, setGsheetIdInput] = useState("");
@@ -247,9 +283,21 @@ export default function StoreOwnerProfile() {
     }
   };
 
+  const fetchWithdrawals = async () => {
+    try {
+      const res = await axios.get(`/api/stores/${slug}/payouts`);
+      setWithdrawalRequests(res.data);
+    } catch (err) {
+      console.error("Failed to load payout list:", err);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "staff" && slug) {
       fetchStaffData();
+    }
+    if (activeTab === "balance" && slug) {
+      fetchWithdrawals();
     }
   }, [activeTab, slug]);
 
@@ -314,6 +362,13 @@ export default function StoreOwnerProfile() {
       setDeliveryFee(res.data.deliveryFee !== undefined ? res.data.deliveryFee : 40);
       setSelfPickup(res.data.selfPickup !== false);
       setCheckoutMode(res.data.checkoutMode || "website");
+      setStoreIsOpen(res.data.storeIsOpen !== false);
+      setMinOrderAmount(res.data.minOrderAmount || 0);
+      setFreeDeliveryAbove(res.data.freeDeliveryAbove || 0);
+      setEstimatedDeliveryTime(res.data.estimatedDeliveryTime || "30-45 mins");
+      if (res.data.businessHours && res.data.businessHours.length === 7) {
+        setBusinessHours(res.data.businessHours);
+      }
 
       // Set default category from store type (using inline map)
       const categoryMap = {
@@ -516,9 +571,9 @@ export default function StoreOwnerProfile() {
   };
 
   const STORE_TYPE_CATEGORIES = {
-    restaurant:         ["Starters", "Mains", "Biryani", "Breads", "Rice & Curries", "Sides", "Soups", "Desserts", "Drinks", "Combos", "Snacks"],
-    bakery:             ["Breads", "Cakes", "Pastries", "Cookies & Biscuits", "Muffins", "Donuts", "Croissants", "Pies & Tarts", "Buns", "Savory Bakes", "Drinks"],
-    restaurant_bakery:  ["Starters", "Mains", "Breads", "Cakes", "Pastries", "Cookies", "Desserts", "Drinks", "Combos", "Snacks", "Savory Bakes"],
+    restaurant:         ["Starters", "Mains", "Biryani", "Rice & Curries", "Sides", "Soups", "Snacks"],
+    bakery:             ["Breads", "Cakes", "Pastries", "Cookies & Biscuits", "Muffins", "Donuts", "Croissants", "Pies & Tarts", "Buns", "Drinks"],
+    restaurant_bakery:  [],
     cafe:               ["Hot Coffee", "Cold Coffee", "Teas", "Juices", "Smoothies", "Sandwiches", "Wraps", "Pastries", "Cookies", "Cakes", "Snacks"],
     fastfood:           ["Burgers", "Pizza", "Wraps", "Tacos", "Noodles", "Fried Items", "Sandwiches", "Rolls", "Snacks", "Drinks", "Combos"],
     juice_bar:          ["Fresh Juices", "Smoothies", "Milkshakes", "Lassi", "Cold Pressed", "Mocktails", "Healthy Shots", "Shakes"],
@@ -544,6 +599,33 @@ export default function StoreOwnerProfile() {
     return STORE_TYPE_CATEGORIES[type] || STORE_TYPE_CATEGORIES["other"];
   };
 
+  const getAllCategoryOptions = () => {
+    const defaultOptions = (storeData?.softwareType === "restaurant" || storeData?.softwareType === "restaurant_bakery")
+      ? []
+      : getAvailableCategories();
+    return [...new Set([...defaultOptions, ...customCategories])];
+  };
+
+  const handleAddCustomCategory = () => {
+    const trimmed = customCategoryInput.trim();
+    if (!trimmed) return;
+    if (getAllCategoryOptions().includes(trimmed)) {
+      setNewProdCategory(trimmed);
+      setCustomCategoryInput("");
+      return;
+    }
+    setCustomCategories(prev => [...prev, trimmed]);
+    setNewProdCategory(trimmed);
+    setCustomCategoryInput("");
+  };
+
+  const handleRemoveCustomCategory = (category) => {
+    setCustomCategories(prev => prev.filter(item => item !== category));
+    if (newProdCategory === category) {
+      setNewProdCategory("");
+    }
+  };
+
   const handleAddNewProductSubmit = async (e) => {
     e.preventDefault();
     if (!newProdName.trim() || !newProdPrice) {
@@ -554,14 +636,12 @@ export default function StoreOwnerProfile() {
     try {
       const payload = {
         storeSlug: slug,
-        productId: "P" + Math.floor(1000 + Math.random() * 9000),
         name: newProdName.trim(),
         price: parseFloat(newProdPrice),
         offerPrice: parseFloat(newProdDiscountPrice || "0"),
         category: newProdCategory,
         description: newProdDescription.trim(),
         brand: newProdBrand.trim(),
-        sku: "SKU-" + Math.floor(10000 + Math.random() * 90000),
         unit: variantInputUnit || "pcs",
         stock: parseInt(newProdStock || "0", 10),
         status: newProdAvailability === "Show" ? "active" : "inactive",
@@ -572,6 +652,13 @@ export default function StoreOwnerProfile() {
         flavor: newProdFlavor.trim(),
         origin: newProdOrigin.trim(),
         dietaryInfo: newProdDietaryInfo.trim(),
+        // Restaurant-specific fields
+        vegNonVeg: newProdVegType,
+        prepTime: parseInt(newProdPrepTime || "0", 10),
+        spiceLevel: newProdSpiceLevel,
+        allergens: newProdAllergens,
+        addons: newProdAddons.filter(a => a.name.trim()),
+        availabilitySchedule: newProdAvailSchedule,
         variants: newProdVariants.map(v => ({
           variantLabel: v.variantLabel,
           unit: v.unit,
@@ -582,31 +669,26 @@ export default function StoreOwnerProfile() {
         }))
       };
 
-      await axios.post("/api/products", payload);
-      alert("Product successfully created!");
-      
-      // Clear form
-      setNewProdName("");
-      setNewProdPrice("");
-      setNewProdDiscountPrice("");
-      setNewProdDescription("");
-      setNewProdBrand("");
-      setNewProdTags("");
-      setNewProdStock("");
-      setNewProdWeight("");
-      setNewProdPackageSize("");
-      setNewProdFlavor("");
-      setNewProdOrigin("");
-      setNewProdDietaryInfo("");
-      setNewProdImage("");
-      setNewProdVariants([]);
-      setVariantInputText("");
+      if (!editingProductId) {
+        payload.productId = "P" + Math.floor(1000 + Math.random() * 9000);
+        payload.sku = "SKU-" + Math.floor(10000 + Math.random() * 90000);
+      }
 
-      navigate("/prices");
-      fetchStoreData();
+      if (editingProductId) {
+        await axios.put(`/api/products/${editingProductId}`, payload);
+        alert("Product successfully updated!");
+        fetchStoreData();
+        resetProductForm();
+        navigate("/dashboard");
+      } else {
+        await axios.post("/api/products", payload);
+        alert("Product successfully created!");
+        resetProductForm();
+        navigate("/prices");
+      }
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.error || "Failed to create new product entry.");
+      alert(err.response?.data?.error || (editingProductId ? "Failed to update product." : "Failed to create new product entry."));
     }
   };
 
@@ -621,9 +703,108 @@ export default function StoreOwnerProfile() {
       stock: 100,
       sku: ""
     }));
-    setNewProdVariants([...newProdVariants, ...newItems]);
+    setNewProdVariants(prev => [...prev, ...newItems]);
     setVariantInputText("");
   };
+
+  const handleAddCustomVariant = () => {
+    const trimmed = customVariantInput.trim();
+    if (!trimmed) return;
+
+    const normalized = trimmed.replace(/\s+/g, " ").trim();
+    const alreadyExists = newProdVariants.some(v => (v.variantLabel || "").toLowerCase() === normalized.toLowerCase());
+    if (alreadyExists) {
+      setCustomVariantInput("");
+      return;
+    }
+
+    setNewProdVariants(prev => [
+      ...prev,
+      {
+        variantLabel: normalized,
+        unit: variantInputUnit,
+        price: newProdPrice ? parseFloat(newProdPrice) : 0,
+        offerPrice: 0,
+        stock: 100,
+        sku: "",
+        isCustom: true
+      }
+    ]);
+    setCustomVariantInput("");
+  };
+
+  const handleRemoveCustomVariant = (variant) => {
+    setNewProdVariants(prev => prev.filter(v => !(v.isCustom && v.variantLabel === variant.variantLabel && v.unit === variant.unit && v.price === variant.price && v.stock === variant.stock)));
+  };
+
+  const resetProductForm = () => {
+    setNewProdName(""); setNewProdPrice(""); setNewProdDiscountPrice("");
+    setNewProdDescription(""); setNewProdBrand(""); setNewProdTags("");
+    setNewProdStock(""); setNewProdWeight(""); setNewProdPackageSize("");
+    setNewProdFlavor(""); setNewProdOrigin(""); setNewProdDietaryInfo("");
+    setNewProdImage(""); setNewProdVariants([]); setVariantInputText(""); setCustomCategoryInput(""); setCustomVariantInput("");
+    setNewProdVegType("veg"); setNewProdPrepTime(""); setNewProdSpiceLevel("none");
+    setNewProdAllergens([]); setNewProdAddons([]); setNewProdAvailSchedule("always");
+    setEditingProductId(null);
+    setSelectedProductToEdit("");
+  };
+
+  const populateProductForm = (product) => {
+    if (!product) return;
+    setEditingProductId(product._id);
+    setSelectedProductToEdit(product._id);
+    setNewProdName(product.name || "");
+    setNewProdPrice(product.price?.toString() || "");
+    setNewProdDiscountPrice((product.offerPrice || product.discountPrice || "").toString());
+    setNewProdCategory(product.category || "");
+    setNewProdDescription(product.description || "");
+    setNewProdBrand(product.brand || "");
+    setNewProdTags(Array.isArray(product.tags) ? product.tags.join(", ") : (product.tags || ""));
+    setNewProdStock(product.stock?.toString() || "");
+    setNewProdAvailability(product.status === "inactive" ? "Hide" : "Show");
+    setNewProdWeight(product.weight || "");
+    setNewProdPackageSize(product.packageSize || "");
+    setNewProdFlavor(product.flavor || "");
+    setNewProdOrigin(product.origin || "");
+    setNewProdDietaryInfo(product.dietaryInfo || "");
+    setNewProdImage(product.image || "");
+    setNewProdVariants(Array.isArray(product.variants) ? product.variants : []);
+    setNewProdVegType(product.vegNonVeg || "veg");
+    setNewProdPrepTime(product.prepTime?.toString() || "");
+    setNewProdSpiceLevel(product.spiceLevel || "none");
+    setNewProdAllergens(Array.isArray(product.allergens) ? product.allergens : []);
+    setNewProdAddons(Array.isArray(product.addons) ? product.addons : []);
+    setNewProdAvailSchedule(product.availabilitySchedule || "always");
+  };
+
+  const handleLoadProductForEdit = () => {
+    if (!selectedProductToEdit) return;
+    const product = productsList.find(p => p._id === selectedProductToEdit);
+    if (!product) {
+      alert("Selected product could not be found.");
+      return;
+    }
+    populateProductForm(product);
+    navigate(`/products/new?edit=${product._id}`);
+  };
+
+  const handleClearEditMode = () => {
+    resetProductForm();
+    navigate("/products/new");
+  };
+
+  useEffect(() => {
+    if (location.pathname === "/products/new") {
+      const params = new URLSearchParams(location.search);
+      const editId = params.get("edit");
+      if (editId && productsList.length > 0) {
+        const product = productsList.find(p => p._id === editId);
+        if (product) {
+          populateProductForm(product);
+        }
+      }
+    }
+  }, [location.pathname, location.search, productsList]);
 
   const handleImageFileChange = (e) => {
     const file = e.target.files[0];
@@ -735,7 +916,12 @@ export default function StoreOwnerProfile() {
         deliveryFee,
         selfPickup,
         upiId,
-        checkoutMode
+        checkoutMode,
+        storeIsOpen,
+        minOrderAmount,
+        freeDeliveryAbove,
+        estimatedDeliveryTime,
+        businessHours
       });
       setStoreData(res.data);
       setSuccessMsg("Store profile updated successfully!");
@@ -774,6 +960,111 @@ export default function StoreOwnerProfile() {
     }
   };
 
+  const handleSaveOperationalSettings = async () => {
+    setUpdating(true);
+    try {
+      const res = await axios.put(`/api/stores/${slug}`, {
+        storeIsOpen,
+        minOrderAmount,
+        freeDeliveryAbove,
+        estimatedDeliveryTime,
+        businessHours,
+        deliveryFee,
+        selfPickup
+      });
+      setStoreData(res.data);
+      setSuccessMsg("Delivery & hours settings saved!");
+      setErrorMsg("");
+    } catch (err) {
+      setErrorMsg("Failed to save operational settings.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleToggleStoreOpen = async (val) => {
+    setStoreIsOpen(val);
+    try {
+      await axios.put(`/api/stores/${slug}`, { storeIsOpen: val });
+    } catch (err) {
+      console.error("Failed to toggle store status.");
+    }
+  };
+
+  const handleDuplicateProduct = async (product) => {
+    try {
+      const payload = {
+        ...product,
+        _id: undefined,
+        storeSlug: slug,
+        name: product.name + " (Copy)",
+        productId: "P" + Math.floor(1000 + Math.random() * 9000),
+        sku: "SKU-" + Math.floor(10000 + Math.random() * 90000),
+      };
+      delete payload._id;
+      delete payload.__v;
+      delete payload.createdAt;
+      delete payload.updatedAt;
+      await axios.post("/api/products", payload);
+      fetchStoreData();
+      setSuccessMsg("Product duplicated successfully!");
+    } catch (err) {
+      alert("Failed to duplicate product.");
+    }
+  };
+
+  const handleToggleProductAvailability = async (product) => {
+    const newStatus = product.status === "active" ? "inactive" : "active";
+    try {
+      await axios.put(`/api/products/${product._id}`, { ...product, status: newStatus });
+      fetchStoreData();
+    } catch (err) {
+      alert("Failed to toggle product availability.");
+    }
+  };
+
+  const handleSaveInlineEdit = async (productId) => {
+    try {
+      const product = productsList.find(p => p._id === productId);
+      await axios.put(`/api/products/${productId}`, {
+        ...product,
+        name: inlineEditName || product.name,
+        price: parseFloat(inlineEditPrice) || product.price
+      });
+      setInlineEditId(null);
+      fetchStoreData();
+    } catch (err) {
+      alert("Failed to save product edit.");
+    }
+  };
+
+  const handlePrintReceipt = (order) => {
+    const win = window.open("", "_blank");
+    if (!win) return;
+    const items = (order.items || []).map(i => `<tr><td>${i.name}</td><td>x${i.quantity}</td><td>₹${(i.price || 0) * i.quantity}</td></tr>`).join("");
+    win.document.write(`
+      <html><head><title>Receipt #${order._id?.slice(-6)}</title>
+      <style>body{font-family:monospace;max-width:300px;margin:0 auto;padding:20px}
+      h2{text-align:center;border-bottom:1px dashed #000;padding-bottom:8px}
+      table{width:100%}td{padding:4px 2px}
+      .total{border-top:1px dashed #000;font-weight:bold;margin-top:8px;padding-top:8px}
+      .footer{text-align:center;font-size:11px;margin-top:16px}</style></head>
+      <body>
+      <h2>${storeData?.name || "Store"}</h2>
+      <p style="text-align:center;font-size:12px">Order #${order._id?.slice(-6)}<br>${new Date(order.createdAt).toLocaleString()}</p>
+      <p><strong>Customer:</strong> ${order.customerName || "—"}<br>
+      <strong>Phone:</strong> ${order.phone || "—"}<br>
+      ${order.address ? `<strong>Address:</strong> ${order.address}` : ""}</p>
+      <table><thead><tr><th style="text-align:left">Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>${items}</tbody></table>
+      <div class="total">Total: ₹${order.totalAmount || 0} | ${(order.paymentMethod || "COD").toUpperCase()}</div>
+      ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
+      <div class="footer">Thank you! Powered by HighP Platform</div>
+      </body></html>
+    `);
+    win.document.close();
+    win.print();
+  };
+
   const handleRequestWithdrawal = async () => {
     const availableBalance = Number((salesTotal * 0.82).toFixed(2));
 
@@ -789,17 +1080,15 @@ export default function StoreOwnerProfile() {
 
     setUpdating(true);
     try {
-      const request = {
-        id: `payout-${Date.now()}`,
+      await axios.post(`/api/stores/${slug}/payouts`, {
         amount: availableBalance,
         accountHolder: bankAccountHolder,
         bankName: bankName || "Primary Bank",
-        status: "Requested",
-        requestedAt: new Date().toISOString()
-      };
-
-      const nextRequests = [request, ...withdrawalRequests].slice(0, 8);
-      saveWithdrawalRequests(nextRequests);
+        accountNumber: bankAccountNumber,
+        ifscCode: bankIfsc
+      });
+      
+      await fetchWithdrawals();
       setShowWithdrawModal(false);
       setSuccessMsg(`Withdrawal request submitted for ₹${availableBalance.toLocaleString("en-IN")}.`);
       setErrorMsg("");
@@ -975,11 +1264,11 @@ export default function StoreOwnerProfile() {
       )}
       
       {/* 1. LEFT SIDEBAR NAVIGATION (TOWNCART STYLE) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col justify-between ${
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col ${
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}>
         
-        <div className="p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Logo & Store details */}
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden shadow-sm">
@@ -1082,7 +1371,7 @@ export default function StoreOwnerProfile() {
       </aside>
 
       {/* 2. MAIN CONTENT PANEL */}
-      <div className="flex-1 flex flex-col h-screen overflow-y-auto relative">
+      <div className="flex-1 flex flex-col min-h-screen overflow-y-auto relative">
         
         {/* TOP BAR */}
         <header className="h-16 bg-white border-b border-[#F0EEEB] px-4 sm:px-6 flex items-center justify-between sticky top-0 z-40 gap-2">
@@ -1090,9 +1379,9 @@ export default function StoreOwnerProfile() {
             <button 
               type="button"
               onClick={toggleSidebar}
-              className="p-2 hover:bg-neutral-50 rounded-lg text-neutral-600 focus:outline-none cursor-pointer"
+              className="p-2.5 hover:bg-neutral-50 rounded-xl text-neutral-700 focus:outline-none cursor-pointer"
             >
-              <Menu className="w-5 h-5" />
+              <Menu className="w-6 h-6" />
             </button>
             <span className="text-xs font-black uppercase tracking-widest text-[#737373] capitalize">
               {activeTab === "add-product" ? "Add Products" : activeTab}
@@ -1106,8 +1395,8 @@ export default function StoreOwnerProfile() {
             >
               ★ Upgrade Plan
             </a>
-            <button className="p-2 hover:bg-neutral-50 rounded-lg text-neutral-450 cursor-pointer">
-              <Bell className="w-4.5 h-4.5" />
+            <button className="p-2.5 hover:bg-neutral-50 rounded-xl text-neutral-600 cursor-pointer">
+              <Bell className="w-5 h-5" />
             </button>
           </div>
         </header>
@@ -1121,14 +1410,14 @@ export default function StoreOwnerProfile() {
               
               {/* Welcome header */}
               <div className="space-y-1">
-                <h1 className="text-2xl font-black text-neutral-955 tracking-tight uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-955 tracking-tight uppercase font-manrope">
                   Welcome back, {storeData.email ? storeData.email.split('@')[0] : "Merchant"}
                 </h1>
-                <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest">{storeData.name}</p>
+                <p className="text-xs text-neutral-500 font-bold uppercase tracking-widest font-manrope">{storeData.name}</p>
               </div>
 
               {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+              <div className="flex gap-4 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:overflow-visible">
                 {[
                   { label: "PRODUCTS", val: productsCount, icon: Package, color: "text-[#D03D56] bg-[#F7EBEF]" },
                   { label: "ORDERS", val: ordersCount, icon: ShoppingCart, color: "text-blue-600 bg-blue-50" },
@@ -1136,12 +1425,12 @@ export default function StoreOwnerProfile() {
                 ].map((s, idx) => {
                   const Icon = s.icon;
                   return (
-                    <div key={idx} className="bg-white border border-[#F0EEEB] p-4 sm:p-6 rounded-3xl flex items-center justify-between shadow-sm gap-3">
+                    <div key={idx} className="w-full min-h-[120px] min-w-[210px] sm:min-w-0 bg-white border border-[#F0EEEB] p-4 sm:p-6 rounded-3xl flex items-center justify-between shadow-sm gap-3 flex-shrink-0">
                       <div className="space-y-2">
-                        <span className="text-[9px] text-[#737373] uppercase tracking-widest font-black block">{s.label}</span>
-                        <span className="text-3xl font-black block text-neutral-955">{s.val}</span>
+                        <span className="text-[9px] text-[#737373] uppercase tracking-widest font-black block font-manrope">{s.label}</span>
+                        <span className="text-3xl font-black block text-neutral-955 font-manrope font-numbers">{s.val}</span>
                       </div>
-                      <div className={`w-10 h-10 ${s.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
+                      <div className={`w-11 h-11 ${s.color} rounded-xl flex items-center justify-center flex-shrink-0`}>
                         <Icon className="w-5 h-5" />
                       </div>
                     </div>
@@ -1280,7 +1569,7 @@ export default function StoreOwnerProfile() {
           {activeTab === "orders" && (
             <div className="space-y-6 animate-fade-up">
               <div className="space-y-1">
-                <h1 className="text-2xl font-black text-neutral-955 tracking-tight uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-955 tracking-tight uppercase font-manrope">
                   Orders
                 </h1>
                 <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest">{ordersList.length} orders total</p>
@@ -1465,7 +1754,7 @@ export default function StoreOwnerProfile() {
               {/* Header metrics */}
               <div className="flex justify-between items-center flex-wrap gap-4 pb-2">
                 <div>
-                  <h1 className="text-2xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                  <h1 className="text-2xl font-black text-neutral-955 uppercase font-manrope">
                     Google Sheets catalog
                   </h1>
                   <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest mt-0.5">
@@ -1703,7 +1992,7 @@ export default function StoreOwnerProfile() {
           {activeTab === "prices" && (
             <div className="space-y-6 animate-fade-up">
               <div className="space-y-1">
-                <h1 className="text-2xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-955 uppercase font-manrope">
                   Prices
                 </h1>
                 <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest">Auto-saves and syncs directly to MongoDB and sheets</p>
@@ -2617,7 +2906,7 @@ export default function StoreOwnerProfile() {
                   </div>
                   <div className="space-y-2.5">
                     {withdrawalRequests.map((request) => (
-                      <div key={request.id} className="flex items-center justify-between rounded-2xl border border-[#F0EEEB] bg-[#FAFAFA] px-4 py-3">
+                      <div key={request._id || request.id} className="flex items-center justify-between rounded-2xl border border-[#F0EEEB] bg-[#FAFAFA] px-4 py-3">
                         <div>
                           <p className="text-[10px] font-black text-neutral-900">₹{Number(request.amount || 0).toLocaleString("en-IN")}</p>
                           <p className="text-[9px] text-neutral-500 font-bold uppercase tracking-wider">{request.bankName || "Primary bank"} · {request.accountHolder}</p>
@@ -2792,7 +3081,7 @@ export default function StoreOwnerProfile() {
           {activeTab === "analytics" && (
             <div className="space-y-6 animate-fade-up">
               <div>
-                <h1 className="text-2xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-955 uppercase font-manrope">
                   Operational Analytics
                 </h1>
                 <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest mt-0.5">
@@ -2912,7 +3201,7 @@ export default function StoreOwnerProfile() {
           {activeTab === "staff" && (
             <div className="space-y-6 animate-fade-up">
               <div>
-                <h1 className="text-2xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
+                <h1 className="text-2xl font-black text-neutral-955 uppercase font-manrope">
                   Staff Profiles & Access Control
                 </h1>
                 <p className="text-xs text-neutral-450 font-bold uppercase tracking-widest mt-0.5">
@@ -3062,62 +3351,100 @@ export default function StoreOwnerProfile() {
                   ← Back to Dashboard
                 </button>
                 <div>
-                  <h1 className="text-xl font-black text-neutral-955 uppercase" style={{ fontFamily: "'Playfair Display', serif" }}>
-                    Add Product
+                  <h1 className="text-xl font-black text-neutral-955 uppercase font-manrope">
+                    {editingProductId ? "Edit Product" : "Add Product"}
                   </h1>
                 </div>
               </div>
 
               <form onSubmit={handleAddNewProductSubmit} className="space-y-6">
-                
-                {/* Image Picker */}
-                <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center space-y-4">
-                  <input 
-                    type="file" 
-                    id="new-product-file-picker" 
-                    accept="image/*" 
-                    onChange={handleImageFileChange} 
-                    className="hidden" 
-                  />
-                  <div 
-                    onClick={() => document.getElementById('new-product-file-picker').click()}
-                    className="w-40 h-28 border-2 border-dashed border-[#F0EEEB] hover:border-[#D03D56]/40 bg-[#FAFAFA] rounded-2xl flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-all gap-1.5 overflow-hidden"
-                  >
-                    {newProdImage ? (
-                      <img src={newProdImage} alt="Preview" className="w-full h-full object-cover rounded-xl" />
-                    ) : (
-                      <>
-                        <Image className="w-6 h-6 text-neutral-400" />
-                        <span className="text-[9px] font-black uppercase text-[#737373] tracking-widest">Tap to add image</span>
-                      </>
-                    )}
-                  </div>
-                  
-                  <div className="flex gap-3 items-center text-[10px]">
+                <div className="bg-white border border-[#F0EEEB] rounded-3xl p-5 shadow-sm space-y-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-[11px] font-black uppercase tracking-wider text-neutral-900">Existing product edit</h2>
+                <p className="text-[9px] text-[#737373] uppercase tracking-widest mt-1">Select an existing product to load the form and update it.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleClearEditMode}
+                className="px-4 py-2 border border-[#F0EEEB] text-neutral-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-neutral-50 transition-all"
+              >
+                Add New Product
+              </button>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-3">
+              <select
+                value={selectedProductToEdit}
+                onChange={e => setSelectedProductToEdit(e.target.value)}
+                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 font-bold"
+              >
+                <option value="">Select a product to edit</option>
+                {productsList.map(product => (
+                  <option key={product._id} value={product._id}>{product.name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleLoadProductForEdit}
+                disabled={!selectedProductToEdit}
+                className="px-4 py-2 bg-[#10b981] text-white rounded-xl text-[10px] font-black uppercase tracking-widest disabled:opacity-50 disabled:cursor-not-allowed hover:bg-[#059669] transition-all"
+              >
+                Load Product
+              </button>
+            </div>
+            {editingProductId && (
+              <div className="rounded-2xl border border-[#F0EEEB] bg-[#FAFAFA] px-4 py-3 text-[10px] font-black uppercase tracking-wider text-neutral-700">
+                Editing product: {newProdName || "Selected item"}
+              </div>
+            )}
+
+            <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm flex flex-col items-center justify-center space-y-4">
+              <input
+                type="file"
+                id="new-product-file-picker"
+                accept="image/*"
+                onChange={handleImageFileChange}
+                className="hidden"
+              />
+              <div
+                onClick={() => document.getElementById('new-product-file-picker').click()}
+                className="w-40 h-28 border-2 border-dashed border-[#F0EEEB] hover:border-[#D03D56]/40 bg-[#FAFAFA] rounded-2xl flex flex-col items-center justify-center p-3 text-center cursor-pointer transition-all gap-1.5 overflow-hidden"
+              >
+                {newProdImage ? (
+                  <img src={newProdImage} alt="Preview" className="w-full h-full object-cover rounded-xl" />
+                ) : (
+                  <>
+                    <Image className="w-6 h-6 text-neutral-400" />
+                    <span className="text-[9px] font-black uppercase text-[#737373] tracking-widest">Tap to add image</span>
+                  </>
+                )}
+              </div>
+
+              <div className="flex gap-3 items-center text-[10px]">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const url = window.prompt("Enter image URL:");
+                    if (url) setNewProdImage(url);
+                  }}
+                  className="font-black text-[#D03D56] hover:underline uppercase tracking-wider cursor-pointer"
+                >
+                  Or Paste Image URL
+                </button>
+                {newProdImage && (
+                  <>
+                    <span className="text-neutral-300">|</span>
                     <button
                       type="button"
-                      onClick={() => {
-                        const url = window.prompt("Enter image URL:");
-                        if (url) setNewProdImage(url);
-                      }}
-                      className="font-black text-[#D03D56] hover:underline uppercase tracking-wider cursor-pointer"
+                      onClick={() => setNewProdImage("")}
+                      className="font-black text-red-650 hover:underline uppercase tracking-wider cursor-pointer"
                     >
-                      Or Paste Image URL
+                      Remove Image
                     </button>
-                    {newProdImage && (
-                      <>
-                        <span className="text-neutral-300">|</span>
-                        <button
-                          type="button"
-                          onClick={() => setNewProdImage("")}
-                          className="font-black text-red-650 hover:underline uppercase tracking-wider cursor-pointer"
-                        >
-                          Remove Image
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                  </>
+                )}
+              </div>
+            </div>
 
                 {/* Core Pricing & Variant Attributes Card */}
                 <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm space-y-5">
@@ -3158,52 +3485,63 @@ export default function StoreOwnerProfile() {
                   </div>
 
                   {/* Variants Section */}
-                  <div className="border border-[#F0EEEB] p-5 rounded-2xl space-y-4">
-                    <div className="flex justify-between items-center">
+                  <div className="border border-[#F0EEEB] p-4 sm:p-5 rounded-2xl space-y-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-start">
                       <div>
                         <h4 className="text-[10px] font-black text-neutral-900 uppercase tracking-widest">Variants (size + price)</h4>
-                        <p className="text-[8px] text-[#737373] font-bold uppercase tracking-wider">Tip: type 2, 3 and press KG to add multiple items at once.</p>
+                        <p className="text-[8px] text-[#737373] font-bold uppercase tracking-wider mt-1">For restaurants, add serving sizes like Small, Regular, Large or Half/Full.</p>
                       </div>
                       <button
                         type="button"
                         onClick={() => setNewProdVariants([...newProdVariants, { variantLabel: "", price: newProdPrice || 0, stock: 100, unit: "KG", sku: "" }])}
-                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 border border-[#F0EEEB] rounded-lg text-[9px] font-black uppercase text-neutral-700 tracking-wider cursor-pointer"
+                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 border border-[#F0EEEB] rounded-lg text-[9px] font-black uppercase text-neutral-700 tracking-wider cursor-pointer self-start"
                       >
                         + Add
                       </button>
                     </div>
 
-                    <div className="flex gap-2 items-center flex-wrap">
-                      <input 
-                        type="text" 
-                        placeholder="Select units: e.g. 2, 3"
-                        value={variantInputText}
-                        onChange={e => setVariantInputText(e.target.value)}
-                        className="bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-4.5 py-2 text-xs rounded-xl focus:outline-none flex-1 min-w-[150px] font-bold"
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        type="text"
+                        placeholder="Add a custom variant"
+                        value={customVariantInput}
+                        onChange={e => setCustomVariantInput(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none font-bold"
                       />
-                      <select
-                        value={variantInputUnit}
-                        onChange={e => setVariantInputUnit(e.target.value)}
-                        className="bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-3 py-2 text-xs rounded-xl focus:outline-none"
-                      >
-                        {["KG", "g", "L", "ml", "pcs", "pack"].map(u => (
-                          <option key={u} value={u}>{u}</option>
-                        ))}
-                      </select>
                       <button
                         type="button"
-                        onClick={handleQuickAddVariants}
-                        className="px-4 py-2 bg-[#10b981] hover:bg-[#059669] text-white rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                        onClick={handleAddCustomVariant}
+                        className="px-4 py-2.5 bg-[#F7EBEF] text-[#D03D56] rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
                       >
-                        Add all
+                        Add custom
                       </button>
                     </div>
+
+                    {newProdVariants.some(v => v.isCustom) && (
+                      <div className="flex flex-wrap gap-2">
+                        {newProdVariants.filter(v => v.isCustom).map((v, i) => (
+                          <div key={`${v.variantLabel}-${i}`} className="flex items-center gap-1.5">
+                            <span className="px-3 py-1.5 rounded-full border border-[#F0EEEB] bg-white text-[10px] font-black uppercase tracking-wider text-neutral-700">
+                              {v.variantLabel}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCustomVariant(v)}
+                              className="w-6 h-6 rounded-full border border-red-200 text-red-500 bg-white hover:bg-red-50 flex items-center justify-center cursor-pointer"
+                              title="Remove custom variant"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
 
                     {/* Rendered variants list */}
                     {newProdVariants.length > 0 && (
                       <div className="space-y-2 pt-2">
                         {newProdVariants.map((v, i) => (
-                          <div key={i} className="flex gap-2 items-center flex-wrap bg-[#FAFAFA] border border-[#F0EEEB] p-3.5 rounded-xl">
+                          <div key={i} className="flex flex-col gap-2 sm:flex-row sm:items-center bg-[#FAFAFA] border border-[#F0EEEB] p-3 rounded-xl">
                             <input 
                               type="text" 
                               placeholder="Label e.g. 500g"
@@ -3213,36 +3551,38 @@ export default function StoreOwnerProfile() {
                                 copy[i].variantLabel = e.target.value;
                                 setNewProdVariants(copy);
                               }}
-                              className="bg-white border border-[#F0EEEB] px-3 py-1.5 text-xs rounded-lg flex-1 min-w-[120px] font-bold"
+                              className="bg-white border border-[#F0EEEB] px-3 py-2 text-xs rounded-lg flex-1 min-w-0 font-bold"
                             />
-                            <input 
-                              type="number" 
-                              placeholder="Price"
-                              value={v.price}
-                              onChange={e => {
-                                const copy = [...newProdVariants];
-                                copy[i].price = parseFloat(e.target.value) || 0;
-                                setNewProdVariants(copy);
-                              }}
-                              className="bg-white border border-[#F0EEEB] px-3 py-1.5 text-xs rounded-lg w-20 font-bold"
-                            />
-                            <select
-                              value={v.unit}
-                              onChange={e => {
-                                const copy = [...newProdVariants];
-                                copy[i].unit = e.target.value;
-                                setNewProdVariants(copy);
-                              }}
-                              className="bg-white border border-[#F0EEEB] px-2.5 py-1.5 text-xs rounded-lg"
-                            >
-                              {["KG", "g", "L", "ml", "pcs", "pack"].map(u => (
-                                <option key={u} value={u}>{u}</option>
-                              ))}
-                            </select>
+                            <div className="flex gap-2">
+                              <input 
+                                type="number" 
+                                placeholder="Price"
+                                value={v.price}
+                                onChange={e => {
+                                  const copy = [...newProdVariants];
+                                  copy[i].price = parseFloat(e.target.value) || 0;
+                                  setNewProdVariants(copy);
+                                }}
+                                className="bg-white border border-[#F0EEEB] px-3 py-2 text-xs rounded-lg w-24 font-bold"
+                              />
+                              <select
+                                value={v.unit}
+                                onChange={e => {
+                                  const copy = [...newProdVariants];
+                                  copy[i].unit = e.target.value;
+                                  setNewProdVariants(copy);
+                                }}
+                                className="bg-white border border-[#F0EEEB] px-2.5 py-2 text-xs rounded-lg min-w-[80px]"
+                              >
+                                {["KG", "g", "L", "ml", "pcs", "pack"].map(u => (
+                                  <option key={u} value={u}>{u}</option>
+                                ))}
+                              </select>
+                            </div>
                             <button
                               type="button"
-                              onClick={() => setNewProdVariants(newProdVariants.filter((_, idx) => idx !== i))}
-                              className="p-1.5 border border-red-200 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer"
+                              onClick={() => setNewProdVariants(prev => prev.filter((_, idx) => idx !== i))}
+                              className="p-2 border border-red-200 text-red-500 hover:bg-red-50 rounded-lg cursor-pointer self-start"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -3253,24 +3593,57 @@ export default function StoreOwnerProfile() {
                   </div>
 
                   {/* Category Pills list */}
-                  <div className="space-y-2">
-                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest">Category *</label>
+                  <div className="space-y-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest">Category *</label>
+                      <span className="text-[8px] text-[#737373] font-bold uppercase tracking-wider">
+                        {storeData?.softwareType === "restaurant" ? "Restaurant menu categories" : "Business categories"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+                      <input
+                        type="text"
+                        placeholder="Add a custom category"
+                        value={customCategoryInput}
+                        onChange={e => setCustomCategoryInput(e.target.value)}
+                        className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 px-4 py-2.5 text-xs rounded-xl focus:outline-none font-bold"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleAddCustomCategory}
+                        className="px-4 py-2.5 bg-[#F7EBEF] text-[#D03D56] rounded-xl text-[10px] font-black uppercase tracking-widest cursor-pointer"
+                      >
+                        Add custom
+                      </button>
+                    </div>
                     <div className="flex flex-wrap gap-2">
-                      {getAvailableCategories().map(cat => {
+                      {getAllCategoryOptions().map(cat => {
                         const isSel = newProdCategory === cat;
+                        const isCustom = customCategories.includes(cat);
                         return (
-                          <button
-                            key={cat}
-                            type="button"
-                            onClick={() => setNewProdCategory(cat)}
-                            className={`px-4.5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer ${
-                              isSel 
-                                ? "bg-[#D03D56] text-white border-[#D03D56]" 
-                                : "bg-neutral-50 text-[#737373] border-[#F0EEEB] hover:bg-neutral-100"
-                            }`}
-                          >
-                            {cat}
-                          </button>
+                          <div key={cat} className="flex items-center gap-1.5">
+                            <button
+                              type="button"
+                              onClick={() => setNewProdCategory(cat)}
+                              className={`px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all border cursor-pointer ${
+                                isSel 
+                                  ? "bg-[#D03D56] text-white border-[#D03D56]" 
+                                  : "bg-neutral-50 text-[#737373] border-[#F0EEEB] hover:bg-neutral-100"
+                              }`}
+                            >
+                              {cat}
+                            </button>
+                            {isCustom && (
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveCustomCategory(cat)}
+                                className="w-7 h-7 rounded-full border border-red-200 text-red-500 bg-white hover:bg-red-50 flex items-center justify-center cursor-pointer"
+                                title="Remove custom category"
+                              >
+                                ×
+                              </button>
+                            )}
+                          </div>
                         );
                       })}
                     </div>
@@ -3389,7 +3762,7 @@ export default function StoreOwnerProfile() {
                   className="w-full py-4 bg-[#10b981] hover:bg-[#059669] text-white font-black text-[11px] uppercase tracking-widest rounded-2xl transition-all shadow-md active:scale-[0.99] cursor-pointer flex items-center justify-center gap-2"
                 >
                   <Plus className="w-4 h-4 text-white" />
-                  <span>Add Product</span>
+                  <span>{editingProductId ? "Update Product" : "Add Product"}</span>
                 </button>
 
               </form>

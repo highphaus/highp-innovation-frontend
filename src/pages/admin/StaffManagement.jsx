@@ -38,7 +38,7 @@ export default function StaffManagement() {
   const [success, setSuccess] = useState("");
 
   const fetchStaff = () => {
-    axios.get(`http://localhost:5000/api/stores/${storeSlug}/staff`)
+    axios.get(`/api/stores/${storeSlug}/staff`)
       .then(res => { setStaff(res.data); setLoading(false); })
       .catch(() => setLoading(false));
   };
@@ -46,7 +46,7 @@ export default function StaffManagement() {
   useEffect(() => {
     if (storeSlug) {
       fetchStaff();
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
+      axios.get(`/api/stores/${storeSlug}`).then(r => setStoreData(r.data)).catch(() => {});
     }
   }, [storeSlug]);
 
@@ -56,7 +56,7 @@ export default function StaffManagement() {
     setError("");
     setSuccess("");
     try {
-      await axios.post(`http://localhost:5000/api/stores/${storeSlug}/staff`, {
+      await axios.post(`/api/stores/${storeSlug}/staff`, {
         name: form.name,
         role: form.role,
         email: form.email,
@@ -75,7 +75,7 @@ export default function StaffManagement() {
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to remove this staff member?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/stores/${storeSlug}/staff/${id}`);
+      await axios.delete(`/api/stores/${storeSlug}/staff/${id}`);
       setStaff(staff.filter(s => s._id !== id));
     } catch {
       alert("Failed to delete staff member.");

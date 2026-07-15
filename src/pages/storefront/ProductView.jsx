@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield } from "lucide-react";
 import axios from "axios";
-import { getTheme, getVerticalDetails } from "./StorefrontHome";
+import { getFoodImage, getTheme, getVerticalDetails } from "./StorefrontHome";
 
 export default function ProductView() {
   const { storeSlug, productId } = useParams();
@@ -13,11 +13,17 @@ export default function ProductView() {
   const [added, setAdded] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isLiked, setIsLiked] = useState(false);
+  const [cartCount, setCartCount] = useState(() => {
+    try {
+      const cart = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
+      return cart.reduce((s, i) => s + i.quantity, 0);
+    } catch { return 0; }
+  });
 
   useEffect(() => {
     Promise.all([
-      axios.get(`http://localhost:5000/api/stores/${storeSlug}`),
-      axios.get(`http://localhost:5000/api/products/${storeSlug}`)
+      axios.get(`/api/stores/${storeSlug}`),
+      axios.get(`/api/products/${storeSlug}`)
     ]).then(([storeRes, productsRes]) => {
       setStoreData(storeRes.data);
       const found = productsRes.data.find(p => p._id === productId);
@@ -36,6 +42,9 @@ export default function ProductView() {
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
     setAdded(true);
+    
+    const totalQty = existing.reduce((s, i) => s + i.quantity, 0);
+    setCartCount(totalQty);
     setTimeout(() => setAdded(false), 2000);
   };
 
@@ -65,29 +74,39 @@ export default function ProductView() {
     <div className="min-h-screen bg-[#FAFAFA] font-sans pb-16 selection:bg-neutral-800 selection:text-white">
       
       {/* NAV */}
-      <nav className="bg-white border-b border-[#F5F5F0] text-neutral-900 px-6 py-4 flex items-center justify-between shadow-sm">
-        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-[#737373] hover:text-neutral-900 transition-colors">
+      <nav className="bg-white border-b border-[#F5F5F0] text-neutral-900 px-6 py-4 flex items-center justify-between shadow-sm sticky top-0 z-40">
+        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-[#737373] hover:text-neutral-955 transition-colors">
           <ArrowLeft className="w-4 h-4" /> <span>Back to {storeData?.name || "Storefront"}</span>
         </Link>
-        <Link to={`/${storeSlug}/cart`} className="relative p-2 text-[#737373] hover:text-neutral-900 transition-colors">
-          <ShoppingCart className="w-4 h-4" />
+        <Link to={`/${storeSlug}/cart`} className="relative p-2 text-[#737373] hover:text-neutral-955 transition-colors" aria-label="View cart">
+          <ShoppingCart className="w-5 h-5" />
+          {cartCount > 0 && (
+            <span 
+              className="absolute -top-0.5 -right-0.5 text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-numbers shadow-sm"
+              style={{ backgroundColor: theme.colorCode || "#D03D56" }}
+            >
+              {cartCount}
+            </span>
+          )}
         </Link>
       </nav>
 
-      <div className="max-w-4xl mx-auto px-4 pt-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="max-w-6xl mx-auto px-4 pt-10 grid grid-cols-1 md:grid-cols-2 gap-10">
         
         {/* PRODUCT IMAGE VIEW */}
         <div className="relative">
           <div className="w-full aspect-square rounded-2xl overflow-hidden bg-white border border-[#F5F5F0] shadow-sm relative group">
             <img 
-              src={product.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80"} 
+              src={getFoodImage(product)} 
               alt={product.name} 
+              loading="lazy"
               className="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-500" 
             />
             
             <button 
               onClick={() => setIsLiked(!isLiked)} 
-              className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur rounded-xl shadow-sm hover:scale-105 active:scale-95 transition-all text-[#737373] hover:text-red-500"
+              className="absolute top-4 right-4 p-3 bg-white/90 backdrop-blur rounded-xl shadow-sm hover:scale-105 active:scale-95 transition-all text-[#737373] hover:text-red-500 cursor-pointer"
+              aria-label={isLiked ? "Remove from favorites" : "Add to favorites"}
             >
               <Heart className={`w-4 h-4 ${isLiked ? 'fill-red-500 text-red-500' : ''}`} />
             </button>
@@ -110,7 +129,7 @@ export default function ProductView() {
               </div>
               <div className="text-left sm:text-right">
                 <span className="text-[9px] font-black text-[#737373] uppercase tracking-widest block mb-1">Standard</span>
-                <span className="text-xl font-black text-neutral-955 block">₹{product.price}</span>
+                <span className="text-xl font-black text-neutral-950 block">₹{product.price}</span>
               </div>
             </div>
 
@@ -138,14 +157,16 @@ export default function ProductView() {
               <div className="flex items-center gap-2 bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl p-1">
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-all text-neutral-750"
+                  className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-all text-neutral-750 cursor-pointer"
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
                 <span className="text-xs font-black w-6 text-center">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(q => q + 1)}
-                  className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-all text-neutral-750"
+                  className="w-7 h-7 rounded-lg bg-white shadow-sm flex items-center justify-center hover:bg-neutral-50 active:scale-95 transition-all text-neutral-750 cursor-pointer"
+                  aria-label="Increase quantity"
                 >
                   <Plus className="w-3 h-3" />
                 </button>
@@ -158,7 +179,7 @@ export default function ProductView() {
           <div className="space-y-3">
             <button 
               onClick={addToCart}
-              className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md`}
+              className={`w-full py-3.5 ${theme.bg} ${theme.hover} text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md cursor-pointer`}
             >
               <ShoppingCart className="w-3.5 h-3.5" />
               {added ? "Selection added! ✓" : `${details.actionLabel} · ₹${product.price * quantity}`}

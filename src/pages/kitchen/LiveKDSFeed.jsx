@@ -40,7 +40,7 @@ export default function LiveKDSFeed() {
   const [loading, setLoading] = useState(true);
 
   const fetchActiveTickets = () => {
-    axios.get(`http://localhost:5000/api/orders/${storeSlug}`)
+    axios.get(`/api/orders/${storeSlug}`)
       .then(res => {
         const activeTickets = res.data.filter(order => order.status === 'pending' || order.status === 'preparing');
         setOrders(activeTickets);
@@ -50,7 +50,7 @@ export default function LiveKDSFeed() {
   };
 
   useEffect(() => {
-    axios.get(`http://localhost:5000/api/stores/${storeSlug}`)
+    axios.get(`/api/stores/${storeSlug}`)
       .then(r => setStoreData(r.data))
       .catch(() => {});
   }, [storeSlug]);
@@ -63,7 +63,7 @@ export default function LiveKDSFeed() {
 
   const updateStatus = async (orderId, nextStatus) => {
     try {
-      await axios.patch(`http://localhost:5000/api/orders/${orderId}/status`, { status: nextStatus });
+      await axios.patch(`/api/orders/${orderId}/status`, { status: nextStatus });
       setOrders(orders.map(o => o._id === orderId ? { ...o, status: nextStatus } : o).filter(o => nextStatus !== 'completed'));
     } catch (err) {
       alert("Failed to advance order status.");
