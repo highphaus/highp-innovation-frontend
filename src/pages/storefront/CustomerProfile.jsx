@@ -1,11 +1,11 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import { 
-  User, MapPin, ShoppingBag, Award, LogOut, ArrowLeft, Loader2,
-  AlertCircle, CheckCircle, Plus, Trash, Phone, Mail, ChevronRight, Sparkles, ShieldCheck
+  User, MapPin, ShoppingBag, LogOut, ArrowLeft, Loader2,
+  AlertCircle, CheckCircle, Plus, Trash, Phone, Mail, ChevronRight, ShieldCheck, Clock
 } from "lucide-react";
 import axios from "axios";
-import { getTheme } from "./StorefrontHome";
+import { getTheme } from "../storefront/StorefrontHome"; // Adjust import mapping path to match your layout directory
 
 export default function CustomerProfile() {
   const { storeSlug } = useParams();
@@ -20,7 +20,7 @@ export default function CustomerProfile() {
     }
   });
 
-  // Access Control: Redirect if not logged in
+  // Access Control: Redirect if session doesn't exist
   useEffect(() => {
     if (!customerUser) {
       navigate(`/${storeSlug}`);
@@ -32,7 +32,7 @@ export default function CustomerProfile() {
     return searchParams.get("tab") || "info";
   });
 
-  // Form Fields
+  // Dynamic Hooks Forms States
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -40,7 +40,7 @@ export default function CustomerProfile() {
   const [addresses, setAddresses] = useState([]);
   const [orders, setOrders] = useState([]);
 
-  // Temp State for New Address
+  // Localized Address Addition Cache States
   const [newAddrTag, setNewAddrTag] = useState("Home");
   const [newAddrDetail, setNewAddrDetail] = useState("");
 
@@ -50,7 +50,6 @@ export default function CustomerProfile() {
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
 
-  // Helper: handle auth errors by clearing stale tokens and redirecting to storefront
   const handleAuthError = (err) => {
     const status = err?.response?.status;
     if (status === 401 || status === 403) {
@@ -106,8 +105,6 @@ export default function CustomerProfile() {
       fetchOrders();
     }
   }, [storeSlug]);
-
-  const theme = getTheme(storeData);
 
   const handleUpdateInfo = async (e) => {
     e.preventDefault();
@@ -214,19 +211,19 @@ export default function CustomerProfile() {
     <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans pb-20 selection:bg-neutral-800 selection:text-white">
       
       {/* BRAND HEADER BAR */}
-      <nav className="sticky top-0 z-50 bg-white border-b border-[#F5F5F0] px-6 py-4 flex items-center justify-between shadow-sm">
+      <nav className="sticky top-0 z-50 bg-white border-b border-[#F5F5F0] px-4 sm:px-6 py-4 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-3">
           <Link 
             to={`/${storeSlug}`} 
-            className="p-2 hover:bg-neutral-50 border border-[#F0EEEB] rounded-xl transition-colors text-neutral-600 hover:text-neutral-900 flex items-center gap-1.5"
+            className="p-2 hover:bg-neutral-50 border border-[#F0EEEB] rounded-xl transition-colors text-neutral-600 hover:text-neutral-900 flex items-center justify-center"
           >
             <ArrowLeft className="w-4 h-4" />
           </Link>
           <div>
-            <span className="text-sm font-black tracking-tight uppercase text-neutral-955 block leading-none">
+            <span className="text-xs sm:text-sm font-black tracking-tight uppercase text-neutral-900 block leading-none">
               {storeData?.name} Account
             </span>
-            <span className="text-[8px] text-neutral-400 font-mono tracking-widest uppercase mt-0.5 block">Customer Workspace</span>
+            <span className="text-[8px] text-neutral-400 font-mono tracking-widest uppercase mt-1 block">Customer Workspace</span>
           </div>
         </div>
 
@@ -238,48 +235,47 @@ export default function CustomerProfile() {
         </button>
       </nav>
 
-      {/* BODY CONSOLE */}
-      <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-10 grid grid-cols-1 lg:grid-cols-4 gap-8">
+      {/* CORE WRAPPER BLOCK */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10 pt-6 sm:pt-10 grid grid-cols-1 lg:grid-cols-4 gap-6 sm:gap-8">
         
-        {/* LEFT COLUMN: SIDE NAVIGATION CARD */}
+        {/* SIDE BAR BUTTON NAVIGATION HOVER SYSTEM */}
         <div className="lg:col-span-1 space-y-6">
-          <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 shadow-sm space-y-6 text-center">
+          <div className="bg-white border border-[#F0EEEB] rounded-3xl p-5 sm:p-6 shadow-sm space-y-5 text-center">
             
-            {/* AVATAR BADGE */}
             <div className="space-y-3">
-              <div className="w-16 h-16 rounded-3xl bg-[#F7EBEF] border border-[#F0EEEB] text-[#D03D56] font-black text-xl flex items-center justify-center mx-auto shadow-sm">
-                {name.charAt(0).toUpperCase()}
+              <div className="w-16 h-16 rounded-2xl bg-[#F7EBEF] border border-[#F0EEEB] text-[#D03D56] font-black text-xl flex items-center justify-center mx-auto shadow-sm">
+                {name ? name.charAt(0).toUpperCase() : <User className="w-6 h-6" />}
               </div>
-              <div>
-                <h2 className="text-sm font-black text-neutral-955 uppercase truncate">{name}</h2>
-                <p className="text-[10px] text-neutral-400 font-medium truncate mt-0.5">{email}</p>
+              <div className="min-w-0">
+                <h2 className="text-sm font-black text-neutral-900 uppercase truncate px-1">{name || "Customer User"}</h2>
+                <p className="text-[10px] text-neutral-400 font-medium truncate mt-0.5 px-1">{email}</p>
               </div>
             </div>
 
             <div className="h-px bg-[#F5F5F0]" />
 
-            {/* QUICK ACTIONS */}
-            <nav className="flex flex-col gap-1.5">
+            <nav className="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0 scrollbar-none">
               {[
-                { id: "info", label: "Personal Information", icon: User },
-                { id: "addresses", label: "Delivery Addresses", icon: MapPin },
-                { id: "orders", label: "Order History Logs", icon: ShoppingBag }
+                { id: "info", label: "Personal Info", icon: User },
+                { id: "addresses", label: "Addresses", icon: MapPin },
+                { id: "orders", label: "Order History", icon: ShoppingBag }
               ].map(t => {
                 const Icon = t.icon;
                 const isActive = activeTab === t.id;
                 return (
                   <button
                     key={t.id}
+                    type="button"
                     onClick={() => { setActiveTab(t.id); setErrorMsg(""); setSuccessMsg(""); }}
-                    className={`w-full text-left px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-3 transition-all ${
+                    className={`text-left px-3.5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2.5 transition-all whitespace-nowrap flex-1 lg:flex-none cursor-pointer ${
                       isActive 
                         ? "bg-[#D03D56] text-white shadow-md shadow-[#D03D56]/15" 
-                        : "text-[#737373] hover:text-neutral-900 hover:bg-[#FAFAFA] border border-transparent"
+                        : "text-[#737373] hover:text-neutral-900 hover:bg-[#FAFAFA]"
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span>{t.label}</span>
-                    <ChevronRight className="w-3 h-3 ml-auto opacity-40" />
+                    <span className="hidden sm:inline lg:inline">{t.label}</span>
+                    <ChevronRight className="w-3 h-3 ml-auto opacity-40 hidden lg:inline" />
                   </button>
                 );
               })}
@@ -287,12 +283,12 @@ export default function CustomerProfile() {
           </div>
         </div>
 
-        {/* RIGHT COLUMN: WORKSPACE WORKFLOW PANEL */}
+        {/* WORKSPACE OPERATIONS RENDER TRACK WINDOW */}
         <div className="lg:col-span-3">
-          <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 sm:p-8 shadow-sm min-h-[500px] flex flex-col justify-between">
+          <div className="bg-white border border-[#F0EEEB] rounded-3xl p-5 sm:p-8 shadow-sm min-h-[520px] flex flex-col justify-between">
             
             <div className="space-y-6">
-              {/* ALERTS SYSTEM */}
+              {/* SYSTEM NOTIFICATION DECK */}
               {errorMsg && (
                 <div className="p-3.5 bg-red-50 border border-red-100 text-red-800 text-xs font-semibold rounded-2xl flex items-start gap-2.5">
                   <AlertCircle className="w-4.5 h-4.5 text-red-600 flex-shrink-0 mt-0.5" />
@@ -306,18 +302,18 @@ export default function CustomerProfile() {
                 </div>
               )}
 
-              {/* 1. PERSONAL INFORMATION WORKSPACE */}
+              {/* TABS CONTAINER A: USER DOCKET INFORMATION */}
               {activeTab === "info" && (
                 <div className="space-y-6 animate-fade-up">
                   <div>
-                    <h3 className="text-base font-black text-neutral-950 uppercase tracking-tight">Personal Details Workspace</h3>
-                    <p className="text-[10px] text-neutral-450 uppercase tracking-widest font-black mt-0.5">Manage details and contact parameters.</p>
+                    <h3 className="text-base font-black text-neutral-950 uppercase tracking-tight">Personal Details</h3>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-black mt-0.5">Manage details and contact parameters.</p>
                   </div>
                   
                   <form onSubmit={handleUpdateInfo} className="space-y-5 max-w-xl">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                      <div>
-                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest ml-1">Full Name</label>
                         <div className="relative">
                           <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                           <input
@@ -328,10 +324,10 @@ export default function CustomerProfile() {
                         </div>
                       </div>
                       
-                      <div>
-                        <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest mb-1.5 ml-1">Email ID (Primary Identity)</label>
+                      <div className="space-y-1">
+                        <label className="block text-[9px] font-black text-neutral-400 uppercase tracking-widest ml-1">Email ID</label>
                         <div className="relative">
-                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-350" />
+                          <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                           <input
                             readOnly type="email"
                             className="w-full bg-neutral-50 border border-[#F0EEEB] text-neutral-450 pl-10 pr-4 py-2.5 text-xs rounded-xl cursor-not-allowed font-medium"
@@ -341,21 +337,21 @@ export default function CustomerProfile() {
                       </div>
                     </div>
 
-                    <div className="max-w-xs">
-                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Phone Number</label>
+                    <div className="max-w-xs space-y-1">
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest ml-1">Phone Number</label>
                       <div className="relative">
                         <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                         <input
                           type="tel"
-                          placeholder="e.g. +91 98765 43210"
+                          placeholder="+91 98765 43210"
                           className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-semibold"
                           value={phone} onChange={e => setPhone(e.target.value)}
                         />
                       </div>
                     </div>
 
-                    <div>
-                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Default Delivery Address</label>
+                    <div className="space-y-1">
+                      <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest ml-1">Default Delivery Address</label>
                       <textarea
                         rows={3}
                         placeholder="Building name, apartment number, street details, area..."
@@ -366,7 +362,7 @@ export default function CustomerProfile() {
 
                     <button
                       type="submit" disabled={saving}
-                      className="px-6 py-3 bg-[#D03D56] hover:bg-[#3F0712] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-md cursor-pointer"
+                      className="px-6 py-3 bg-[#D03D56] hover:bg-[#3F0712] text-white font-black text-[10px] uppercase tracking-widest rounded-xl transition-all flex items-center justify-center gap-2 shadow-sm cursor-pointer"
                     >
                       {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <span>Update Info →</span>}
                     </button>
@@ -374,25 +370,23 @@ export default function CustomerProfile() {
                 </div>
               )}
 
-              {/* 2. SAVED ADDRESSES WORKSPACE */}
+              {/* TABS CONTAINER B: DELIVERY DROP OFF LOCATIONS */}
               {activeTab === "addresses" && (
                 <div className="space-y-6 animate-fade-up">
                   <div>
-                    <h3 className="text-base font-black text-neutral-955 uppercase tracking-tight">Saved Delivery Addresses</h3>
-                    <p className="text-[10px] text-neutral-450 uppercase tracking-widest font-black mt-0.5">Manage drop points for checkout dispatches.</p>
+                    <h3 className="text-base font-black text-neutral-955 uppercase tracking-tight">Saved Addresses</h3>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-black mt-0.5">Manage drop points for checkout dispatches.</p>
                   </div>
 
-                  {/* Add New Address Form */}
-                  <form onSubmit={handleAddAddress} className="bg-[#FAFAFA] border border-[#F0EEEB] p-5 rounded-2xl space-y-4 max-w-xl shadow-sm">
+                  <form onSubmit={handleAddAddress} className="bg-[#FAFAFA] border border-[#F0EEEB] p-4 sm:p-5 rounded-2xl space-y-4 max-w-xl shadow-sm">
                     <h4 className="text-[10px] font-black uppercase tracking-widest text-neutral-900">Add New Drop Point</h4>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
                       <div className="sm:col-span-1">
                         <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1 ml-0.5">Tag</label>
                         <select
                           value={newAddrTag}
                           onChange={e => setNewAddrTag(e.target.value)}
-                          className="w-full bg-white border border-[#F0EEEB] text-neutral-900 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 font-semibold"
+                          className="w-full bg-white border border-[#F0EEEB] text-neutral-900 px-3 py-2 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 font-semibold bg-no-repeat"
                         >
                           <option value="Home">Home 🏠</option>
                           <option value="Work">Work 💼</option>
@@ -413,22 +407,21 @@ export default function CustomerProfile() {
 
                     <button
                       type="submit" disabled={saving}
-                      className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[9px] uppercase tracking-widest rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" /> <span>Add Address</span>
                     </button>
                   </form>
 
-                  {/* List of Saved Addresses */}
-                  <div className="space-y-3.5 max-w-xl">
-                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#737373]">Your Drop Points</h4>
+                  <div className="space-y-3 max-w-xl">
+                    <h4 className="text-[10px] font-black uppercase tracking-widest text-[#737373]">Your Saved Drop Points</h4>
                     {addresses.length === 0 ? (
-                      <p className="text-neutral-450 text-[10px] font-bold uppercase tracking-wider pl-1">No saved drop points found. Add one above to simplify checkout dispatches.</p>
+                      <p className="text-neutral-450 text-[10px] font-bold uppercase tracking-wider pl-1">No saved drop points found.</p>
                     ) : (
                       <div className="space-y-2.5">
                         {addresses.map((addr, idx) => (
-                          <div key={idx} className="bg-white border border-[#F0EEEB] p-4 rounded-xl flex items-center justify-between hover:border-neutral-350 transition-all shadow-sm">
-                            <div className="space-y-1">
+                          <div key={idx} className="bg-white border border-[#F0EEEB] p-4 rounded-xl flex items-center justify-between hover:border-neutral-300 transition-all shadow-sm gap-4">
+                            <div className="space-y-1 min-w-0">
                               <div className="flex items-center gap-2">
                                 <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded tracking-widest ${
                                   addr.tag === "Home" ? "bg-blue-50 text-blue-700" :
@@ -440,11 +433,11 @@ export default function CustomerProfile() {
                                   <span className="text-[8px] font-black text-emerald-600 uppercase tracking-widest">Default Drop</span>
                                 )}
                               </div>
-                              <p className="text-xs font-bold text-neutral-850">{addr.detail}</p>
+                              <p className="text-xs font-bold text-neutral-800 break-words">{addr.detail}</p>
                             </div>
                             <button
                               onClick={() => handleDeleteAddress(idx)}
-                              className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              className="text-red-500 hover:text-red-700 p-2 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
                               title="Delete address"
                             >
                               <Trash className="w-4 h-4" />
@@ -457,12 +450,12 @@ export default function CustomerProfile() {
                 </div>
               )}
 
-              {/* 3. ORDER HISTORY WORKSPACE */}
+              {/* TABS CONTAINER C: PRODUCT LOGS & PREPARATION LEDGER */}
               {activeTab === "orders" && (
                 <div className="space-y-6 animate-fade-up">
                   <div>
                     <h3 className="text-base font-black text-neutral-955 uppercase tracking-tight">Order Logs Ledger</h3>
-                    <p className="text-[10px] text-neutral-450 uppercase tracking-widest font-black mt-0.5">Historical log of all checkout submissions.</p>
+                    <p className="text-[10px] text-neutral-400 uppercase tracking-widest font-black mt-0.5">Historical log of all checkout submissions.</p>
                   </div>
 
                   {loadingOrders ? (
@@ -471,45 +464,69 @@ export default function CustomerProfile() {
                       <span className="text-[9px] font-black uppercase tracking-widest animate-pulse">Syncing order history...</span>
                     </div>
                   ) : orders.length === 0 ? (
-                    <div className="py-20 text-center border border-dashed border-[#E8E6E3] rounded-3xl space-y-3">
+                    <div className="py-20 text-center border border-dashed border-[#E8E6E3] rounded-3xl space-y-3 bg-neutral-50/50">
                       <ShoppingBag className="w-10 h-10 mx-auto text-neutral-300 stroke-[1.2]" />
                       <h4 className="text-xs font-black uppercase text-neutral-500 tracking-wider">No Orders Placed Yet</h4>
-                      <p className="text-[9px] text-[#737373] max-w-xs mx-auto uppercase tracking-widest font-bold">Checkout items from your cart to populate this logs ledger.</p>
+                      <p className="text-[9px] text-[#737373] max-w-xs mx-auto uppercase tracking-widest font-bold">Checkout items from your cart to populate this ledger.</p>
                     </div>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-5">
                       {orders.map((o) => (
-                        <div key={o._id} className="bg-[#FAFAFA] border border-[#F0EEEB] p-5 rounded-2xl space-y-4 shadow-sm">
-                          <div className="flex justify-between items-start border-b border-[#F5F5F0] pb-3.5">
+                        <div key={o._id} className="bg-[#FAFAFA] border border-[#F0EEEB] p-4 sm:p-5 rounded-2xl space-y-4 shadow-sm hover:border-neutral-300 transition-colors">
+                          
+                          {/* Top Heading Actions Panel */}
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[#F5F5F0] pb-3">
                             <div>
                               <p className="text-[9px] text-[#737373] font-black uppercase tracking-widest">
                                 Order ID: #{o._id.substring(o._id.length - 6).toUpperCase()}
                               </p>
-                              <p className="text-[10px] text-neutral-500 font-medium mt-0.5">
-                                {new Date(o.createdAt).toLocaleDateString()} at {new Date(o.createdAt).toLocaleTimeString()}
+                              <p className="text-[10px] text-neutral-400 font-medium mt-0.5">
+                                {new Date(o.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })} at {new Date(o.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
                             </div>
-                            <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${getStatusClass(o.status)}`}>
-                              {o.status}
-                            </span>
+                            
+                            <div className="flex flex-wrap items-center gap-2">
+                              {/* Dynamic Preparation Clock Component Indicator */}
+                              {o.status !== "completed" && o.status !== "cancelled" && (
+                                <div className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-[#475569] border border-slate-200 px-2 py-0.5 rounded-md">
+                                  <Clock className="w-3 h-3 text-neutral-500" />
+                                  <span>Prep: {o.preparationTime || "15-20 mins"}</span>
+                                </div>
+                              )}
+                              <span className={`text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border shadow-sm ${getStatusClass(o.status)}`}>
+                                {o.status}
+                              </span>
+                            </div>
                           </div>
 
-                          <div className="space-y-2.5">
+                          {/* HIGH UX DYNAMIC PRODUCT MATRIX (Strict 2-Column wrap array grid on mobile screen layouts) */}
+                          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3">
                             {o.items.map((item, idx) => (
-                              <div key={idx} className="flex justify-between text-xs text-neutral-700">
-                                <span>
-                                  <span className="font-black text-[#D03D56] mr-1.5">{item.quantity}x</span>
-                                  {item.name}
+                              <div key={idx} className="bg-white border border-[#F5F5F0] p-2.5 rounded-xl flex items-center justify-between gap-2 shadow-sm min-w-0">
+                                <div className="min-w-0 space-y-0.5">
+                                  <h4 className="text-xs font-bold text-neutral-900 truncate" title={item.name}>
+                                    {item.name}
+                                  </h4>
+                                  <div className="flex items-center gap-1.5 text-[9px] font-extrabold uppercase tracking-wide">
+                                    <span className="text-[#D03D56]">{item.quantity}x</span>
+                                    {item.variantLabel && (
+                                      <span className="text-neutral-400 font-medium">({item.variantLabel})</span>
+                                    )}
+                                  </div>
+                                </div>
+                                <span className="text-xs font-black text-neutral-950 flex-shrink-0">
+                                  ₹{item.price * item.quantity}
                                 </span>
-                                <span className="font-bold text-neutral-900">₹{item.price * item.quantity}</span>
                               </div>
                             ))}
                           </div>
 
-                          <div className="flex justify-between items-center border-t border-[#F5F5F0] pt-3.5 text-xs font-black text-neutral-900">
+                          {/* Total Paid Row */}
+                          <div className="flex justify-between items-center border-t border-[#F5F5F0] pt-3 text-xs font-black text-neutral-900">
                             <span className="uppercase tracking-widest text-[9px] text-[#737373]">Total Paid Amount</span>
                             <span className="text-base font-black text-neutral-955">₹{o.totalAmount}</span>
                           </div>
+
                         </div>
                       ))}
                     </div>
@@ -517,13 +534,12 @@ export default function CustomerProfile() {
                 </div>
               )}
 
-
-
             </div>
 
-            {/* PLATFORM SECURE FOOTNOTE */}
-            <div className="border-t border-[#F5F5F0] pt-5 mt-8 flex items-center justify-center gap-1.5 text-[9px] text-[#737373] uppercase tracking-widest font-black">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> HighP Secure Multi-Tenant Framework
+            {/* PLATFORM SECURE FOOTNOTE BAR */}
+            <div className="border-t border-[#F5F5F0] pt-4 mt-6 flex items-center justify-center gap-1.5 text-[9px] text-[#737373] uppercase tracking-widest font-black text-center">
+              <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" /> 
+              <span>HighP Secure Multi-Tenant Framework</span>
             </div>
 
           </div>
