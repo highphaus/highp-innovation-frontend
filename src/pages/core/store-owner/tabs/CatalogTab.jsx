@@ -66,7 +66,7 @@ export default function CatalogTab({
         {currentTab === "manage" && (
           <div className="bg-white border border-[#e2e8f0] rounded-lg p-5 sm:p-6 shadow-sm space-y-6">
             <div className="flex items-start gap-4">
-              <div className="p-2.5 bg-[#e8f5e9] text-[#10b981] rounded-full flex-shrink-0 mt-0.5">
+              <div className="p-2.5 bg-[#F7EBEF] text-[#D03D56] rounded-full flex-shrink-0 mt-0.5">
                 <FileSpreadsheet className="w-5 h-5" />
               </div>
               <div className="space-y-1">
@@ -118,7 +118,7 @@ export default function CatalogTab({
               <button
                 type="button"
                 onClick={triggerFileSelect}
-                className="bg-[#10b981] text-white text-xs font-bold px-4 py-2.5 rounded shadow-sm hover:opacity-95 transition-opacity flex items-center gap-1.5 cursor-pointer"
+                className="bg-[#D03D56] text-white text-xs font-bold px-4 py-2.5 rounded shadow-sm hover:bg-[#3F0712] transition-opacity flex items-center gap-1.5 cursor-pointer"
               >
                 <Upload className="w-3.5 h-3.5" />
                 <span>Choose Files</span>

@@ -17,17 +17,41 @@ export default function OrderHistoryDrawer({ isOpen, onClose, storeSlug, theme }
     setLoading(true);
     setErrorMsg("");
     const token = localStorage.getItem(`customerToken_${storeSlug}`);
-
-    try {
-      const res = await axios.get("/api/customers/orders", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setOrders(res.data);
-    } catch (err) {
-      setErrorMsg("Failed to sync historical order metrics.");
-    } finally {
-      setLoading(false);
+    let dbOrders = [];
+    if (token) {
+      try {
+        const res = await axios.get("/api/customers/orders", {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        dbOrders = res.data || [];
+      } catch (err) {
+        console.error("Failed to load customer DB orders:", err);
+      }
     }
+
+    let localOrders = [];
+    try {
+      localOrders = JSON.parse(localStorage.getItem(`recentOrders_${storeSlug}`)) || [];
+    } catch (_) {}
+
+    const orderMap = new Map();
+    [...localOrders, ...dbOrders].forEach(o => {
+      if (o && (o._id || o.id)) {
+        const key = o._id || o.id;
+        orderMap.set(key, {
+          ...o,
+          _id: key,
+          status: o.status || "confirmed"
+        });
+      }
+    });
+
+    const combined = Array.from(orderMap.values()).sort(
+      (a, b) => new Date(b.createdAt || b.placedAt || 0) - new Date(a.createdAt || a.placedAt || 0)
+    );
+
+    setOrders(combined);
+    setLoading(false);
   };
 
   if (!isOpen) return null;

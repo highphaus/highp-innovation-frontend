@@ -91,7 +91,7 @@ export default function CampaignsTab({
         <button
           type="button"
           onClick={handleCreateCampaignClick}
-          className="bg-[#10b981] text-white text-sm font-bold px-4 py-2 rounded shadow-sm hover:opacity-95 transition-opacity flex items-center gap-1 cursor-pointer whitespace-nowrap"
+          className="bg-[#D03D56] text-white text-sm font-bold px-4 py-2 rounded shadow-sm hover:opacity-95 transition-opacity flex items-center gap-1 cursor-pointer whitespace-nowrap"
         >
           <Plus className="w-4 h-4" />
           <span>New</span>
@@ -111,7 +111,7 @@ export default function CampaignsTab({
           
           {/* Main Empty Core Banner Indicator */}
           <div className="flex flex-col items-center justify-center text-center space-y-3 py-6">
-            <div className="p-4 bg-[#e8f5e9] text-[#10b981] rounded-2xl shadow-inner">
+            <div className="p-4 bg-[#F7EBEF] text-[#D03D56] rounded-2xl shadow-inner">
               <Megaphone className="w-8 h-8 transform -rotate-12 fill-current" />
             </div>
             <div className="space-y-1">
@@ -128,7 +128,7 @@ export default function CampaignsTab({
               onClick={handleCreateCampaignClick}
               className="bg-white border border-[#e2e8f0] rounded-xl p-4 shadow-sm hover:border-neutral-300 transition-all cursor-pointer space-y-1 group"
             >
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#10b981]">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#D03D56]">
                 <Sparkles className="w-3.5 h-3.5 fill-current" />
                 <span>Weekend Sale</span>
               </div>
@@ -142,7 +142,7 @@ export default function CampaignsTab({
               onClick={handleCreateCampaignClick}
               className="bg-white border border-[#e2e8f0] rounded-xl p-4 shadow-sm hover:border-neutral-300 transition-all cursor-pointer space-y-1 group"
             >
-              <div className="flex items-center gap-1.5 text-xs font-bold text-[#10b981]">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-[#D03D56]">
                 <Sparkles className="w-3.5 h-3.5 fill-current" />
                 <span>New Arrivals</span>
               </div>
@@ -172,7 +172,7 @@ export default function CampaignsTab({
                     </span>
                   </div>
                   <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${
-                    campaign.status === "active" ? "bg-emerald-50 text-emerald-600 border-emerald-200" : "bg-neutral-50 text-neutral-500 border-neutral-200"
+                  campaign.status === "active" ? "bg-[#F7EBEF] text-[#D03D56] border-[#D03D56]/30" : "bg-neutral-50 text-neutral-500 border-neutral-200"
                   }`}>
                     {campaign.status}
                   </span>

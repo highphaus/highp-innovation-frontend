@@ -86,7 +86,7 @@ export default function OverviewTab({
               <DollarSign className="w-4 h-4 text-[#64748b]" />
               <span>Sales</span>
             </div>
-            <div className="text-3xl font-bold text-[#10b981] mt-2 flex items-center">
+            <div className="text-3xl font-bold text-[#D03D56] mt-2 flex items-center">
               <span>₹</span>
               <span>{salesTotal || 0}</span>
             </div>
@@ -114,7 +114,7 @@ export default function OverviewTab({
                 className="text-[#64748b] hover:text-[#0f172a] transition-colors cursor-pointer p-1"
                 title={copied ? "Copied!" : "Copy link"}
               >
-                <Copy className={`w-4 h-4 ${copied ? "text-[#10b981]" : ""}`} />
+                <Copy className={`w-4 h-4 ${copied ? "text-[#D03D56]" : ""}`} />
               </button>
               <a
                 href={dynamicStoreUrl}
@@ -212,7 +212,7 @@ export default function OverviewTab({
 
           {/* Inline Verified Block */}
           <div className="flex items-center gap-2 bg-[#f8fafc] border border-[#e2e8f0] px-4 py-2.5 rounded text-xs font-medium text-[#334155] self-start sm:self-auto">
-            <span className="text-[#10b981] font-bold text-sm">✓</span>
+            <span className="text-[#D03D56] font-bold text-sm">✓</span>
             <span>Verified successfully!</span>
           </div>
         </div>

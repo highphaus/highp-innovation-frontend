@@ -42,13 +42,13 @@ export default function OrdersTab({
               onClick={() => setOrdersFilter?.(tab.id)}
               className={`pb-3 text-sm font-medium transition-all relative cursor-pointer whitespace-nowrap ${
                 isActive 
-                  ? "text-[#10b981] font-semibold" 
+                  ? "text-[#D03D56] font-semibold" 
                   : "text-[#64748b] hover:text-[#0f172a]"
               }`}
             >
               {tab.label}
               {isActive && (
-                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#10b981]" />
+                <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#D03D56]" />
               )}
             </button>
           );

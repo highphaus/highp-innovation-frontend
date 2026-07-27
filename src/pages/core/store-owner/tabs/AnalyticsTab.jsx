@@ -77,7 +77,7 @@ export default function AnalyticsTab({
         <div className="bg-white border border-[#e2e8f0] rounded-xl p-5 shadow-sm space-y-2">
           <div className="flex justify-between items-center text-[#64748b]">
             <span className="text-xs font-bold uppercase tracking-wider">Gross Sales</span>
-            <div className="p-1.5 bg-emerald-50 text-[#10b981] rounded-lg"><DollarSign className="w-4 h-4" /></div>
+            <div className="p-1.5 bg-[#F7EBEF] text-[#D03D56] rounded-lg"><DollarSign className="w-4 h-4" /></div>
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-2xl font-extrabold text-[#0f172a]">₹{analyticsData.grossSales.toLocaleString("en-IN")}</span>
@@ -153,7 +153,7 @@ export default function AnalyticsTab({
                   ₹{(heightVal * 150).toLocaleString()}
                 </div>
                 <div 
-                  className="w-full bg-neutral-800 group-hover:bg-[#10b981] transition-colors rounded-t cursor-pointer" 
+                  className="w-full bg-neutral-800 group-hover:bg-[#D03D56] transition-colors rounded-t cursor-pointer" 
                   style={{ height: `${heightVal}%` }}
                 />
                 <span className="text-[10px] text-[#64748b] font-medium mt-1">
@@ -207,7 +207,7 @@ export default function AnalyticsTab({
                     <span className="text-xs text-[#64748b] font-medium">{product.sales} sales</span>
                   </div>
                 </div>
-                <span className="text-sm font-bold text-[#10b981]">₹{product.revenue.toLocaleString()}</span>
+                <span className="text-sm font-bold text-[#D03D56]">₹{product.revenue.toLocaleString()}</span>
               </div>
             ))}
           </div>

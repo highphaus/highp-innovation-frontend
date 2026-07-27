@@ -182,6 +182,10 @@ export default function StoreOwnerProfile() {
     { day: "Sunday", isOpen: true, openTime: "10:00", closeTime: "23:00" }
   ]);
 
+  const [busyModeActive, setBusyModeActive] = useState(false);
+  const [busyModeMessage, setBusyModeMessage] = useState("");
+  const [alertSoundType, setAlertSoundType] = useState("loud_alarm");
+
   // Google Sheets state variables
   const [gsheetIdInput, setGsheetIdInput] = useState("");
   const [gsheetStatusData, setGsheetStatusData] = useState({
@@ -375,6 +379,8 @@ export default function StoreOwnerProfile() {
       setSelfPickup(res.data.selfPickup !== false);
       setCheckoutMode(res.data.checkoutMode || "website");
       setStoreIsOpen(res.data.storeIsOpen !== false);
+      setBusyModeActive(res.data.busyModeActive === true);
+      setBusyModeMessage(res.data.busyModeMessage || "");
       setMinOrderAmount(res.data.minOrderAmount || 0);
       setFreeDeliveryAbove(res.data.freeDeliveryAbove || 0);
       setEstimatedDeliveryTime(res.data.estimatedDeliveryTime || "30-45 mins");
@@ -931,6 +937,8 @@ export default function StoreOwnerProfile() {
         upiId,
         checkoutMode,
         storeIsOpen,
+        busyModeActive,
+        busyModeMessage,
         minOrderAmount,
         freeDeliveryAbove,
         estimatedDeliveryTime,
@@ -1119,49 +1127,115 @@ export default function StoreOwnerProfile() {
     alert("Transfer owner feature is not yet connected. Use this control to assign store ownership to another user.");
   };
 
-  const handleTestAlert = () => {
-    if (soundAlertsEnabled) {
-      try {
-        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-        if (AudioContextClass) {
-          const audioContext = new AudioContextClass();
-          const masterGain = audioContext.createGain();
-          masterGain.gain.setValueAtTime(0.08, audioContext.currentTime);
-          masterGain.connect(audioContext.destination);
+  const playFullVolumeOrderAlert = (typeChoice = alertSoundType || "loud_alarm") => {
+    try {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) return;
 
-          const playTone = (freq, duration, delay = 0, type = "sawtooth") => {
-            const osc = audioContext.createOscillator();
-            const gain = audioContext.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
-            gain.gain.setValueAtTime(0.0001, audioContext.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.04, audioContext.currentTime + delay + 0.01);
-            gain.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + delay + duration);
-            osc.connect(gain);
-            gain.connect(masterGain);
-            osc.start(audioContext.currentTime + delay);
-            osc.stop(audioContext.currentTime + delay + duration);
-          };
+      const audioContext = new AudioContextClass();
+      const masterGain = audioContext.createGain();
+      // 100% MAXIMUM VOLUME (1.0 GAIN LEVEL)
+      masterGain.gain.setValueAtTime(1.0, audioContext.currentTime);
+      masterGain.connect(audioContext.destination);
 
-          playTone(980, 0.14, 0, "square");
-          playTone(1320, 0.14, 0.14, "square");
-          playTone(1480, 0.12, 0.28, "square");
-          playTone(1100, 0.16, 0.42, "sawtooth");
+      const playSingleNote = (freq, duration, delay = 0, waveType = "triangle") => {
+        const osc = audioContext.createOscillator();
+        const gain = audioContext.createGain();
+        osc.type = waveType;
+        osc.frequency.setValueAtTime(freq, audioContext.currentTime + delay);
+        gain.gain.setValueAtTime(0.001, audioContext.currentTime + delay);
+        gain.gain.linearRampToValueAtTime(1.0, audioContext.currentTime + delay + 0.02); // 100% Peak
+        gain.gain.exponentialRampToValueAtTime(0.001, audioContext.currentTime + delay + duration);
+        osc.connect(gain);
+        gain.connect(masterGain);
+        osc.start(audioContext.currentTime + delay);
+        osc.stop(audioContext.currentTime + delay + duration);
+      };
 
-          if (audioContext.state === "suspended") {
-            audioContext.resume().catch(() => { });
-          }
+      if (typeChoice === "new_order_voice") {
+        // "YOU HAVE A NEW ORDER!" VOICE ANNOUNCEMENT + CHIME
+        for (let cycle = 0; cycle < 2; cycle++) {
+          const offset = cycle * 1.5;
+          playSingleNote(659.25,  0.20, offset + 0.00, "sine");     // E5
+          playSingleNote(783.99,  0.20, offset + 0.18, "sine");     // G5
+          playSingleNote(1046.50, 0.40, offset + 0.36, "triangle"); // C6 Peak
         }
-      } catch (err) {
-        console.error("Unable to play alert sound:", err);
+        if ('speechSynthesis' in window) {
+          setTimeout(() => {
+            try {
+              window.speechSynthesis.cancel();
+              const utterance = new SpeechSynthesisUtterance("You have a new order! You have a new order!");
+              utterance.volume = 1.0; // 100% Volume
+              utterance.rate = 0.95;  // Clear, natural speaking rate
+              utterance.pitch = 1.25; // Female voice pitch shift
+
+              const voices = window.speechSynthesis.getVoices();
+              const femaleVoice = voices.find(v => 
+                (v.name.includes("Female") || v.name.includes("Zira") || v.name.includes("Samantha") || v.name.includes("Karen") || v.name.includes("Victoria") || v.name.includes("Google US English") || v.name.includes("Google UK English Female") || v.name.includes("Natural")) && 
+                v.lang.startsWith("en")
+              ) || voices.find(v => v.lang.startsWith("en"));
+
+              if (femaleVoice) {
+                utterance.voice = femaleVoice;
+              }
+
+              window.speechSynthesis.speak(utterance);
+            } catch (_) {}
+          }, 300);
+        }
+      } else if (typeChoice === "digital_chime") {
+        // 5.5 SECOND DIGITAL STORE CHIME (3 Melodic Cycles)
+        for (let cycle = 0; cycle < 3; cycle++) {
+          const offset = cycle * 1.8;
+          playSingleNote(523.25,  0.25, offset + 0.00, "sine");     // C5
+          playSingleNote(659.25,  0.25, offset + 0.20, "sine");     // E5
+          playSingleNote(783.99,  0.25, offset + 0.40, "sine");     // G5
+          playSingleNote(1046.50, 0.50, offset + 0.60, "triangle"); // C6 Peak
+        }
+      } else if (typeChoice === "high_pitch") {
+        // 7.0 SECOND HIGH-PITCH EMERGENCY RINGER (4 Urgent Patterns)
+        for (let pattern = 0; pattern < 4; pattern++) {
+          const offset = pattern * 1.7;
+          playSingleNote(1760.00, 0.18, offset + 0.00, "sawtooth"); // A6
+          playSingleNote(2093.00, 0.18, offset + 0.18, "sawtooth"); // C7
+          playSingleNote(2637.02, 0.18, offset + 0.36, "sawtooth"); // E7
+          playSingleNote(2793.83, 0.40, offset + 0.54, "square");   // F7 High
+        }
+      } else {
+        // 6.5 SECOND LOUD ORDER ALARM (4 Repeating Dual-Tone Bursts - DEFAULT)
+        for (let burst = 0; burst < 4; burst++) {
+          const offset = burst * 1.5;
+          playSingleNote(987.77,  0.22, offset + 0.00, "triangle"); // B5
+          playSingleNote(1318.51, 0.22, offset + 0.18, "triangle"); // E6
+          playSingleNote(1567.98, 0.22, offset + 0.36, "triangle"); // G6
+          playSingleNote(2093.00, 0.50, offset + 0.54, "sawtooth"); // C7 Loud Peak
+        }
       }
+
+      if (audioContext.state === "suspended") {
+        audioContext.resume().catch(() => { });
+      }
+    } catch (err) {
+      console.error("Unable to play 100% alert sound:", err);
+    }
+  };
+
+  const handleTestAlert = () => {
+    if (soundAlertsEnabled !== false) {
+      playFullVolumeOrderAlert(alertSoundType);
     }
 
-    if (vibrationAlertsEnabled && navigator.vibrate) {
-      navigator.vibrate([120, 60, 120]);
+    if (vibrationAlertsEnabled !== false && navigator.vibrate) {
+      navigator.vibrate([200, 100, 200, 100, 300, 100, 400]);
     }
 
-    alert("Test alert sent.");
+    const soundNames = {
+      new_order_voice: "🗣️ Female Voice: 'You Have a New Order!' Announcement",
+      loud_alarm: "📢 Loud Order Ringtone (6.5s)",
+      digital_chime: "🔔 Digital Store Chime (5.5s)",
+      high_pitch: "🚨 High-Pitch Emergency Ringer (7.0s)"
+    };
+    alert(`🔊 100% Volume Alert Triggered! Playing: ${soundNames[alertSoundType] || "Voice Announcement"}`);
   };
 
   const handleDeleteStore = async () => {
@@ -1520,6 +1594,8 @@ export default function StoreOwnerProfile() {
               setSoundAlertsEnabled={setSoundAlertsEnabled}
               vibrationAlertsEnabled={vibrationAlertsEnabled}
               setVibrationAlertsEnabled={setVibrationAlertsEnabled}
+              alertSoundType={alertSoundType}
+              setAlertSoundType={setAlertSoundType}
               checkoutMode={checkoutMode}
               setCheckoutMode={setCheckoutMode}
               settingsSubTab={settingsSubTab}
@@ -1532,6 +1608,26 @@ export default function StoreOwnerProfile() {
               setDeliveryFee={setDeliveryFee}
               selfPickup={selfPickup}
               setSelfPickup={setSelfPickup}
+              storeIsOpen={storeIsOpen}
+              setStoreIsOpen={setStoreIsOpen}
+              busyModeActive={busyModeActive}
+              setBusyModeActive={setBusyModeActive}
+              busyModeMessage={busyModeMessage}
+              setBusyModeMessage={setBusyModeMessage}
+              minOrderAmount={minOrderAmount}
+              setMinOrderAmount={setMinOrderAmount}
+              freeDeliveryAbove={freeDeliveryAbove}
+              setFreeDeliveryAbove={setFreeDeliveryAbove}
+              estimatedDeliveryTime={estimatedDeliveryTime}
+              setEstimatedDeliveryTime={setEstimatedDeliveryTime}
+              bankAccountHolder={bankAccountHolder}
+              setBankAccountHolder={setBankAccountHolder}
+              bankName={bankName}
+              setBankName={setBankName}
+              bankAccountNumber={bankAccountNumber}
+              setBankAccountNumber={setBankAccountNumber}
+              bankIfsc={bankIfsc}
+              setBankIfsc={setBankIfsc}
               copied={copied}
               setCopied={setCopied}
               updating={updating}

@@ -8,6 +8,7 @@ import {
 import axios from "axios";
 import { getTheme, getVerticalDetails } from "./StorefrontHome";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
+import MobileBottomNav from "../../components/MobileBottomNav";
 
 export default function CustomerCart() {
   const { storeSlug } = useParams();
@@ -27,8 +28,9 @@ export default function CustomerCart() {
   });
 
   const [customerName, setCustomerName] = useState(customerUser ? customerUser.name : "");
-  const [customerPhone, setCustomerPhone] = useState("");
-  const [customerAddress, setCustomerAddress] = useState("");
+  const [customerPhone, setCustomerPhone] = useState(customerUser ? (customerUser.phone || "") : "");
+  const [customerAddress, setCustomerAddress] = useState(customerUser ? (customerUser.address || "") : "");
+  const [pincode, setPincode] = useState(customerUser ? (customerUser.pincode || "") : "");
   
   // Custom checkout options
   const [checkoutMethod, setCheckoutMethod] = useState("website"); // website | whatsapp
@@ -74,7 +76,13 @@ export default function CustomerCart() {
           setCheckoutMethod(r.data.checkoutMode);
         }
       }
-    }).catch(() => {});
+    }).catch(() => {
+      setStoreData({
+        name: storeSlug,
+        checkoutMode: "website",
+        codEnabled: true
+      });
+    });
   }, [storeSlug]);
 
   useEffect(() => {
@@ -89,7 +97,8 @@ export default function CustomerCart() {
   const removeItem = (id) => setCart(prev => prev.filter(item => item._id !== id));
 
   const subtotalAmount = cart.reduce((s, i) => s + i.price * i.quantity, 0);
-  const storeDeliveryFee = storeData?.deliveryFee !== undefined ? storeData.deliveryFee : 40;
+  const isFreeDelivery = storeData?.freeDeliveryAbove > 0 && subtotalAmount >= storeData.freeDeliveryAbove;
+  const storeDeliveryFee = isFreeDelivery ? 0 : (storeData?.deliveryFee !== undefined ? storeData.deliveryFee : 40);
   const storeCodEnabled = storeData?.codEnabled !== false;
   const storeUpiId = storeData?.upiId || "";
   const calculatedTax = Math.round(subtotalAmount * 0.05); // 5% standard tax
@@ -108,43 +117,44 @@ export default function CustomerCart() {
       return;
     }
 
-    // Validate WhatsApp number is configured when checkout mode is WhatsApp
-    if (checkoutMethod === "whatsapp") {
-      const cleanPhone = (storeData?.whatsappNumber || "").replace(/[^0-9]/g, "");
-      if (!cleanPhone) {
-        alert("This store has not configured a WhatsApp number yet. Please contact the store owner.");
-        return;
-      }
-      // Open the WhatsApp tab HERE (synchronous, direct user gesture)
-      // so browsers don't block it as a popup.
-      // We store a reference and update the URL after the order is saved.
-      const waTab = window.open("about:blank", "_blank");
-      executeSubmitOrder({ paymentStatus: "pending", paymentReference: "", waTab });
-    } else if (checkoutMethod === "website" && paymentMethod === "upi") {
-      // Trigger the interactive payment verification screen
-      setShowWebsiteUpiPayment(true);
-    } else {
-      // Proceed directly to submit standard COD order
-      executeSubmitOrder({ paymentStatus: "pending", paymentReference: "" });
+    if (storeData?.minOrderAmount > 0 && subtotalAmount < storeData.minOrderAmount) {
+      alert(`Minimum order amount for this store is ₹${storeData.minOrderAmount}. Please add items worth ₹${storeData.minOrderAmount - subtotalAmount} more to proceed.`);
+      return;
     }
+
+    const rawPhone = (storeData?.whatsappNumber || storeData?.phone || "").replace(/[^0-9]/g, "");
+    const cleanPhone = rawPhone.length === 10 ? `91${rawPhone}` : rawPhone;
+
+    // Pre-open WhatsApp tab to bypass browser popup blockers
+    let waTab = null;
+    if (cleanPhone) {
+      waTab = window.open("about:blank", "_blank");
+    }
+
+    executeSubmitOrder({ paymentStatus: "pending", paymentReference: "", waTab, cleanPhone });
   };
 
-  const executeSubmitOrder = async ({ paymentStatus = "pending", paymentReference = "", waTab = null }) => {
+  const executeSubmitOrder = async ({ paymentStatus = "pending", paymentReference = "", waTab = null, cleanPhone = "" }) => {
     setSubmitting(true);
 
-    const cleanPhone = (storeData?.whatsappNumber || "").replace(/[^0-9]/g, "");
-    const itemsList = cart.map(item => `* ${item.name} x${item.quantity} - Rs.${item.price * item.quantity}`).join("\n");
-    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(customerAddress.trim())}`;
-    
-    // Add QR/Pay Link for WhatsApp orders if UPI is selected
+    const targetPhone = cleanPhone || (() => {
+      const raw = (storeData?.whatsappNumber || storeData?.phone || "").replace(/[^0-9]/g, "");
+      return raw.length === 10 ? `91${raw}` : raw;
+    })();
+
+    const itemsList = cart.map(item => `• ${item.name} x${item.quantity} - Rs.${item.price * item.quantity}`).join("\n");
+    const fullAddressWithPin = pincode.trim() ? `${customerAddress.trim()} (PIN: ${pincode.trim()})` : customerAddress.trim();
+    const mapsLink = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddressWithPin)}`;
     const upiPayLink = paymentMethod === "upi" ? `\n👉 Pay Online: ${getUpiPaymentUri()}` : "";
     
-    const waMessageEarly = `New Order from ${storeData?.name || storeSlug}\n\nItems:\n${itemsList}\n\nSubtotal: Rs.${subtotalAmount}\nTax (5%): Rs.${calculatedTax}\nDelivery: Rs.${storeDeliveryFee}\nTotal: Rs.${grandTotal}\n\nCustomer: ${customerName.trim()}\nPhone: ${customerPhone.trim()}\nAddress: ${customerAddress.trim()}\nDirections: ${mapsLink}\n\nInstructions: ${deliveryInstructions || "None"}\nPayment Method: ${paymentMethod === "cod" ? "Cash on Delivery" : `UPI (${storeUpiId})`}${upiPayLink}\n\nPlease confirm order. Thank you!`;
-    const waUrlEarly = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(waMessageEarly)}` : "";
+    // WhatsApp message format: Food items, Customer info, Address & Location, NO shop name
+    const waMessageEarly = `New Order\n\nItems:\n${itemsList}\n\nSubtotal: Rs.${subtotalAmount}\nTax (5%): Rs.${calculatedTax}\nDelivery: Rs.${storeDeliveryFee}\nTotal: Rs.${grandTotal}\n\nCustomer: ${customerName.trim()}\nPhone: ${customerPhone.trim()}\nAddress: ${fullAddressWithPin}\nLocation: ${mapsLink}\n\nInstructions: ${deliveryInstructions || "None"}\nPayment Method: ${paymentMethod === "cod" ? "Cash on Delivery" : `UPI (${storeUpiId})`}${upiPayLink}\n\nPlease confirm order. Thank you!`;
+    const waUrlEarly = targetPhone ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(waMessageEarly)}` : "";
 
-    // If a WhatsApp tab was pre-opened synchronously, redirect it now
     if (waTab && waUrlEarly) {
-      waTab.location.href = waUrlEarly;
+      try { waTab.location.href = waUrlEarly; } catch (_) {}
+    } else if (targetPhone && !waTab) {
+      window.open(`https://wa.me/${targetPhone}?text=${encodeURIComponent(waMessageEarly)}`, "_blank");
     }
 
     try {
@@ -152,13 +162,14 @@ export default function CustomerCart() {
         storeSlug,
         customerName: customerName.trim(),
         phone: customerPhone.trim(),
-        address: customerAddress.trim(),
-        customerId: customerUser ? (customerUser.id || customerUser._id) : null,
+        address: fullAddressWithPin,
+        pincode: pincode.trim(),
+        customerId: customerUser ? String(customerUser.id || customerUser._id || "") : null,
         items: cart.map(i => ({
-          productId: i._id,
-          name: i.name,
-          quantity: i.quantity,
-          price: i.price
+          productId: String(i._id || i.id || "prod_" + Math.random().toString(36).substr(2, 6)),
+          name: i.name || "Item",
+          quantity: Number(i.quantity) || 1,
+          price: Number(i.price) || 0
         })),
         totalAmount: grandTotal,
         estimatedPrepTime: storeData?.busyModeActive ? (20 + storeData.busyModeDuration) : 20,
@@ -169,39 +180,38 @@ export default function CustomerCart() {
         paymentReference
       });
 
-      const orderId = orderRes.data?._id || orderRes.data?.id || "";
+      const createdOrder = orderRes.data || {};
+      const orderId = createdOrder._id || createdOrder.id || "";
       const shortId = orderId ? `#${orderId.slice(-6).toUpperCase()}` : "#NEW";
-      const finalMsg = waMessageEarly.replace("New Order from", `New Order ${shortId} from`);
-      const waUrlFinal = cleanPhone ? `https://wa.me/${cleanPhone}?text=${encodeURIComponent(finalMsg)}` : waUrlEarly;
+      
+      const finalMsg = `New Order ${shortId}\n\nItems:\n${itemsList}\n\nSubtotal: Rs.${subtotalAmount}\nTax (5%): Rs.${calculatedTax}\nDelivery: Rs.${storeDeliveryFee}\nTotal: Rs.${grandTotal}\n\nCustomer: ${customerName.trim()}\nPhone: ${customerPhone.trim()}\nAddress: ${fullAddressWithPin}\nLocation: ${mapsLink}\n\nInstructions: ${deliveryInstructions || "None"}\nPayment Method: ${paymentMethod === "cod" ? "Cash on Delivery" : `UPI (${storeUpiId})`}${upiPayLink}\n\nPlease confirm order. Thank you!`;
+      const waUrlFinal = targetPhone ? `https://wa.me/${targetPhone}?text=${encodeURIComponent(finalMsg)}` : waUrlEarly;
 
-      // Update the already-open WhatsApp tab with the final URL that includes the real order ID
       if (waTab && waUrlFinal) {
         try { waTab.location.href = waUrlFinal; } catch (_) {}
       }
 
-      setPlacedOrder({
-        id: orderId, shortId,
-        customerName: customerName.trim(),
-        phone: customerPhone.trim(),
-        address: customerAddress.trim(),
-        items: [...cart],
-        subtotal: subtotalAmount,
-        deliveryFee: storeDeliveryFee,
-        tax: calculatedTax,
-        grandTotal,
-        placedAt: new Date(),
-        storeName: storeData?.name || storeSlug,
-        estimatedPrepTime: storeData?.busyModeActive ? (20 + storeData.busyModeDuration) : 20,
-        deliveryInstructions: deliveryInstructions.trim(),
-        paymentMethod,
-        paymentStatus,
-        paymentReference
-      });
-      setWhatsappUrl(waUrlFinal);
+      // Cache order in localStorage so it immediately shows up as Order Confirmed in My Orders page
+      try {
+        const existingLocal = JSON.parse(localStorage.getItem(`recentOrders_${storeSlug}`)) || [];
+        const fullOrderForCache = {
+          ...createdOrder,
+          _id: orderId,
+          status: createdOrder.status || "confirmed",
+          createdAt: createdOrder.createdAt || new Date().toISOString()
+        };
+        const updatedLocal = [fullOrderForCache, ...existingLocal.filter(o => (o._id || o.id) !== orderId)];
+        localStorage.setItem(`recentOrders_${storeSlug}`, JSON.stringify(updatedLocal));
+      } catch (cacheErr) {
+        console.error("Failed to cache recent order:", cacheErr);
+      }
+
+      // Clear cart
       setCart([]);
       localStorage.removeItem(`cart_${storeSlug}`);
-      setPlaced(true);
-      setShowWebsiteUpiPayment(false);
+
+      // Instantly navigate user to My Orders page
+      navigate(`/${storeSlug}/profile?tab=orders`);
     } catch (err) {
       console.error("Order placement failure:", err);
       alert("Order placement failed. Check server connection and try again.");
@@ -431,15 +441,27 @@ export default function CustomerCart() {
   return (
     <div className="min-h-screen bg-white font-sans pb-24 selection:bg-neutral-800 selection:text-white">
       
-      {/* ── HEADER ── */}
+      {/* ── HEADER WITH DYNAMIC STORE OWNER DETAILS ── */}
       <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-2xl mx-auto px-5 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <ShoppingCart className="w-5 h-5 text-neutral-700" />
-            <h1 className="font-bold text-sm text-neutral-900 font-manrope">Your Basket</h1>
+        <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {storeData?.logoUrl ? (
+              <img src={storeData.logoUrl} alt={storeData.name} className="w-8 h-8 rounded-xl object-cover border border-neutral-200" />
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-[#d03d56]/10 text-[#d03d56] font-black text-xs flex items-center justify-center border border-[#d03d56]/20">
+                {storeData?.name ? storeData.name.charAt(0).toUpperCase() : "S"}
+              </div>
+            )}
+            <div>
+              <h1 className="font-black text-xs sm:text-sm text-neutral-900 uppercase tracking-tight font-manrope leading-none">
+                {storeData?.name || storeSlug} Basket
+              </h1>
+              {storeData?.tagline && <span className="text-[10px] text-neutral-400 font-medium italic block mt-0.5">{storeData.tagline}</span>}
+            </div>
           </div>
+
           <Link to={`/${storeSlug}`}
-            className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-955 text-xs font-semibold transition-colors">
+            className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 text-xs font-bold transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to menu
           </Link>
         </div>
@@ -596,74 +618,96 @@ export default function CustomerCart() {
                 )}
               </div>
 
-              {!customerUser ? (
-                <div className="rounded-lg p-5 text-center space-y-3 bg-neutral-50 border border-neutral-200">
-                  <div className="w-10 h-10 bg-white border border-neutral-200 rounded-full flex items-center justify-center mx-auto">
-                    <User className="w-5 h-5 text-neutral-600" />
+              {!customerUser && (
+                <div className="bg-gradient-to-r from-neutral-900 via-neutral-850 to-neutral-900 text-white rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-white/10 text-white flex items-center justify-center font-bold shrink-0 border border-white/20">
+                      <User className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-white leading-tight">Already have an account?</p>
+                      <p className="text-[10px] text-white/70 mt-0.5">Sign in to auto-fill saved addresses & track live orders</p>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="text-xs font-bold text-neutral-800">Authentication Required</h4>
-                    <p className="text-[10px] text-neutral-400 mt-0.5 leading-relaxed">Sign in or register to place your order and trace status.</p>
-                  </div>
-                  <button type="button" onClick={() => setAuthModalOpen(true)}
-                    className="w-full py-3 bg-neutral-850 hover:bg-neutral-900 active:scale-98 text-white font-semibold text-xs rounded-lg transition-all cursor-pointer">
-                    Sign In / Register
+                  <button
+                    type="button"
+                    onClick={() => setAuthModalOpen(true)}
+                    className="px-4 py-2 bg-white text-neutral-950 hover:bg-neutral-100 text-xs font-bold rounded-lg transition-all cursor-pointer shrink-0 w-full sm:w-auto text-center shadow-xs"
+                  >
+                    Sign In / Login ➔
                   </button>
                 </div>
-              ) : (
-                <form onSubmit={handleCheckoutFormSubmit} className="space-y-4">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label htmlFor="cart-name" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Your Name</label>
-                      <input 
-                        required 
-                        id="cart-name"
-                        type="text" 
-                        placeholder="Full name"
-                        value={customerName} 
-                        onChange={e => setCustomerName(e.target.value)}
-                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
-                      />
-                    </div>
+              )}
 
-                    <div className="space-y-1.5">
-                      <label htmlFor="cart-phone" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Phone Number</label>
-                      <input 
-                        required 
-                        id="cart-phone"
-                        type="tel" 
-                        placeholder="+91 98765 43210"
-                        value={customerPhone} 
-                        onChange={e => setCustomerPhone(e.target.value)}
-                        className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
-                      />
-                    </div>
-                  </div>
-
+              <form onSubmit={handleCheckoutFormSubmit} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label htmlFor="cart-address" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Address</label>
-                    <textarea 
-                      required 
-                      id="cart-address"
-                      rows={3} 
-                      placeholder="Building name, apartment number, street details, area..."
-                      value={customerAddress} 
-                      onChange={e => setCustomerAddress(e.target.value)}
-                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all resize-none font-sans" 
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label htmlFor="cart-instructions" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Instructions</label>
+                    <label htmlFor="cart-name" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Your Name *</label>
                     <input 
-                      id="cart-instructions"
+                      required 
+                      id="cart-name"
                       type="text" 
-                      placeholder="e.g. Leave at gate, Ring doorbell..."
-                      value={deliveryInstructions} 
-                      onChange={e => setDeliveryInstructions(e.target.value)}
+                      placeholder="Full name"
+                      value={customerName} 
+                      onChange={e => setCustomerName(e.target.value)}
                       className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
                     />
                   </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="cart-phone" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Phone Number *</label>
+                    <input 
+                      required 
+                      id="cart-phone"
+                      type="tel" 
+                      placeholder="+91 98765 43210"
+                      value={customerPhone} 
+                      onChange={e => setCustomerPhone(e.target.value)}
+                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="sm:col-span-2 space-y-1.5">
+                    <label htmlFor="cart-address" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Address *</label>
+                    <input 
+                      required 
+                      id="cart-address"
+                      type="text"
+                      placeholder="House / Flat No, Street details, Locality..."
+                      value={customerAddress} 
+                      onChange={e => setCustomerAddress(e.target.value)}
+                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label htmlFor="cart-pincode" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">PIN Code / Zip *</label>
+                    <input 
+                      required 
+                      id="cart-pincode"
+                      type="text"
+                      placeholder="e.g. 695608"
+                      maxLength={6}
+                      value={pincode} 
+                      onChange={e => setPincode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6))}
+                      className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans font-mono" 
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label htmlFor="cart-instructions" className="block text-[10px] font-bold text-neutral-450 uppercase tracking-wider">Delivery Instructions</label>
+                  <input 
+                    id="cart-instructions"
+                    type="text" 
+                    placeholder="e.g. Leave at gate, Ring doorbell..."
+                    value={deliveryInstructions} 
+                    onChange={e => setDeliveryInstructions(e.target.value)}
+                    className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2.5 text-xs font-semibold text-neutral-900 placeholder-neutral-300 focus:outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-250 transition-all font-sans" 
+                  />
+                </div>
 
                   <div className="p-3 bg-neutral-50 border border-neutral-200 rounded-lg flex items-center justify-between text-[11px] text-neutral-600">
                     <span className="font-semibold">Selected Payment Method</span>
@@ -688,7 +732,6 @@ export default function CustomerCart() {
                     )}
                   </button>
                 </form>
-              )}
             </div>
           </div>
         )}
@@ -701,6 +744,9 @@ export default function CustomerCart() {
         theme={theme}
         onAuthSuccess={(user) => setCustomerUser(user)}
       />
+
+      {/* MOBILE STICKY BOTTOM NAV */}
+      <MobileBottomNav storeSlug={storeSlug} cartCount={cart.reduce((s, i) => s + i.quantity, 0)} />
     </div>
   );
 }

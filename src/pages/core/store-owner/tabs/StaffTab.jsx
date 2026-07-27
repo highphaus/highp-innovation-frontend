@@ -110,7 +110,7 @@ export default function StaffTab({
             {/* Submit CTA */}
             <button
               type="submit"
-              className="w-full bg-[#10b981] text-white text-xs font-bold py-2.5 rounded shadow-sm hover:opacity-95 uppercase tracking-wider transition-all cursor-pointer"
+              className="w-full bg-[#D03D56] text-white text-xs font-bold py-2.5 rounded shadow-sm hover:bg-[#3F0712] uppercase tracking-wider transition-all cursor-pointer"
             >
               Add Staff Member
             </button>

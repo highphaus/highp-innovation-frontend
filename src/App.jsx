@@ -53,6 +53,7 @@ export default function App() {
 
           {/* Product Detail View */}
           <Route path="product/:productId" element={<ProductView />} />
+          <Route path="products/:productId" element={<ProductView />} />
 
           {/* Customer Cart & Checkout */}
           <Route path="cart" element={<CustomerCart />} />

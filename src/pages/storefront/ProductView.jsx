@@ -1,7 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield, Clock } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield, Clock, Loader2, Share2 } from "lucide-react";
 import axios from "axios";
+import MobileBottomNav from "../../components/MobileBottomNav";
+import { getStoreDisplayName } from "./StorefrontHome";
 
 // Safe inline local theme declarations matching your core storefront layout parameters
 export function getTheme(storeData) {
@@ -14,7 +16,36 @@ export function getTheme(storeData) {
 }
 
 export function getFoodImage(product) {
-  return product?.image || "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80";
+  if (product?.image && typeof product.image === "string" && product.image.trim()) {
+    return product.image.trim();
+  }
+  if (product?.imageUrl && typeof product.imageUrl === "string" && product.imageUrl.trim()) {
+    return product.imageUrl.trim();
+  }
+  return "";
+}
+
+export function getProductVariants(product) {
+  if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+    return product.variants.map(v => {
+      const label = v.variantLabel || v.name || (v.unit ? `1 ${v.unit}` : "Standard Option");
+      return {
+        name: label,
+        variantLabel: label,
+        price: Number(v.price !== undefined ? v.price : (product.price || 0))
+      };
+    });
+  }
+
+  const basePrice = Number(product?.price) || 200;
+  const mainLabel = product?.variantLabel || (product?.unit ? `1 ${product.unit}` : "Full");
+
+  return [
+    { name: "Half", variantLabel: "Half", price: Math.round(basePrice * 0.6) },
+    { name: mainLabel, variantLabel: mainLabel, price: basePrice },
+    { name: "1 Kg", variantLabel: "1 Kg", price: Math.round(basePrice * 1.8) },
+    { name: "2 Kg", variantLabel: "2 Kg", price: Math.round(basePrice * 3.4) }
+  ];
 }
 
 export default function ProductView() {
@@ -22,6 +53,7 @@ export default function ProductView() {
   const navigate = useNavigate();
   const [product, setProduct] = useState(null);
   const [storeData, setStoreData] = useState(null);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState(1); // Default to "Full"
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -36,8 +68,8 @@ export default function ProductView() {
 
   useEffect(() => {
     Promise.all([
-      axios.get(`/api/stores/${storeSlug}`),
-      axios.get(`/api/products/${storeSlug}`)
+      axios.get(`/api/stores/${storeSlug}`).catch(() => ({ data: null })),
+      axios.get(`/api/products/${storeSlug}`).catch(() => ({ data: [] }))
     ]).then(([storeRes, productsRes]) => {
       setStoreData(storeRes.data);
       const fetchedProducts = Array.isArray(productsRes.data) ? productsRes.data : productsRes.data?.products || [];
@@ -45,30 +77,78 @@ export default function ProductView() {
       setProduct(found || null);
       setLoading(false);
     }).catch(() => {
-      // Safe fallback data footprint layer mapping directly to database fields
-      setStoreData({ name: "Taste and park", softwareType: "restaurant" });
-      setProduct({
-        _id: productId,
-        name: "Premium Special Biryani Platter",
-        price: 340,
-        variantLabel: "Full Portion",
-        preparationTime: 20,
-        isNonVeg: true,
-        rating: "4.9",
-        description: "Signature premium wood-fired authentic slow-cooked layered basmati rice platter infused with native robust spice aggregates, garnished with fresh toasted nuts."
-      });
+      setStoreData(null);
+      setProduct(null);
       setLoading(false);
     });
   }, [storeSlug, productId]);
 
+  // Track recently viewed products
+  useEffect(() => {
+    if (product && product._id) {
+      try {
+        const existing = JSON.parse(localStorage.getItem(`viewed_${storeSlug}`)) || [];
+        const filtered = existing.filter(p => p._id !== product._id);
+        const itemToSave = {
+          _id: product._id,
+          name: product.name,
+          price: product.price,
+          image: getFoodImage(product),
+          category: product.category,
+          viewedAt: new Date().toISOString()
+        };
+        localStorage.setItem(`viewed_${storeSlug}`, JSON.stringify([itemToSave, ...filtered].slice(0, 20)));
+      } catch (_) {}
+    }
+  }, [product, storeSlug]);
+
+  const handleShareProduct = () => {
+    if (!product) return;
+    try {
+      const url = window.location.href;
+      if (navigator.share) {
+        navigator.share({ title: product.name, text: `Check out ${product.name} on ${storeData?.name || storeSlug}!`, url });
+      } else {
+        navigator.clipboard.writeText(url);
+        alert("Product link copied to clipboard!");
+      }
+      const existing = JSON.parse(localStorage.getItem(`shared_${storeSlug}`)) || [];
+      const filtered = existing.filter(p => p._id !== product._id);
+      const itemToSave = {
+        _id: product._id,
+        name: product.name,
+        price: product.price,
+        image: getFoodImage(product),
+        sharedAt: new Date().toISOString()
+      };
+      localStorage.setItem(`shared_${storeSlug}`, JSON.stringify([itemToSave, ...filtered].slice(0, 20)));
+    } catch (_) {}
+  };
+
+  const variants = useMemo(() => getProductVariants(product), [product]);
+  const currentVariant = variants[selectedVariantIndex] || variants[0] || { name: "Full", price: product?.price || 200 };
+  const unitPrice = currentVariant.price;
+
   const addToCart = () => {
     if (!product) return;
+    const cartItemId = `${product._id}_${currentVariant.name}`;
+    const cartItemName = `${product.name} (${currentVariant.name})`;
+
     const existing = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
-    const idx = existing.findIndex(i => i._id === product._id);
+    const idx = existing.findIndex(i => i._id === cartItemId || (i.productId === product._id && i.variantLabel === currentVariant.name));
+    
     if (idx > -1) {
       existing[idx].quantity += quantity;
     } else {
-      existing.push({ ...product, quantity });
+      existing.push({
+        _id: cartItemId,
+        productId: product._id,
+        name: cartItemName,
+        price: unitPrice,
+        variantLabel: currentVariant.name,
+        quantity,
+        image: product.image || "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80"
+      });
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
     setAdded(true);
@@ -107,6 +187,7 @@ export default function ProductView() {
   );
 
   return (
+    <>
     <div className="min-h-screen bg-[#F8FAFC] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white">
       
       {/* BRAND NAVIGATION HEADER */}
@@ -137,13 +218,26 @@ export default function ProductView() {
               className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
             />
             
-            {/* Floating Top Heart Toggle Actions overlay */}
-            <button 
-              onClick={toggleLike} 
-              className="absolute top-4 right-4 p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-400 hover:text-[#d03d56] transition-colors cursor-pointer z-10 border border-neutral-100"
-            >
-              <Heart className={`w-4 h-4 ${isLiked ? 'fill-[#d03d56] text-[#d03d56]' : ''}`} />
-            </button>
+            {/* Floating Top Share & Wishlist Toggle Actions */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+              <button 
+                type="button"
+                onClick={handleShareProduct} 
+                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-600 hover:text-black transition-colors cursor-pointer border border-neutral-100"
+                title="Share product link"
+              >
+                <Share2 className="w-4 h-4" />
+              </button>
+
+              <button 
+                type="button"
+                onClick={toggleLike} 
+                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-400 hover:text-[#d03d56] transition-colors cursor-pointer border border-neutral-100"
+                title="Wishlist product"
+              >
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-[#d03d56] text-[#d03d56]' : ''}`} />
+              </button>
+            </div>
 
             {/* Zomato Style Veg/Non-Veg Corner Flag overlay */}
             <div className="absolute left-4 top-4 z-10 bg-white/95 px-2 py-1 rounded-md border border-neutral-100 backdrop-blur-xs flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-neutral-600 shadow-sm">
@@ -166,12 +260,9 @@ export default function ProductView() {
                   <span>{product.rating || "4.6"}</span>
                   <span className="text-[8px]">★</span>
                 </div>
-                {/* Variant metadata badge layout */}
-                {product.variantLabel && (
-                  <span className="text-[9px] bg-neutral-100 border border-neutral-200 font-bold px-2 py-0.5 rounded text-neutral-500 uppercase tracking-wide">
-                    {product.variantLabel}
-                  </span>
-                )}
+                <span className="text-[9px] bg-neutral-100 border border-neutral-200 font-bold px-2 py-0.5 rounded text-neutral-500 uppercase tracking-wide">
+                  {currentVariant.name}
+                </span>
               </div>
 
               <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight leading-tight uppercase font-manrope">
@@ -180,13 +271,39 @@ export default function ProductView() {
             </div>
 
             <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-neutral-950 font-mono">₹{product.price}</span>
-              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">Base Price</span>
+              <span className="text-2xl font-black text-neutral-950 font-mono">₹{unitPrice * quantity}</span>
+              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                ({currentVariant.name} × {quantity})
+              </span>
             </div>
 
             <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed font-medium">
               {product.description || "Fresh premium selections curated with organic high-quality baseline ingredients prepared natively for convenient fulfillment."}
             </p>
+
+            <div className="h-px bg-neutral-100" />
+
+            {/* PORTION / QUANTITY DROPDOWN SELECTOR */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Select Portion / Quantity</span>
+                <span className="text-[10px] font-bold text-[#d03d56] uppercase tracking-wider">{currentVariant.name}</span>
+              </div>
+              <div className="relative">
+                <select
+                  value={selectedVariantIndex}
+                  onChange={(e) => setSelectedVariantIndex(Number(e.target.value))}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-bold text-neutral-900 px-4 py-3 focus:outline-none focus:border-[#d03d56] cursor-pointer appearance-none pr-8 shadow-2xs"
+                >
+                  {variants.map((v, idx) => (
+                    <option key={idx} value={idx}>
+                      {v.name} &mdash; ₹{v.price}
+                    </option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-bold">▼</div>
+              </div>
+            </div>
 
             <div className="h-px bg-neutral-100" />
 
@@ -242,7 +359,7 @@ export default function ProductView() {
               className="w-full py-3.5 bg-[#d03d56] hover:bg-[#a02240] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md cursor-pointer border-none"
             >
               <ShoppingCart className="w-3.5 h-3.5" />
-              {added ? "Added To Basket! ✓" : `Add to Basket · ₹${product.price * quantity}`}
+              {added ? "Added To Basket! ✓" : `Add to Basket · ₹${unitPrice * quantity}`}
             </button>
 
             <Link 
@@ -255,6 +372,46 @@ export default function ProductView() {
         </div>
 
       </div>
+
+      {/* STORE OWNER INFO CARD (FETCHED DYNAMICALLY FROM STORE SETTINGS) */}
+      {storeData && (
+        <div className="mt-8 max-w-4xl mx-auto px-4">
+          <div className="bg-white border border-neutral-200 rounded-3xl p-5 sm:p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-3.5">
+              {storeData.logoUrl ? (
+                <img src={storeData.logoUrl} alt={storeData.name} className="w-12 h-12 rounded-2xl object-cover border border-neutral-100 shadow-2xs" />
+              ) : (
+                <div className="w-12 h-12 rounded-2xl bg-[#d03d56]/10 text-[#d03d56] font-black text-lg flex items-center justify-center border border-[#d03d56]/20 shrink-0">
+                  {storeData.name ? storeData.name.charAt(0).toUpperCase() : "S"}
+                </div>
+              )}
+              <div>
+                <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
+                {storeData.tagline && <p className="text-[11px] text-neutral-500 font-medium italic">{storeData.tagline}</p>}
+                {storeData.address && (
+                  <p className="text-[10px] text-neutral-400 font-medium flex items-center gap-1 mt-0.5">
+                    <span>📍</span> {storeData.address}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {(storeData.phone || storeData.whatsappNumber) && (
+              <a 
+                href={`tel:${storeData.whatsappNumber || storeData.phone}`}
+                className="px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto hover:bg-emerald-100 transition-colors shadow-2xs"
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Call {storeData.whatsappNumber || storeData.phone}</span>
+              </a>
+            )}
+          </div>
+        </div>
+      )}
     </div>
+
+    {/* MOBILE STICKY BOTTOM NAV */}
+    <MobileBottomNav storeSlug={storeSlug} cartCount={cartCount} />
+  </>
   );
 }

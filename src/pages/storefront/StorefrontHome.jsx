@@ -1,12 +1,23 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  ShoppingCart, Loader2, Search, User, Clock, Heart, Store
+  ShoppingCart, Loader2, Search, User, Clock, Heart, Store, Info, MapPin, Phone, AlertTriangle, Sparkles, X, Check, Share2
 } from "lucide-react";
 import axios from "axios";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
 import OrderHistoryDrawer from "../../components/OrderHistoryDrawer";
 import CustomerProfileDrawer from "../../components/CustomerProfileDrawer";
+import MobileBottomNav from "../../components/MobileBottomNav";
+
+export function getStoreDisplayName(storeData, storeSlug) {
+  if (storeData && storeData.name && storeData.name.trim()) {
+    return storeData.name.trim();
+  }
+  if (storeSlug && storeSlug.trim()) {
+    return storeSlug.trim().replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  }
+  return "Storefront";
+}
 
 // ─── ADDED BACK FOR PRODUCTVIEW.JSX COMPATIBILITY ───────────
 export function getVerticalDetails(softwareType) {
@@ -18,37 +29,14 @@ export function getVerticalDetails(softwareType) {
 }
 
 // ─── THEME RESOLVER FOR SOFTWARE VERTICALS ─────────────────
-const foodImagePool = [
-  {
-    keywords: ["chicken", "grill", "grilled", "tikka", "kebab", "bbq", "shawarma", "fry", "fried"],
-    image: "https://images.unsplash.com/photo-1529042410759-befb1204b468?auto=format&fit=crop&w=900&q=80"
-  },
-  {
-    keywords: ["fries", "potato", "crisp", "loaded"],
-    image: "https://images.unsplash.com/photo-1576107232684-1279f390859f?auto=format&fit=crop&w=900&q=80"
-  },
-  {
-    keywords: ["biryani", "rice", "pulao", "kuzhimanthi"],
-    image: "https://images.unsplash.com/photo-1626074353765-517a681e40be?auto=format&fit=crop&w=900&q=80"
-  },
-  {
-    keywords: ["fish", "prawns", "seafood", "meen", "karimeen"],
-    image: "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=80"
-  },
-  {
-    keywords: ["dosa", "idli", "vada", "breakfast", "appam"],
-    image: "https://images.unsplash.com/photo-1589302168068-964664d93dc0?auto=format&fit=crop&w=900&q=80"
-  },
-  {
-    keywords: ["juice", "cool drink", "mango", "smoothie"],
-    image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&w=900&q=80"
-  }
-];
-
 export function getFoodImage(product) {
-  const text = `${product?.name || ""} ${product?.description || ""}`.toLowerCase();
-  const match = foodImagePool.find((item) => item.keywords.some((keyword) => text.includes(keyword)));
-  return match?.image || "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=80";
+  if (product?.image && typeof product.image === "string" && product.image.trim()) {
+    return product.image.trim();
+  }
+  if (product?.imageUrl && typeof product.imageUrl === "string" && product.imageUrl.trim()) {
+    return product.imageUrl.trim();
+  }
+  return "";
 }
 
 export function getTheme(storeData) {
@@ -62,11 +50,37 @@ export function getTheme(storeData) {
   };
 }
 
+export function getProductVariants(product) {
+  if (product?.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+    return product.variants.map(v => {
+      const label = v.variantLabel || v.name || (v.unit ? `1 ${v.unit}` : "Standard Option");
+      return {
+        name: label,
+        variantLabel: label,
+        price: Number(v.price !== undefined ? v.price : (product.price || 0))
+      };
+    });
+  }
+
+  const basePrice = Number(product?.price) || 200;
+  const mainLabel = product?.variantLabel || (product?.unit ? `1 ${product.unit}` : "Full");
+
+  return [
+    { name: "Half", variantLabel: "Half", price: Math.round(basePrice * 0.6) },
+    { name: mainLabel, variantLabel: mainLabel, price: basePrice },
+    { name: "1 Kg", variantLabel: "1 Kg", price: Math.round(basePrice * 1.8) },
+    { name: "2 Kg", variantLabel: "2 Kg", price: Math.round(basePrice * 3.4) }
+  ];
+}
+
 export default function Storefront() {
   const { storeSlug } = useParams();
 
   const [storeData, setStoreData] = useState(null);
   const [products, setProducts] = useState([]);
+  const [selectedVariants, setSelectedVariants] = useState({});
+  const [showStoreInfoModal, setShowStoreInfoModal] = useState(false);
+  
   const [customerUser, setCustomerUser] = useState(() => {
     try {
       const stored = localStorage.getItem(`customerUser_${storeSlug}`);
@@ -108,8 +122,8 @@ export default function Storefront() {
   const fetchStoreAndProducts = () => {
     const slug = (storeSlug || "").toLowerCase().trim();
     Promise.all([
-      axios.get(`/api/stores/${slug}`),
-      axios.get(`/api/products/${slug}`)
+      axios.get(`/api/stores/${slug}`).catch(() => ({ data: null })),
+      axios.get(`/api/products/${slug}`).catch(() => ({ data: [] }))
     ])
       .then(([storeRes, productsRes]) => {
         setStoreData(storeRes.data);
@@ -118,13 +132,8 @@ export default function Storefront() {
         setLoading(false);
       })
       .catch(() => {
-        setStoreData({ name: "Taste and park", softwareType: "restaurant", customCategories: ["Mains", "Sides", "Beverages"] });
-        setProducts([
-          { _id: "p1", name: "Premium Mutton Biryani", price: 340, variantLabel: "Full Portion", preparationTime: 20, isNonVeg: true, rating: "4.9", category: "Mains" },
-          { _id: "p2", name: "Double Cheese Crunch Burger", price: 160, variantLabel: "1 Pcs", preparationTime: 12, isNonVeg: false, rating: "4.7", category: "Mains" },
-          { _id: "p3", name: "Peri Peri Loaded Fries", price: 190, variantLabel: "Reg Box", preparationTime: 8, isNonVeg: false, rating: "4.5", category: "Sides" },
-          { _id: "p4", name: "Classic Grilled Chicken Shawarma", price: 180, variantLabel: "1 Roll", preparationTime: 15, isNonVeg: true, rating: "4.8", category: "Mains" }
-        ]);
+        setStoreData(null);
+        setProducts([]);
         setLoading(false);
       });
   };
@@ -137,32 +146,54 @@ export default function Storefront() {
     let result = [...products];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase().trim();
-      result = result.filter((p) => (p.name || "").toLowerCase().includes(q));
+      result = result.filter((p) => 
+        (p.name || "").toLowerCase().includes(q) || 
+        (p.category || "").toLowerCase().includes(q) ||
+        (p.description || "").toLowerCase().includes(q)
+      );
     }
     if (selectedCategory && selectedCategory !== "All") {
-      result = result.filter((p) => (p.category || "").toLowerCase() === selectedCategory.toLowerCase());
+      result = result.filter((p) => (p.category || "").toLowerCase().trim() === selectedCategory.toLowerCase().trim());
     }
-    if (vegFilter === "veg") result = result.filter(p => !p.isNonVeg);
-    if (vegFilter === "non-veg") result = result.filter(p => p.isNonVeg);
+    if (vegFilter === "veg") {
+      result = result.filter(p => p.vegNonVeg === "veg" || p.isNonVeg === false || (!p.isNonVeg && p.vegNonVeg !== "non-veg"));
+    }
+    if (vegFilter === "non-veg") {
+      result = result.filter(p => p.vegNonVeg === "non-veg" || p.isNonVeg === true);
+    }
     return result;
   }, [products, searchQuery, selectedCategory, vegFilter]);
 
-  const addToCart = (product) => {
+  const addToCart = (product, variantObj) => {
+    const variants = getProductVariants(product);
+    const selected = variantObj || variants[selectedVariants[product._id] || 0] || variants[0];
+    const cartItemId = `${product._id}_${selected.name}`;
+    const cartItemName = `${product.name} (${selected.name})`;
+
     const existing = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
-    const idx = existing.findIndex(i => i._id === product._id);
+    const idx = existing.findIndex(i => i._id === cartItemId || (i.productId === product._id && i.variantLabel === selected.name));
+    
     if (idx > -1) {
       existing[idx].quantity += 1;
     } else {
-      existing.push({ ...product, quantity: 1 });
+      existing.push({
+        _id: cartItemId,
+        productId: product._id,
+        name: cartItemName,
+        price: selected.price,
+        variantLabel: selected.name,
+        quantity: 1,
+        image: getFoodImage(product)
+      });
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
     setCartCount(existing.reduce((s, i) => s + i.quantity, 0));
     setCartTotal(existing.reduce((s, i) => s + (i.price * i.quantity), 0));
   };
 
-  const updateCartQty = (productId, delta) => {
+  const updateCartQty = (cartItemId, delta) => {
     const existing = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
-    const idx = existing.findIndex(i => i._id === productId);
+    const idx = existing.findIndex(i => i._id === cartItemId);
     if (idx > -1) {
       existing[idx].quantity += delta;
       if (existing[idx].quantity <= 0) existing.splice(idx, 1);
@@ -172,9 +203,9 @@ export default function Storefront() {
     }
   };
 
-  const getProductQty = (productId) => {
+  const getProductQty = (cartItemId) => {
     const cart = JSON.parse(localStorage.getItem(`cart_${storeSlug}`)) || [];
-    const item = cart.find(i => i._id === productId);
+    const item = cart.find(i => i._id === cartItemId);
     return item ? item.quantity : 0;
   };
 
@@ -191,11 +222,22 @@ export default function Storefront() {
     setCustomerUser(null);
     setUserMenuOpen(false);
   };
+  
+  const categories = useMemo(() => {
+    const custom = storeData?.customCategories || [];
+    const fromProducts = products.map(p => p.category).filter(Boolean);
+    const combined = Array.from(new Set(["All", ...custom, ...fromProducts]));
+    if (combined.length <= 1) {
+      return ["All", "Mains", "Starters", "Sides", "Beverages", "Desserts"];
+    }
+    return combined;
+  }, [storeData, products]);
 
   const theme = useMemo(() => getTheme(storeData), [storeData]);
-  const categories = useMemo(() => {
-    return storeData?.customCategories?.length > 0 ? ["All", ...storeData.customCategories] : ["All", "Mains", "Sides", "Beverages"];
-  }, [storeData]);
+
+  const freeDeliveryThreshold = Number(storeData?.freeDeliveryAbove) || 0;
+  const isFreeDeliveryUnlocked = freeDeliveryThreshold > 0 && cartTotal >= freeDeliveryThreshold;
+  const freeDeliveryProgress = freeDeliveryThreshold > 0 ? Math.min(100, (cartTotal / freeDeliveryThreshold) * 100) : 0;
 
   if (loading) {
     return (
@@ -207,22 +249,65 @@ export default function Storefront() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-neutral-900 font-sans pb-32">
+    <div className="min-h-screen bg-white text-neutral-900 font-sans pb-32 md:pb-20">
       
-      {/* ─── HEADER BAND ─── */}
-      <div className="bg-[#d03d56] text-white pt-6 pb-10 px-4 relative shadow-sm">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center backdrop-blur-xs">
-              <Store className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h1 className="text-base font-bold tracking-tight uppercase leading-tight font-manrope">{storeData?.name || "Storefront"}</h1>
-              <p className="text-[10px] text-white/80 font-medium">{storeData?.softwareType === 'restaurant' ? 'Restaurant & Café' : 'Store'} &middot; {products?.length || 0} products</p>
+      {/* ─── HEADER BAND WITH STORE OWNER DETAILS & STATUS BADGES ─── */}
+      <div className="bg-[#d03d56] text-white pt-6 pb-12 px-4 relative shadow-sm">
+        <div className="max-w-5xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+          
+          <div className="flex items-center gap-4">
+            {storeData?.logoUrl ? (
+              <img 
+                src={storeData.logoUrl} 
+                alt={getStoreDisplayName(storeData, storeSlug)} 
+                className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl object-cover border-2 border-white shadow-md shrink-0 bg-white" 
+              />
+            ) : (
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-white/20 flex items-center justify-center backdrop-blur-xs shrink-0 border-2 border-white/30 shadow-md">
+                <Store className="w-8 h-8 text-white" />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg sm:text-xl font-black tracking-tight uppercase leading-tight font-manrope">
+                  {getStoreDisplayName(storeData, storeSlug)}
+                </h1>
+                <button
+                  onClick={() => setShowStoreInfoModal(true)}
+                  className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors cursor-pointer"
+                  title="Store Info & Operating Hours"
+                >
+                  <Info className="w-4 h-4" />
+                </button>
+              </div>
+
+              {storeData?.tagline && (
+                <p className="text-xs text-white/90 font-medium italic leading-none">{storeData.tagline}</p>
+              )}
+
+              {/* Badges Row: Open Status, Prep Time, Delivery Fee */}
+              <div className="flex flex-wrap items-center gap-1.5 pt-1.5 text-[9px] font-bold">
+                <span className={`px-2.5 py-0.5 rounded-full flex items-center gap-1 ${storeData?.storeIsOpen !== false ? "bg-emerald-500/90 text-white" : "bg-red-900/90 text-white"}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${storeData?.storeIsOpen !== false ? "bg-white animate-pulse" : "bg-red-300"}`} />
+                  {storeData?.storeIsOpen !== false ? "Open Now" : "Closed"}
+                </span>
+
+                <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-xs flex items-center gap-1">
+                  <Clock className="w-2.5 h-2.5" />
+                  {storeData?.estimatedDeliveryTime || "30-45 Mins"}
+                </span>
+
+                {storeData?.minOrderAmount > 0 && (
+                  <span className="px-2.5 py-0.5 rounded-full bg-white/20 text-white backdrop-blur-xs">
+                    Min Order: ₹{storeData.minOrderAmount}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {customerUser ? (
               <div className="relative">
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="w-8 h-8 rounded-full bg-white/20 text-white border border-white/10 font-bold text-xs flex items-center justify-center cursor-pointer">
@@ -250,6 +335,7 @@ export default function Storefront() {
               )}
             </Link>
           </div>
+
         </div>
       </div>
 
@@ -267,7 +353,110 @@ export default function Storefront() {
         </div>
       </div>
 
-      {/* FILTER CAROUSEL */}
+      {/* FREE DELIVERY PROGRESS BAR BANNER */}
+      {freeDeliveryThreshold > 0 && (
+        <div className="max-w-4xl mx-auto px-4 mt-4">
+          <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200/80 rounded-2xl p-3 shadow-2xs space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-bold text-emerald-900">
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="w-3.5 h-3.5 text-emerald-600 animate-bounce" />
+                {isFreeDeliveryUnlocked 
+                  ? "🎉 Congratulations! FREE Delivery Unlocked!" 
+                  : `Add ₹${freeDeliveryThreshold - cartTotal} more for FREE Delivery!`}
+              </span>
+              <span className="text-[10px] font-mono font-black text-emerald-700">₹{cartTotal} / ₹{freeDeliveryThreshold}</span>
+            </div>
+            <div className="w-full h-2 bg-emerald-200/60 rounded-full overflow-hidden">
+              <div 
+                className="h-full bg-emerald-600 rounded-full transition-all duration-500" 
+                style={{ width: `${freeDeliveryProgress}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* BUSY MODE / CLOSED NOTICE BANNER */}
+      {(storeData?.busyModeActive || storeData?.storeIsOpen === false) && (
+        <div className="max-w-4xl mx-auto px-4 mt-3">
+          <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-3 flex items-center gap-2.5 text-amber-900">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <p className="text-xs font-semibold leading-snug">
+              {storeData?.storeIsOpen === false 
+                ? "This store is currently not taking immediate orders, but you can browse the menu and schedule."
+                : (storeData?.busyModeMessage || `High order volume! Orders may take extra ${storeData?.busyModeDuration || 20} mins.`)}
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* STORE INFO & OPERATING HOURS POPUP MODAL */}
+      {showStoreInfoModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 z-50 animate-in fade-in">
+          <div className="bg-white border border-neutral-200 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-4 relative overflow-hidden">
+            <button
+              onClick={() => setShowStoreInfoModal(false)}
+              className="absolute top-4 right-4 p-1.5 rounded-full bg-white/80 hover:bg-white text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer z-10 border border-neutral-200"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
+            {storeData?.logoUrl && (
+              <div className="w-full h-36 -mx-6 -mt-6 mb-2 bg-neutral-100 overflow-hidden relative">
+                <img src={storeData.logoUrl} alt={getStoreDisplayName(storeData, storeSlug)} className="w-full h-full object-cover" />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <h3 className="text-base font-black text-neutral-900 uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
+              <p className="text-xs text-neutral-500 font-medium">{storeData?.tagline || "Store Overview & Details"}</p>
+            </div>
+
+            <div className="h-px bg-neutral-100" />
+
+            <div className="space-y-3 text-xs">
+              {storeData?.address && (
+                <div className="flex items-start gap-2 text-neutral-700">
+                  <MapPin className="w-4 h-4 text-[#d03d56] shrink-0 mt-0.5" />
+                  <span>{storeData.address}</span>
+                </div>
+              )}
+
+              {(storeData?.phone || storeData?.whatsappNumber) && (
+                <div className="flex items-center gap-2 text-neutral-700 font-mono">
+                  <Phone className="w-4 h-4 text-emerald-600 shrink-0" />
+                  <span>{storeData.whatsappNumber || storeData.phone}</span>
+                </div>
+              )}
+
+              <div className="bg-neutral-50 border border-neutral-200/80 rounded-2xl p-3 space-y-1.5">
+                <span className="block text-[10px] font-black text-neutral-400 uppercase tracking-widest">Delivery Details</span>
+                <div className="flex justify-between text-neutral-800 font-bold">
+                  <span>Est. Time:</span>
+                  <span className="font-mono">{storeData?.estimatedDeliveryTime || "30-45 Mins"}</span>
+                </div>
+                <div className="flex justify-between text-neutral-800 font-bold">
+                  <span>Min Order:</span>
+                  <span className="font-mono">{storeData?.minOrderAmount > 0 ? `₹${storeData.minOrderAmount}` : "None"}</span>
+                </div>
+                <div className="flex justify-between text-neutral-800 font-bold">
+                  <span>Free Delivery:</span>
+                  <span className="font-mono">{storeData?.freeDeliveryAbove > 0 ? `Above ₹${storeData.freeDeliveryAbove}` : "N/A"}</span>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setShowStoreInfoModal(false)}
+              className="w-full py-2.5 bg-neutral-900 hover:bg-neutral-955 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition-colors cursor-pointer"
+            >
+              Close Info
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* DYNAMIC CATEGORY FILTER CAROUSEL (FROM STORE OWNER CATEGORIES) */}
       <section className="max-w-4xl mx-auto px-4 pt-6 pb-2">
         <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
           <button onClick={() => setVegFilter(vegFilter === "veg" ? "all" : "veg")} className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${vegFilter === "veg" ? "bg-emerald-50 border-emerald-400 text-emerald-700" : "bg-white border-neutral-200 text-neutral-600"}`}>
@@ -296,17 +485,59 @@ export default function Storefront() {
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {filteredProducts.map((product) => {
               const liked = likedProducts.includes(product._id);
-              const quantityInCart = getProductQty(product._id);
+              const variants = getProductVariants(product);
+              const selectedIdx = selectedVariants[product._id] ?? 0;
+              const currentVariant = variants[selectedIdx] || variants[0];
+              const cartItemId = `${product._id}_${currentVariant.name}`;
+              const quantityInCart = getProductQty(cartItemId);
 
               return (
                 <div key={product._id} className="group flex flex-col rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden hover:shadow-sm transition-shadow">
                   
-                  <div className="relative aspect-square bg-neutral-50 overflow-hidden">
+                  <Link to={`/${storeSlug}/product/${product._id}`} className="relative aspect-square bg-neutral-50 overflow-hidden block cursor-pointer">
                     <img src={getFoodImage(product)} alt={product.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102" />
                     
-                    <button type="button" onClick={() => toggleLike(product._id)} className="absolute right-2 top-2 rounded-full bg-white/90 p-1.5 text-neutral-400 shadow-xs hover:text-[#d03d56] cursor-pointer">
-                      <Heart className={`h-3.5 w-3.5 ${liked ? "fill-[#d03d56] text-[#d03d56]" : ""}`} />
-                    </button>
+                    <div className="absolute right-2 top-2 flex items-center gap-1 z-10">
+                      <button 
+                        type="button" 
+                        onClick={(e) => { 
+                          e.preventDefault(); 
+                          e.stopPropagation(); 
+                          try {
+                            const url = `${window.location.origin}/${storeSlug}/product/${product._id}`;
+                            if (navigator.share) {
+                              navigator.share({ title: product.name, url });
+                            } else {
+                              navigator.clipboard.writeText(url);
+                              alert("Product link copied!");
+                            }
+                            const existing = JSON.parse(localStorage.getItem(`shared_${storeSlug}`)) || [];
+                            const filtered = existing.filter(p => p._id !== product._id);
+                            const itemToSave = {
+                              _id: product._id,
+                              name: product.name,
+                              price: product.price,
+                              image: getFoodImage(product),
+                              sharedAt: new Date().toISOString()
+                            };
+                            localStorage.setItem(`shared_${storeSlug}`, JSON.stringify([itemToSave, ...filtered].slice(0, 20)));
+                          } catch (_) {}
+                        }} 
+                        className="rounded-full bg-white/90 p-1.5 text-neutral-600 shadow-xs hover:text-black cursor-pointer"
+                        title="Share product link"
+                      >
+                        <Share2 className="h-3.5 w-3.5" />
+                      </button>
+
+                      <button 
+                        type="button" 
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); toggleLike(product._id); }} 
+                        className="rounded-full bg-white/90 p-1.5 text-neutral-400 shadow-xs hover:text-[#d03d56] cursor-pointer"
+                        title="Wishlist product"
+                      >
+                        <Heart className={`h-3.5 w-3.5 ${liked ? "fill-[#d03d56] text-[#d03d56]" : ""}`} />
+                      </button>
+                    </div>
 
                     <div className="absolute left-2 top-2 bg-white/90 p-1 rounded border border-neutral-100 backdrop-blur-xs">
                       <span className={`w-2.5 h-2.5 border rounded-xs flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-600" : "border-emerald-600"}`}>
@@ -318,38 +549,54 @@ export default function Storefront() {
                       <Clock className="h-2.5 w-2.5 text-neutral-300" />
                       <span>{product.preparationTime || "15"} MINS</span>
                     </div>
-                  </div>
+                  </Link>
 
-                  <div className="p-3 flex flex-col flex-1 justify-between gap-3 bg-white">
-                    <div className="space-y-1">
-                      <div className="flex items-start justify-between gap-1.5">
-                        <h4 className="text-xs sm:text-sm font-bold text-neutral-900 tracking-tight leading-tight line-clamp-2 min-h-[2rem]">
-                          {product.name}
-                        </h4>
-                        <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[8px] px-1 rounded shrink-0">
-                          <span>{product.rating || "4.5"}</span>
-                          <span>★</span>
+                  <div className="p-3 flex flex-col flex-1 justify-between gap-2.5 bg-white">
+                    <div className="space-y-2">
+                      <Link to={`/${storeSlug}/product/${product._id}`} className="space-y-1 block group-hover:text-[#d03d56] transition-colors cursor-pointer">
+                        <div className="flex items-start justify-between gap-1.5">
+                          <h4 className="text-xs sm:text-sm font-bold text-neutral-900 tracking-tight leading-tight line-clamp-2 min-h-[2rem]">
+                            {product.name}
+                          </h4>
+                          <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[8px] px-1 rounded shrink-0">
+                            <span>{product.rating || "4.5"}</span>
+                            <span>★</span>
+                          </div>
                         </div>
-                      </div>
+                      </Link>
 
-                      {product.variantLabel && (
-                        <span className="inline-block text-[9px] font-bold text-neutral-400 bg-neutral-50 border border-neutral-200 rounded px-1.5 py-0.5 uppercase tracking-wider">
-                          {product.variantLabel}
-                        </span>
-                      )}
+                      {/* PORTION / QUANTITY DROPDOWN SELECTOR */}
+                      <div className="relative">
+                        <select
+                          value={selectedIdx}
+                          onChange={(e) => {
+                            const newIdx = Number(e.target.value);
+                            setSelectedVariants(prev => ({ ...prev, [product._id]: newIdx }));
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-lg text-[10px] font-bold text-neutral-800 px-2 py-1 focus:outline-none focus:border-[#d03d56] cursor-pointer appearance-none pr-5"
+                        >
+                          {variants.map((v, idx) => (
+                            <option key={idx} value={idx}>
+                              {v.name} &mdash; ₹{v.price}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 text-neutral-400 text-[9px]">▼</div>
+                      </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-1 border-t border-neutral-100 mt-auto">
-                      <span className="text-xs sm:text-sm font-black text-neutral-955 font-mono">₹{product.price}</span>
+                      <span className="text-xs sm:text-sm font-black text-neutral-955 font-mono">₹{currentVariant.price}</span>
                       
                       {quantityInCart > 0 ? (
                         <div className="flex items-center bg-[#d03d56] text-white rounded-lg h-7 px-1 font-bold text-xs select-none">
-                          <button onClick={() => updateCartQty(product._id, -1)} className="w-5 h-full bg-transparent border-none text-white text-sm font-bold">-</button>
+                          <button onClick={(e) => { e.stopPropagation(); updateCartQty(cartItemId, -1); }} className="w-5 h-full bg-transparent border-none text-white text-sm font-bold cursor-pointer">-</button>
                           <span className="w-4 text-center text-[11px] font-black">{quantityInCart}</span>
-                          <button onClick={() => updateCartQty(product._id, 1)} className="w-5 h-full bg-transparent border-none text-white text-sm font-bold">+</button>
+                          <button onClick={(e) => { e.stopPropagation(); updateCartQty(cartItemId, 1); }} className="w-5 h-full bg-transparent border-none text-white text-sm font-bold cursor-pointer">+</button>
                         </div>
                       ) : (
-                        <button type="button" onClick={() => addToCart(product)} className="bg-white border border-[#d03d56] text-[#d03d56] font-bold text-[10px] uppercase tracking-wider px-3 py-1 rounded-lg hover:bg-[#d03d56] hover:text-white transition-all cursor-pointer">
+                        <button type="button" onClick={(e) => { e.stopPropagation(); addToCart(product, currentVariant); }} className="bg-white border border-[#d03d56] text-[#d03d56] font-bold text-[10px] uppercase tracking-wider px-3 py-1 rounded-lg hover:bg-[#d03d56] hover:text-white transition-all cursor-pointer">
                           Add
                         </button>
                       )}
@@ -363,9 +610,9 @@ export default function Storefront() {
         )}
       </section>
 
-      {/* FLOATING ACTION BOTTOM TRAY */}
+      {/* FLOATING ACTION BOTTOM TRAY — sits above the bottom nav on mobile */}
       {cartCount > 0 && (
-        <div className="fixed bottom-5 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">
+        <div className="fixed bottom-[72px] md:bottom-5 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">
           <Link to={`/${storeSlug}/cart`} className="flex items-center justify-between bg-neutral-900 text-white px-4 py-3.5 rounded-xl shadow-xl hover:bg-neutral-955 transition-all">
             <div className="flex items-center gap-2">
               <span className="bg-[#d03d56] text-white font-black text-[10px] px-2 py-0.5 rounded">{cartCount}</span>
@@ -385,6 +632,9 @@ export default function Storefront() {
       <CustomerAuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} storeSlug={storeSlug} theme={theme} onAuthSuccess={(user) => setCustomerUser(user)} />
       <OrderHistoryDrawer isOpen={historyDrawerOpen} onClose={() => setHistoryDrawerOpen(false)} storeSlug={storeSlug} theme={theme} />
       <CustomerProfileDrawer isOpen={profileDrawerOpen} onClose={() => setProfileDrawerOpen(false)} storeSlug={storeSlug} theme={theme} />
+
+      {/* MOBILE STICKY BOTTOM NAV */}
+      <MobileBottomNav storeSlug={storeSlug} cartCount={cartCount} />
     </div>
   );
 }
