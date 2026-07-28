@@ -150,11 +150,11 @@ export default function UnifiedLogin() {
             <div>
               <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Full Name</label>
               <div className="relative">
-                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   required type="text"
                   placeholder="e.g. John Doe"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={name} onChange={e => setName(e.target.value)}
                 />
               </div>
@@ -165,17 +165,17 @@ export default function UnifiedLogin() {
           <div>
             <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Workspace Role</label>
             <div className="relative">
-              <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none" />
+              <Shield className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
               <select 
                 value={selectedRole}
                 onChange={e => setSelectedRole(e.target.value)}
-                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-10 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/50 focus:bg-white transition-all font-bold appearance-none cursor-pointer"
+                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-10 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-bold appearance-none cursor-pointer relative z-0"
               >
                 {!isSignUpMode && <option value="admin">Store Owner / Manager</option>}
                 <option value="kitchen">Operations / Production Team</option>
                 <option value="delivery">Delivery Dispatch / Riders</option>
               </select>
-              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] font-bold text-neutral-400">
+              <div className="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-[8px] font-bold text-neutral-400 z-10">
                 ▼
               </div>
             </div>
@@ -185,11 +185,11 @@ export default function UnifiedLogin() {
           <div>
             <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Email Address</label>
             <div className="relative">
-              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
               <input
                 required type="email"
                 placeholder="you@example.com"
-                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                 value={email} onChange={e => setEmail(e.target.value)}
               />
             </div>
@@ -200,11 +200,11 @@ export default function UnifiedLogin() {
             <div>
               <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Security Password</label>
               <div className="relative">
-                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   required type="password"
                   placeholder="••••••••••••"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={password} onChange={e => setPassword(e.target.value)}
                 />
               </div>
@@ -216,11 +216,11 @@ export default function UnifiedLogin() {
             <div>
               <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Phone Number (Optional)</label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+                <Bike className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   type="tel"
                   placeholder="e.g. +91 98765 43210"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={phone} onChange={e => setPhone(e.target.value)}
                 />
               </div>

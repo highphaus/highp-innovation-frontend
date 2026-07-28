@@ -247,7 +247,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                   Full Name
                 </label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+                  <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                   <input
                     required
                     type="text"
@@ -255,7 +255,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                     value={formData.name}
                     onChange={handleInputChange}
                     placeholder="e.g. Shamsaifudheen"
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   />
                 </div>
               </div>
@@ -266,7 +266,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                 Email Address
               </label>
               <div className="relative">
-                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+                <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   required
                   type="email"
@@ -274,7 +274,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                   value={formData.email}
                   onChange={handleInputChange}
                   placeholder="customer@enterprise.com"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                 />
               </div>
             </div>
@@ -285,14 +285,14 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                   Phone Number (Optional)
                 </label>
                 <div className="relative">
-                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#737373]" />
+                  <Phone className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                   <input
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
                     placeholder="+91 9876543210"
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
+                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   />
                 </div>
               </div>
