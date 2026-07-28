@@ -25,29 +25,31 @@ export default function StoreRegister() {
     setErrorMsg("");
     setInfoMsg("");
 
-    if (!storeName.trim()) {
-      setErrorMsg("Please enter your store name.");
-      return;
-    }
-    if (!email.trim()) {
-      setErrorMsg("Please enter your email address.");
+    const cleanStoreName = storeName.trim();
+    if (!cleanStoreName || cleanStoreName.length < 2) {
+      setErrorMsg("Please enter a valid store name (minimum 2 characters).");
       return;
     }
 
-    // Instantly show OTP typing form (0ms delay)
-    setStep(2);
-    setOtp(["", "", "", "", "", ""]);
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address (e.g. user@example.com).");
+      return;
+    }
+
     setLoading(true);
 
     try {
       await axios.post(`${API_BASE_URL}/stores/send-otp`, {
-        email:     email.trim(),
-        purpose:   "register",
-        storeName: storeName.trim()
+        email: cleanEmail,
+        purpose: "register",
+        storeName: cleanStoreName
       });
+      setStep(2);
+      setOtp(["", "", "", "", "", ""]);
       startResendCooldown();
     } catch (err) {
-      setStep(1); // Revert to Step 1 on validation error
       const resp = err.response?.data;
       if (resp?.alreadyRegistered) {
         setErrorMsg("An account with this email already exists. Please log in.");
@@ -152,7 +154,7 @@ export default function StoreRegister() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-2)] p-4 antialiased sm:p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="animate-fade-up space-y-6 rounded-[32px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)] sm:p-8">
+        <div className="animate-fade-up space-y-5 sm:space-y-6 rounded-[32px] border border-[var(--border)] bg-white p-5 sm:p-8 shadow-[var(--shadow)] max-h-[92vh] overflow-y-auto">
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] shadow-sm">
               {step === 1 ? <Store className="h-6 w-6 text-white" /> : <ShieldCheck className="h-6 w-6 text-white" />}
@@ -249,7 +251,7 @@ export default function StoreRegister() {
                 <label className="mb-3 ml-1 block text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-3)]">
                   Enter 6-digit verification code
                 </label>
-                <div className="flex gap-2 justify-center flex-wrap" onPaste={handleOtpPaste}>
+                <div className="flex gap-1.5 sm:gap-2 justify-center items-center" onPaste={handleOtpPaste}>
                   {otp.map((digit, i) => (
                     <input
                       key={i}
@@ -260,7 +262,7 @@ export default function StoreRegister() {
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={`h-12 w-10 rounded-2xl border-2 bg-[var(--surface)] text-center text-lg font-black transition-all sm:h-13 sm:w-11 ${
+                      className={`h-11 w-9 sm:h-13 sm:w-11 rounded-2xl border-2 bg-[var(--surface)] text-center text-base sm:text-lg font-black transition-all ${
                         digit ? "border-[var(--brand)] bg-[var(--brand-light)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-primary)]"
                       } focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15`}
                       aria-label={`OTP Digit ${i + 1}`}

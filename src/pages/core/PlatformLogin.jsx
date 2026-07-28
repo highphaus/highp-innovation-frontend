@@ -22,14 +22,12 @@ export default function PlatformLogin() {
     setInfoMsg("");
 
     const cleanEmail = email.trim();
-    if (!cleanEmail) {
-      setErrorMsg("Please enter your email address.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address (e.g. user@example.com).");
       return;
     }
 
-    // Instantly show OTP typing form (0ms delay)
-    setStep(2);
-    setOtp(["", "", "", "", "", ""]);
     setLoading(true);
 
     try {
@@ -37,13 +35,13 @@ export default function PlatformLogin() {
         email: cleanEmail,
         purpose: "login"
       });
+      setStep(2);
+      setOtp(["", "", "", "", "", ""]);
       startResendCooldown();
     } catch (err) {
-      setStep(1); // Revert to email input step on error
       const resp = err.response?.data;
-      if (resp?.notRegistered) {
-        setErrorMsg("No account found with this email. Redirecting to Registration...");
-        navigate("/register");
+      if (resp?.notRegistered || err.response?.status === 404) {
+        setErrorMsg("No store account found with this email. Click 'Register Store' below to create your store account.");
       } else {
         setErrorMsg(resp?.message || "Failed to send verification code. Please check your email.");
       }
@@ -140,7 +138,7 @@ export default function PlatformLogin() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-[var(--surface-2)] p-4 antialiased sm:p-6">
       <div className="w-full max-w-md space-y-6">
-        <div className="animate-fade-up space-y-6 rounded-[32px] border border-[var(--border)] bg-white p-6 shadow-[var(--shadow)] sm:p-8">
+        <div className="animate-fade-up space-y-5 sm:space-y-6 rounded-[32px] border border-[var(--border)] bg-white p-5 sm:p-8 shadow-[var(--shadow)] max-h-[92vh] overflow-y-auto">
           <div className="space-y-2 text-center">
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] shadow-sm">
               {step === 1 ? <Store className="h-6 w-6 text-white" /> : <ShieldCheck className="h-6 w-6 text-white" />}
@@ -207,7 +205,7 @@ export default function PlatformLogin() {
                 <label className="mb-3 ml-1 block text-center text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-3)]">
                   Enter 6-digit verification code
                 </label>
-                <div className="flex gap-2 justify-center flex-wrap" onPaste={handleOtpPaste}>
+                <div className="flex gap-1.5 sm:gap-2 justify-center items-center" onPaste={handleOtpPaste}>
                   {otp.map((digit, i) => (
                     <input
                       key={i}
@@ -218,7 +216,7 @@ export default function PlatformLogin() {
                       value={digit}
                       onChange={e => handleOtpChange(i, e.target.value)}
                       onKeyDown={e => handleOtpKeyDown(i, e)}
-                      className={`h-12 w-10 rounded-2xl border-2 bg-[var(--surface)] text-center text-lg font-black transition-all sm:h-13 sm:w-11 ${
+                      className={`h-11 w-9 sm:h-13 sm:w-11 rounded-2xl border-2 bg-[var(--surface)] text-center text-base sm:text-lg font-black transition-all ${
                         digit ? "border-[var(--brand)] bg-[var(--brand-light)] text-[var(--brand)]" : "border-[var(--border)] text-[var(--text-primary)]"
                       } focus:border-[var(--brand)] focus:ring-2 focus:ring-[var(--brand)]/15`}
                       aria-label={`OTP Digit ${i + 1}`}

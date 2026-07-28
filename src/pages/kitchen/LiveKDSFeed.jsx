@@ -1,13 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { 
   ChefHat, Flame, Check, Clock, Home, ShoppingBag, 
   BookOpen, Scissors, Droplets, Dumbbell, Wrench, 
-  Package, Truck
+  Package, Truck, Volume2, VolumeX
 } from "lucide-react";
 import axios from "axios";
 import { getTheme } from "../storefront/StorefrontHome";
 import { getVerticalAdminLabels } from "../admin/AdminDashboard";
+import { playOrderSound, testOrderSound } from "../../utils/playOrderSound";
 
 // ─── DYNAMIC ICONS & LABELS RESOLVER FOR LIVE QUEUES ────────
 function getKdsIconsAndActions(softwareType) {
@@ -38,11 +39,28 @@ export default function LiveKDSFeed() {
   const [orders, setOrders] = useState([]);
   const [storeData, setStoreData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const knownTicketIds = useRef(new Set());
+  const isInitialFetch = useRef(true);
 
   const fetchActiveTickets = () => {
     axios.get(`/api/orders/${storeSlug}`)
       .then(res => {
         const activeTickets = res.data.filter(order => order.status === 'pending' || order.status === 'preparing');
+        
+        if (isInitialFetch.current) {
+          activeTickets.forEach(t => knownTicketIds.current.add(t._id));
+          isInitialFetch.current = false;
+        } else {
+          const newTickets = activeTickets.filter(t => !knownTicketIds.current.has(t._id));
+          if (newTickets.length > 0) {
+            newTickets.forEach(t => knownTicketIds.current.add(t._id));
+            if (soundEnabled) {
+              playOrderSound();
+            }
+          }
+        }
+
         setOrders(activeTickets);
         setLoading(false);
       })
@@ -59,7 +77,7 @@ export default function LiveKDSFeed() {
     fetchActiveTickets();
     const interval = setInterval(fetchActiveTickets, 5000);
     return () => clearInterval(interval);
-  }, [storeSlug]);
+  }, [storeSlug, soundEnabled]);
 
   const updateStatus = async (orderId, nextStatus) => {
     try {
@@ -98,7 +116,23 @@ export default function LiveKDSFeed() {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !soundEnabled;
+              setSoundEnabled(next);
+              if (next) testOrderSound();
+            }}
+            className={`px-3 py-2 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+              soundEnabled
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm"
+                : "bg-neutral-100 text-neutral-500 border border-neutral-200"
+            }`}
+          >
+            {soundEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            <span>{soundEnabled ? "Sound ON" : "Sound OFF"}</span>
+          </button>
           <span className="bg-[#FAFAFA] border border-[#F5F5F0] text-[9px] font-black uppercase tracking-widest px-4 py-2 rounded-xl text-neutral-700 font-mono">
             Active Tickets: {orders.length}
           </span>

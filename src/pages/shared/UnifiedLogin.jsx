@@ -33,12 +33,20 @@ export default function UnifiedLogin() {
 
   const handleProcessLogin = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
+
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address (e.g. user@example.com).");
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await axios.post("/api/stores/login", {
-        storeSlug, email, password, loginRole: selectedRole
+        storeSlug, email: cleanEmail, password, loginRole: selectedRole
       });
       localStorage.setItem(`token_${storeSlug}`, res.data.token);
       localStorage.setItem(`role_${storeSlug}`, res.data.role);
@@ -49,10 +57,10 @@ export default function UnifiedLogin() {
     } catch (err) {
       const resp = err.response?.data;
       if (resp?.notRegistered || err.response?.status === 404) {
-        setErrorMsg("No account found with this email. Redirecting to Registration...");
+        setErrorMsg("No account found with this email for this store. Switching to Register...");
         setIsSignUpMode(true);
       } else {
-        setErrorMsg(resp?.message || resp?.error || "Authentication failed. Check credentials.");
+        setErrorMsg(resp?.message || resp?.error || "Authentication failed. Check your credentials.");
       }
     } finally {
       setLoading(false);
@@ -61,12 +69,26 @@ export default function UnifiedLogin() {
 
   const handleProcessRegister = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg("");
     setSuccessMsg("");
+
+    const cleanName = name.trim();
+    if (!cleanName || cleanName.length < 2) {
+      setErrorMsg("Please enter a valid full name (minimum 2 characters).");
+      return;
+    }
+
+    const cleanEmail = email.trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setErrorMsg("Please enter a valid email address (e.g. user@example.com).");
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await axios.post(`/api/stores/${storeSlug}/staff`, {
-        name, role: selectedRole, email, phone
+        name: cleanName, role: selectedRole, email: cleanEmail, phone
       });
       
       setSuccessMsg("Account registered successfully! You can now log in to access workspace.");
@@ -85,8 +107,8 @@ export default function UnifiedLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6 selection:bg-neutral-800 selection:text-white font-sans antialiased">
-      <div className="w-full max-w-md bg-white border border-[#F0EEEB] rounded-3xl p-8 shadow-lg space-y-6 animate-fade-up">
+    <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-3 sm:p-6 selection:bg-neutral-800 selection:text-white font-sans antialiased">
+      <div className="w-full max-w-md bg-white border border-[#F0EEEB] rounded-3xl p-5 sm:p-8 shadow-lg space-y-5 sm:space-y-6 animate-fade-up max-h-[92vh] overflow-y-auto">
         
         {/* LOGO HEADER */}
         <div className="text-center space-y-2">

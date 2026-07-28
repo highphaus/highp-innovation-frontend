@@ -73,20 +73,24 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     e.preventDefault();
     setErrorMsg("");
 
-    if (isSignUp && !formData.name.trim()) {
-      setErrorMsg("Please enter your name for registration.");
-      return;
-    }
-
     const email = formData.email.trim();
-    if (!email) {
-      setErrorMsg("Please enter a valid email address.");
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setErrorMsg("Please enter a valid email address (e.g. name@example.com).");
       return;
     }
 
-    // Instantly transition to OTP step (0ms delay)
-    setStep(2);
-    setOtp(["", "", "", "", "", ""]);
+    if (isSignUp) {
+      if (!formData.name || !formData.name.trim()) {
+        setErrorMsg("Please enter your full name for registration.");
+        return;
+      }
+      if (formData.name.trim().length < 2) {
+        setErrorMsg("Name must be at least 2 characters long.");
+        return;
+      }
+    }
+
     setLoading(true);
 
     const payload = {
@@ -98,16 +102,16 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
 
     try {
       await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
+      setStep(2);
+      setOtp(["", "", "", "", "", ""]);
       startResendCooldown();
     } catch (err) {
-      setStep(1); // Revert to step 1 on validation error
       const resp = err.response?.data;
-      if (resp?.notRegistered) {
-        setErrorMsg("No account found with this email. Redirecting to Registration...");
-        setIsSignUp(true); // Auto-switch tab to Register
+      if (resp?.notRegistered || err.response?.status === 404) {
+        setErrorMsg("No account found with this email for this store. Please switch to Sign Up to create your account.");
       } else if (resp?.alreadyRegistered) {
-        setErrorMsg("An account already exists for this email. Switching to Login...");
-        setIsSignUp(false); // Auto-switch tab to Login
+        setErrorMsg("An account already exists for this email. Switching to Sign In...");
+        setIsSignUp(false);
       } else {
         setErrorMsg(resp?.message || "Failed to send verification code. Please check details.");
       }
@@ -127,8 +131,6 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
 
     setLoading(true);
     setErrorMsg("");
-
-
 
     const url = isSignUp 
       ? `${API_BASE_URL}/customers/register`
@@ -176,9 +178,9 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in font-sans">
+    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 animate-fade-in font-sans">
       <div 
-        className="bg-white border border-[#F0EEEB] rounded-3xl p-8 max-w-sm w-full shadow-2xl relative space-y-6 animate-fade-up"
+        className="bg-white border border-[#F0EEEB] rounded-3xl p-5 sm:p-7 max-w-sm w-full shadow-2xl relative space-y-5 animate-fade-up max-h-[90vh] overflow-y-auto"
         onClick={(e) => e.stopPropagation()}
       >
         {/* CLOSE BUTTON */}
@@ -327,7 +329,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
               <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-3 ml-1 text-center">
                 Enter 6-digit verification code
               </label>
-              <div className="flex gap-2 justify-center" onPaste={handleOtpPaste}>
+              <div className="flex gap-1.5 sm:gap-2 justify-center items-center" onPaste={handleOtpPaste}>
                 {otp.map((digit, i) => (
                   <input
                     key={i}
@@ -338,7 +340,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                     value={digit}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className={`w-10 h-12 text-center text-lg font-black border-2 rounded-xl outline-none transition-all bg-[#FAFAFA] ${
+                    className={`w-8 h-10 sm:w-10 sm:h-12 text-center text-base sm:text-lg font-black border-2 rounded-xl outline-none transition-all bg-[#FAFAFA] ${
                       digit ? "border-[#D03D56] bg-[#FEF2F4] text-[#D03D56]" : "border-[#F0EEEB] text-neutral-800"
                     } focus:border-[#D03D56]`}
                   />

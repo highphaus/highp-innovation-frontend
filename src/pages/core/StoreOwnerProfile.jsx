@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import {
   BarChart2, ShoppingCart, Package, Settings, Menu, X,
@@ -7,9 +7,10 @@ import {
   CheckCircle, AlertCircle, Search, Filter, Download,
   Megaphone, Wallet, Truck, Image, Tag, Percent, Globe, Upload, Camera, Clock,
   Database, Link2, FileSpreadsheet, Play, Trash2, AlertTriangle, Loader2, Plus, TrendingUp, Users2, RefreshCw, LogOut,
-  MessageCircle, Grid3X3
+  MessageCircle, Grid3X3, Volume2, VolumeX
 } from "lucide-react";
 import axios from "axios";
+import { playOrderSound, testOrderSound, unlockAudioContext } from "../../utils/playOrderSound";
 
 // Import tab subcomponents (all live under store-owner/tabs/)
 import OverviewTab from "./store-owner/tabs/OverviewTab";
@@ -60,6 +61,11 @@ export default function StoreOwnerProfile() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [orderSearchQuery, setOrderSearchQuery] = useState("");
   const [orderTimeFilter, setOrderTimeFilter] = useState("all-time");
+
+  // Real-time sound notification & order polling states
+  const [newOrderToast, setNewOrderToast] = useState(null);
+  const knownOrderIdsRef = useRef(new Set());
+  const isInitialOrdersFetchRef = useRef(true);
 
   // Prices tab filters & edits
   const [priceSearchQuery, setPriceSearchQuery] = useState("");
@@ -407,9 +413,30 @@ export default function StoreOwnerProfile() {
 
       // Fetch orders list count & sales sum
       const oRes = await axios.get(`/api/orders/${slug}`);
-      setOrdersList(oRes.data);
-      setOrdersCount(oRes.data.length);
-      const total = oRes.data.reduce((sum, order) => {
+      const freshOrders = oRes.data || [];
+
+      if (isInitialOrdersFetchRef.current) {
+        freshOrders.forEach(o => knownOrderIdsRef.current.add(o._id));
+        isInitialOrdersFetchRef.current = false;
+      } else {
+        const newOrders = freshOrders.filter(o => !knownOrderIdsRef.current.has(o._id));
+        if (newOrders.length > 0) {
+          newOrders.forEach(o => knownOrderIdsRef.current.add(o._id));
+          const latest = newOrders[0];
+          setNewOrderToast({
+            id: latest._id,
+            customerName: latest.customerName,
+            totalAmount: latest.totalAmount
+          });
+          if (soundAlertsEnabled) {
+            playOrderSound();
+          }
+        }
+      }
+
+      setOrdersList(freshOrders);
+      setOrdersCount(freshOrders.length);
+      const total = freshOrders.reduce((sum, order) => {
         if (order.status === "completed" || order.status === "delivered") {
           return sum + (order.totalAmount || 0);
         }
@@ -440,6 +467,58 @@ export default function StoreOwnerProfile() {
       fetchStoreData();
     }
   }, [isAuthenticated, slug]);
+
+  // Real-time background polling for new orders (every 7 seconds)
+  useEffect(() => {
+    if (!isAuthenticated || !slug) return;
+    const interval = setInterval(() => {
+      axios.get(`/api/orders/${slug}`)
+        .then(oRes => {
+          const freshOrders = oRes.data || [];
+          const newOrders = freshOrders.filter(o => !knownOrderIdsRef.current.has(o._id));
+          if (newOrders.length > 0) {
+            newOrders.forEach(o => knownOrderIdsRef.current.add(o._id));
+            const latest = newOrders[0];
+            setNewOrderToast({
+              id: latest._id,
+              customerName: latest.customerName,
+              totalAmount: latest.totalAmount
+            });
+            if (soundAlertsEnabled) {
+              playOrderSound();
+            }
+          }
+          setOrdersList(freshOrders);
+          setOrdersCount(freshOrders.length);
+          const total = freshOrders.reduce((sum, order) => {
+            if (order.status === "completed" || order.status === "delivered") {
+              return sum + (order.totalAmount || 0);
+            }
+            return sum;
+          }, 0);
+          setSalesTotal(total);
+        })
+        .catch(err => console.error("Order background sync error:", err));
+    }, 7000);
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated, slug, soundAlertsEnabled]);
+
+  // Dismiss new order toast after 6 seconds
+  useEffect(() => {
+    if (newOrderToast) {
+      const timer = setTimeout(() => setNewOrderToast(null), 6000);
+      return () => clearTimeout(timer);
+    }
+  }, [newOrderToast]);
+
+  const handleToggleSoundAlerts = () => {
+    const next = !soundAlertsEnabled;
+    setSoundAlertsEnabled(next);
+    if (next) {
+      testOrderSound();
+    }
+  };
 
   // Hide toast after 4 seconds
   useEffect(() => {
@@ -1464,7 +1543,20 @@ export default function StoreOwnerProfile() {
             </span>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={handleToggleSoundAlerts}
+              className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer ${
+                soundAlertsEnabled
+                  ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 shadow-sm"
+                  : "bg-neutral-100 text-neutral-500 border border-neutral-200 hover:bg-neutral-200"
+              }`}
+              title="Toggle Order Notification Sound"
+            >
+              {soundAlertsEnabled ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+              <span className="hidden xs:inline">{soundAlertsEnabled ? "Sound ON" : "Sound OFF"}</span>
+            </button>
             <a
               href="#pricing"
               className="hidden sm:inline-flex text-[10px] font-black uppercase tracking-widest px-4 py-2 bg-[#D03D56] text-white rounded-xl shadow-sm hover:bg-[#3F0712] transition-colors"
@@ -1476,6 +1568,24 @@ export default function StoreOwnerProfile() {
             </button>
           </div>
         </header>
+
+        {/* NEW ORDER FLOATING TOAST NOTIFICATION */}
+        {newOrderToast && (
+          <div className="fixed top-20 right-4 sm:right-6 z-50 bg-[#D03D56] text-white p-4 rounded-2xl shadow-2xl flex items-center gap-3 animate-bounce border border-white/20 max-w-sm">
+            <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center shrink-0">
+              <Bell className="w-5 h-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-black uppercase tracking-wider">🔔 New Order Received!</p>
+              <p className="text-[11px] font-semibold text-white/90 truncate">
+                Customer: {newOrderToast.customerName || "Walk-in Guest"} • ₹{newOrderToast.totalAmount}
+              </p>
+            </div>
+            <button onClick={() => setNewOrderToast(null)} className="p-1 hover:bg-white/20 rounded-lg transition-colors cursor-pointer">
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         {/* VIEW BODY */}
         <main className="p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-5xl">
