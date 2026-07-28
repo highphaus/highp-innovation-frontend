@@ -1,25 +1,24 @@
 import React from "react";    
 import ReactDOM from "react-dom/client";
-import App from "./App.jsx"; // 🌟 Changed from ".App.jsx" to "./App.jsx"
+import App from "./App.jsx";
 import "./app/globals.css";   
 import axios from "axios";
+import { getApiBaseUrl } from "./config/api";
 
-// Intercept axios requests to rewrite base URL dynamically on production/mobile deployment
+// Intercept axios requests to rewrite base URL dynamically across Vercel, Render & Localhost
 axios.interceptors.request.use((config) => {
-  const isLocal = typeof window !== "undefined" && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
-  const fallbackUrl = isLocal ? "http://localhost:5000" : "https://highp-innovation-backend.onrender.com";
-  let apiUrl = (import.meta.env.VITE_API_URL || fallbackUrl).trim().replace(/\/$/, "");
-
-  if (apiUrl.endsWith("/api")) {
-    apiUrl = apiUrl.slice(0, -4);
-  }
+  const apiBase = getApiBaseUrl(); // Returns e.g. "https://highp-innovation-backend.onrender.com/api"
+  const rootBase = apiBase.replace(/\/api$/, "");
 
   if (config.url) {
-    if (config.url.startsWith("http://localhost:5000") && !isLocal) {
-      config.url = config.url.replace("http://localhost:5000", apiUrl);
+    if (config.url.startsWith("http://localhost:5000") && !window.location.hostname.includes("localhost")) {
+      config.url = config.url.replace("http://localhost:5000", rootBase);
     } else if (config.url.startsWith("/")) {
-      const cleanPath = config.url.startsWith("/api/") ? config.url : `/api${config.url}`;
-      config.url = `${apiUrl}${cleanPath}`;
+      if (config.url.startsWith("/api/")) {
+        config.url = `${rootBase}${config.url}`;
+      } else {
+        config.url = `${apiBase}${config.url}`;
+      }
     }
   }
 

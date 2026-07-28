@@ -5,8 +5,7 @@ import {
   AlertCircle, CheckCircle, ShieldCheck, RefreshCw
 } from "lucide-react";
 import axios from "axios";
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+import { API_BASE_URL } from "../../config/api";
 
 export default function StoreRegister() {
   const navigate = useNavigate();

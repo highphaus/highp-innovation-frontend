@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, Mail, User, Phone, AlertCircle, Loader2, ShieldCheck, RefreshCw, ArrowRight } from "lucide-react";
 import axios from "axios";
-
-const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+import { API_BASE_URL } from "../config/api";
 
 export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, onAuthSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
