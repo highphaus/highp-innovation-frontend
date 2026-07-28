@@ -6,6 +6,8 @@ import {
 } from "lucide-react";
 import axios from "axios";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 export default function StoreRegister() {
   const navigate = useNavigate();
 
@@ -39,7 +41,7 @@ export default function StoreRegister() {
     setLoading(true);
 
     try {
-      await axios.post("/api/stores/send-otp", {
+      await axios.post(`${API_BASE_URL}/stores/send-otp`, {
         email:     email.trim(),
         purpose:   "register",
         storeName: storeName.trim()
@@ -71,7 +73,7 @@ export default function StoreRegister() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/stores/register", {
+      const res = await axios.post(`${API_BASE_URL}/stores/register`, {
         name:  storeName.trim(),
         email: email.trim(),
         otp:   otpValue

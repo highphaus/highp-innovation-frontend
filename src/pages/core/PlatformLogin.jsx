@@ -3,6 +3,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { Mail, ArrowRight, AlertCircle, Store, ShieldCheck, RefreshCw } from "lucide-react";
 import axios from "axios";
 
+const API_BASE_URL = (import.meta.env.VITE_API_URL || "/api").replace(/\/$/, "");
+
 export default function PlatformLogin() {
   const navigate = useNavigate();
 
@@ -32,7 +34,7 @@ export default function PlatformLogin() {
     setLoading(true);
 
     try {
-      await axios.post("/api/stores/send-otp", {
+      await axios.post(`${API_BASE_URL}/stores/send-otp`, {
         email: cleanEmail,
         purpose: "login"
       });
@@ -64,7 +66,7 @@ export default function PlatformLogin() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/stores/login", {
+      const res = await axios.post(`${API_BASE_URL}/stores/login`, {
         email: email.trim(),
         otp:   otpValue
       });
