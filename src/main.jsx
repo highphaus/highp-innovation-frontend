@@ -6,9 +6,13 @@ import axios from "axios";
 
 // Intercept axios requests to rewrite base URL dynamically on production/mobile deployment
 axios.interceptors.request.use((config) => {
-  const apiUrl = import.meta.env.VITE_API_URL;
-  if (apiUrl && config.url && config.url.startsWith("http://localhost:5000")) {
-    config.url = config.url.replace("http://localhost:5000", apiUrl);
+  const apiUrl = (import.meta.env.VITE_API_URL || "").trim();
+  if (apiUrl && config.url) {
+    if (config.url.startsWith("/api")) {
+      config.url = `${apiUrl.replace(/\/$/, "")}${config.url}`;
+    } else if (config.url.startsWith("http://localhost:5000")) {
+      config.url = config.url.replace("http://localhost:5000", apiUrl.replace(/\/$/, ""));
+    }
   }
   return config;
 });
