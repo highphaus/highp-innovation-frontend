@@ -39,14 +39,11 @@ export default function StoreRegister() {
     setLoading(true);
 
     try {
-      const res = await axios.post("/api/stores/send-otp", {
+      await axios.post("/api/stores/send-otp", {
         email:     email.trim(),
         purpose:   "register",
         storeName: storeName.trim()
       });
-      if (res.data?.otp && res.data.otp.length === 6) {
-        setOtp(res.data.otp.split(""));
-      }
       startResendCooldown();
     } catch (err) {
       setStep(1); // Revert to Step 1 on validation error
