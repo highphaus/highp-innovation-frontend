@@ -47,7 +47,13 @@ export default function UnifiedLogin() {
       else if (res.data.role === "kitchen") navigate(`/${storeSlug}/kitchen`);
       else if (res.data.role === "delivery") navigate(`/${storeSlug}/delivery`);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || err.response?.data?.error || "Authentication failed. Check credentials.");
+      const resp = err.response?.data;
+      if (resp?.notRegistered || err.response?.status === 404) {
+        setErrorMsg("No account found with this email. Redirecting to Registration...");
+        setIsSignUpMode(true);
+      } else {
+        setErrorMsg(resp?.message || resp?.error || "Authentication failed. Check credentials.");
+      }
     } finally {
       setLoading(false);
     }
@@ -59,17 +65,20 @@ export default function UnifiedLogin() {
     setErrorMsg("");
     setSuccessMsg("");
     try {
-      // 1. Submit registration payload to backend
       const res = await axios.post(`/api/stores/${storeSlug}/staff`, {
         name, role: selectedRole, email, phone
       });
       
-      setSuccessMsg("Account registered successfully! Switch to Login tab to access.");
-      setName("");
-      setEmail("");
-      setPhone("");
+      setSuccessMsg("Account registered successfully! You can now log in to access workspace.");
+      setIsSignUpMode(false);
     } catch (err) {
-      setErrorMsg(err.response?.data?.error || err.response?.data?.message || "Registration failed. Check parameters.");
+      const resp = err.response?.data;
+      if (resp?.alreadyRegistered || (resp?.message && resp.message.includes("already exists"))) {
+        setErrorMsg("An account with this email already exists. Switching to Login...");
+        setIsSignUpMode(false);
+      } else {
+        setErrorMsg(resp?.error || resp?.message || "Registration failed. Check parameters.");
+      }
     } finally {
       setLoading(false);
     }

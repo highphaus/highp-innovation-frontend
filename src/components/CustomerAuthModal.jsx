@@ -75,11 +75,16 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     setErrorMsg("");
 
     if (isSignUp && !formData.name.trim()) {
-      setErrorMsg("Please enter your name.");
+      setErrorMsg("Please enter your name for registration.");
       return;
     }
 
     const email = formData.email.trim();
+    if (!email) {
+      setErrorMsg("Please enter a valid email address.");
+      return;
+    }
+
     const payload = {
       storeSlug,
       email,
@@ -90,15 +95,25 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     setLoading(true);
     try {
       await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
+      setOtp(["", "", "", "", "", ""]);
+      setStep(2);
+      startResendCooldown();
     } catch (err) {
-      console.warn("OTP request failed; please use the code sent to your email or phone.", err);
+      const resp = err.response?.data;
+      if (resp?.notRegistered) {
+        setErrorMsg("No account found with this email. Redirecting to Registration...");
+        setIsSignUp(true); // Auto-switch tab to Register
+        setStep(1);
+      } else if (resp?.alreadyRegistered) {
+        setErrorMsg("An account already exists for this email. Switching to Login...");
+        setIsSignUp(false); // Auto-switch tab to Login
+        setStep(1);
+      } else {
+        setErrorMsg(resp?.message || "Failed to send verification code. Please check details.");
+      }
     } finally {
       setLoading(false);
     }
-
-    setOtp(["", "", "", "", "", ""]);
-    setStep(2);
-    startResendCooldown();
   };
 
   // Step 2: Verify OTP
