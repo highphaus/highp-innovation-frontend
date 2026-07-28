@@ -180,13 +180,13 @@ export default function StoreRegister() {
               <div>
                 <label htmlFor="reg-storename" className="form-label ml-1">Store Name</label>
                 <div className="relative">
-                  <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)]" />
+                  <User className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] pointer-events-none z-10" />
                   <input
                     required
                     id="reg-storename"
                     type="text"
-                    placeholder="e.g. Taste N Park"
-                    className="input pl-10 pr-4 text-sm"
+                    placeholder="Enter store name"
+                    className="input pl-11 pr-4 text-sm relative z-0"
                     value={storeName}
                     onChange={(e) => setStoreName(e.target.value)}
                   />
@@ -203,13 +203,13 @@ export default function StoreRegister() {
               <div>
                 <label htmlFor="reg-email" className="form-label ml-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)]" />
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] pointer-events-none z-10" />
                   <input
                     required
                     id="reg-email"
                     type="email"
-                    placeholder="you@example.com"
-                    className="input pl-10 pr-4 text-sm"
+                    placeholder="Enter your email address"
+                    className="input pl-11 pr-4 text-sm relative z-0"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
