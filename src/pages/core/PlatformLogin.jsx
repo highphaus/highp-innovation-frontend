@@ -19,21 +19,36 @@ export default function PlatformLogin() {
     e.preventDefault();
     setErrorMsg("");
     setInfoMsg("");
+
+    const cleanEmail = email.trim();
+    if (!cleanEmail) {
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
+
+    // Instantly show OTP typing form (0ms delay)
+    setStep(2);
+    setOtp(["", "", "", "", "", ""]);
     setLoading(true);
+
     try {
       await axios.post("/api/stores/send-otp", {
-        email: email.trim(),
+        email: cleanEmail,
         purpose: "login"
       });
+      startResendCooldown();
     } catch (err) {
-      console.warn("OTP send failed, continuing with local fallback", err);
+      setStep(1); // Revert to email input step on error
+      const resp = err.response?.data;
+      if (resp?.notRegistered) {
+        setErrorMsg("No account found with this email. Redirecting to Registration...");
+        navigate("/register");
+      } else {
+        setErrorMsg(resp?.message || "Failed to send verification code. Please check your email.");
+      }
     } finally {
       setLoading(false);
     }
-
-    setStep(2);
-    setOtp(["", "", "", "", "", ""]);
-    startResendCooldown();
   };
 
   // ── Step 2: verify OTP & login ──────────────────────────────

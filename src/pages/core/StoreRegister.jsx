@@ -33,17 +33,20 @@ export default function StoreRegister() {
       return;
     }
 
+    // Instantly show OTP typing form (0ms delay)
+    setStep(2);
+    setOtp(["", "", "", "", "", ""]);
     setLoading(true);
+
     try {
-      const res = await axios.post("/api/stores/send-otp", {
+      await axios.post("/api/stores/send-otp", {
         email:     email.trim(),
         purpose:   "register",
         storeName: storeName.trim()
       });
-      setStep(2);
-      setOtp(["", "", "", "", "", ""]);
       startResendCooldown();
     } catch (err) {
+      setStep(1); // Revert to Step 1 on validation error
       const resp = err.response?.data;
       if (resp?.alreadyRegistered) {
         setErrorMsg("An account with this email already exists. Please log in.");

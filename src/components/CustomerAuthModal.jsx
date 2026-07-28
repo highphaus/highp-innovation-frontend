@@ -85,6 +85,11 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
       return;
     }
 
+    // Instantly transition to OTP step (0ms delay)
+    setStep(2);
+    setOtp(["", "", "", "", "", ""]);
+    setLoading(true);
+
     const payload = {
       storeSlug,
       email,
@@ -92,22 +97,18 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
       name: formData.name.trim()
     };
 
-    setLoading(true);
     try {
       await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
-      setOtp(["", "", "", "", "", ""]);
-      setStep(2);
       startResendCooldown();
     } catch (err) {
+      setStep(1); // Revert to step 1 on validation error
       const resp = err.response?.data;
       if (resp?.notRegistered) {
         setErrorMsg("No account found with this email. Redirecting to Registration...");
         setIsSignUp(true); // Auto-switch tab to Register
-        setStep(1);
       } else if (resp?.alreadyRegistered) {
         setErrorMsg("An account already exists for this email. Switching to Login...");
         setIsSignUp(false); // Auto-switch tab to Login
-        setStep(1);
       } else {
         setErrorMsg(resp?.message || "Failed to send verification code. Please check details.");
       }
