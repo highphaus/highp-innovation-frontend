@@ -98,7 +98,10 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     };
 
     try {
-      await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
+      const res = await axios.post(`${API_BASE_URL}/customers/send-otp`, payload);
+      if (res.data?.otp && res.data.otp.length === 6) {
+        setOtp(res.data.otp.split(""));
+      }
       startResendCooldown();
     } catch (err) {
       setStep(1); // Revert to step 1 on validation error

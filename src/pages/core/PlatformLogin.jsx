@@ -32,10 +32,13 @@ export default function PlatformLogin() {
     setLoading(true);
 
     try {
-      await axios.post("/api/stores/send-otp", {
+      const res = await axios.post("/api/stores/send-otp", {
         email: cleanEmail,
         purpose: "login"
       });
+      if (res.data?.otp && res.data.otp.length === 6) {
+        setOtp(res.data.otp.split(""));
+      }
       startResendCooldown();
     } catch (err) {
       setStep(1); // Revert to email input step on error
