@@ -254,8 +254,8 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                     name="name"
                     value={formData.name}
                     onChange={handleInputChange}
-                    placeholder="e.g. Shamsaifudheen"
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                    placeholder="Enter your full name"
+                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   />
                 </div>
               </div>
@@ -273,8 +273,8 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  placeholder="customer@enterprise.com"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                  placeholder="Enter your email address"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                 />
               </div>
             </div>
@@ -291,8 +291,8 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                     name="phone"
                     value={formData.phone}
                     onChange={handleInputChange}
-                    placeholder="+91 9876543210"
-                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                    placeholder="Enter 10-digit mobile number"
+                    className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   />
                 </div>
               </div>

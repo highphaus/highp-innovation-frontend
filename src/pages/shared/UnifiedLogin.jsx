@@ -153,8 +153,8 @@ export default function UnifiedLogin() {
                 <User className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   required type="text"
-                  placeholder="e.g. John Doe"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                  placeholder="Enter your full name"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={name} onChange={e => setName(e.target.value)}
                 />
               </div>
@@ -188,8 +188,8 @@ export default function UnifiedLogin() {
               <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
               <input
                 required type="email"
-                placeholder="you@example.com"
-                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                placeholder="Enter your email address"
+                className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                 value={email} onChange={e => setEmail(e.target.value)}
               />
             </div>
@@ -203,8 +203,8 @@ export default function UnifiedLogin() {
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   required type="password"
-                  placeholder="••••••••••••"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                  placeholder="Enter security password"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={password} onChange={e => setPassword(e.target.value)}
                 />
               </div>
@@ -219,8 +219,8 @@ export default function UnifiedLogin() {
                 <Bike className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
                   type="tel"
-                  placeholder="e.g. +91 98765 43210"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                  placeholder="Enter 10-digit mobile number"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={phone} onChange={e => setPhone(e.target.value)}
                 />
               </div>
