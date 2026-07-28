@@ -28,23 +28,31 @@ export default function StoreRegister() {
       setErrorMsg("Please enter your store name.");
       return;
     }
+    if (!email.trim()) {
+      setErrorMsg("Please enter your email address.");
+      return;
+    }
 
     setLoading(true);
     try {
-      await axios.post("/api/stores/send-otp", {
+      const res = await axios.post("/api/stores/send-otp", {
         email:     email.trim(),
         purpose:   "register",
         storeName: storeName.trim()
       });
+      setStep(2);
+      setOtp(["", "", "", "", "", ""]);
+      startResendCooldown();
     } catch (err) {
-      console.warn("OTP send failed, continuing with local fallback", err);
+      const resp = err.response?.data;
+      if (resp?.alreadyRegistered) {
+        setErrorMsg("An account with this email already exists. Please log in.");
+      } else {
+        setErrorMsg(resp?.message || "Failed to send verification code. Please check your details.");
+      }
     } finally {
       setLoading(false);
     }
-
-    setStep(2);
-    setOtp(["", "", "", "", "", ""]);
-    startResendCooldown();
   };
 
   // ── Step 2: verify OTP and create store ───────────────────
