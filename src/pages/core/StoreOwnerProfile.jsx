@@ -429,7 +429,7 @@ export default function StoreOwnerProfile() {
             totalAmount: latest.totalAmount
           });
           if (soundAlertsEnabled) {
-            playOrderSound();
+            playOrderSound(latest);
           }
         }
       }
@@ -490,7 +490,7 @@ export default function StoreOwnerProfile() {
               totalAmount: latest.totalAmount
             });
             if (soundAlertsEnabled) {
-              playOrderSound();
+              playOrderSound(latest);
             }
           }
           setOrdersList(freshOrders);

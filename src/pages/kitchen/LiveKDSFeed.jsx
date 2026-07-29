@@ -56,7 +56,7 @@ export default function LiveKDSFeed() {
           if (newTickets.length > 0) {
             newTickets.forEach(t => knownTicketIds.current.add(t._id));
             if (soundEnabled) {
-              playOrderSound();
+              playOrderSound(newTickets[0]);
             }
           }
         }
