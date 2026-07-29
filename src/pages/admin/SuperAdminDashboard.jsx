@@ -3,13 +3,48 @@ import { Link } from "react-router-dom";
 import { 
   ShieldCheck, Loader2, AlertCircle, Trash2, 
   CheckCircle, XCircle, ArrowLeft, Mail, Lock, 
-  ExternalLink, Layers, CreditCard, Calendar
+  ExternalLink, Layers, CreditCard, Calendar, UserCheck, UserX, Crown, ShieldAlert
 } from "lucide-react";
 import axios from "axios";
 
 export default function SuperAdminDashboard() {
+  const MASTER_ADMIN_EMAIL = "shamsaifudheen@gmail.com";
+
+  // Helper to load and seed super admin accounts
+  const getStoredAdmins = () => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("superAdmins") || "[]");
+      const hasMaster = stored.some(a => a.email.toLowerCase() === MASTER_ADMIN_EMAIL);
+      if (!hasMaster) {
+        const masterAcc = {
+          email: MASTER_ADMIN_EMAIL,
+          password: "highpsupersecret",
+          isApproved: true,
+          role: "Master Super Admin",
+          registeredAt: new Date().toISOString()
+        };
+        const updated = [masterAcc, ...stored];
+        localStorage.setItem("superAdmins", JSON.stringify(updated));
+        return updated;
+      }
+      return stored;
+    } catch {
+      return [{
+        email: MASTER_ADMIN_EMAIL,
+        password: "highpsupersecret",
+        isApproved: true,
+        role: "Master Super Admin",
+        registeredAt: new Date().toISOString()
+      }];
+    }
+  };
+
+  const [adminList, setAdminList] = useState(getStoredAdmins);
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem("isSuperAdmin") === "true";
+  });
+  const [currentAdminEmail, setCurrentAdminEmail] = useState(() => {
+    return localStorage.getItem("superAdminEmail") || MASTER_ADMIN_EMAIL;
   });
   
   const [isSignUpMode, setIsSignUpMode] = useState(false);
@@ -24,6 +59,7 @@ export default function SuperAdminDashboard() {
   const [loadingStores, setLoadingStores] = useState(false);
   const [actionLoading, setActionLoading] = useState(null);
   const [errorMsg, setErrorMsg] = useState("");
+  const [adminActionMsg, setAdminActionMsg] = useState("");
 
   const handleLogin = (e) => {
     e.preventDefault();
@@ -31,16 +67,44 @@ export default function SuperAdminDashboard() {
     setLoginError("");
     setLoginSuccess("");
 
-    const existingAdmins = JSON.parse(localStorage.getItem("superAdmins") || "[]");
-    const isMatched = (loginEmail === "superadmin@highp.com" && loginPassword === "highpsupersecret") ||
-                      existingAdmins.some(a => a.email === loginEmail && a.password === loginPassword);
+    const cleanEmail = loginEmail.toLowerCase().trim();
+    const cleanPassword = loginPassword.trim();
 
-    if (isMatched) {
+    const admins = getStoredAdmins();
+    const isMasterCredential = (cleanEmail === MASTER_ADMIN_EMAIL || cleanEmail === "superadmin@highp.com") && cleanPassword === "highpsupersecret";
+    const foundAdmin = admins.find(a => a.email.toLowerCase() === cleanEmail);
+
+    if (isMasterCredential) {
       localStorage.setItem("isSuperAdmin", "true");
+      localStorage.setItem("superAdminEmail", cleanEmail);
+      setCurrentAdminEmail(cleanEmail);
+      setIsAuthenticated(true);
+      setLoginLoading(false);
+      return;
+    }
+
+    if (foundAdmin) {
+      if (foundAdmin.password !== cleanPassword) {
+        setLoginError("Invalid platform operator credentials. Incorrect password.");
+        setLoginLoading(false);
+        return;
+      }
+
+      // Check approval requirement: Only approved admins (or master) can log in!
+      const isMasterEmail = cleanEmail === MASTER_ADMIN_EMAIL || cleanEmail === "superadmin@highp.com";
+      if (!isMasterEmail && !foundAdmin.isApproved) {
+        setLoginError(`Account Pending Approval: Your super admin account requires approval from master administrator ${MASTER_ADMIN_EMAIL} before login is permitted.`);
+        setLoginLoading(false);
+        return;
+      }
+
+      localStorage.setItem("isSuperAdmin", "true");
+      localStorage.setItem("superAdminEmail", cleanEmail);
+      setCurrentAdminEmail(cleanEmail);
       setIsAuthenticated(true);
       setLoginLoading(false);
     } else {
-      setLoginError("Invalid platform operator credentials.");
+      setLoginError("No super admin operator account found with this email. Please Sign Up first.");
       setLoginLoading(false);
     }
   };
@@ -51,23 +115,52 @@ export default function SuperAdminDashboard() {
     setLoginError("");
     setLoginSuccess("");
 
+    const cleanEmail = loginEmail.toLowerCase().trim();
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!cleanEmail || !emailRegex.test(cleanEmail)) {
+      setLoginError("Please enter a valid email address.");
+      setLoginLoading(false);
+      return;
+    }
+
+    if (loginPassword.length < 6) {
+      setLoginError("Password must be at least 6 characters long.");
+      setLoginLoading(false);
+      return;
+    }
+
     if (loginPassword !== confirmPassword) {
       setLoginError("Passwords do not match.");
       setLoginLoading(false);
       return;
     }
 
-    const existingAdmins = JSON.parse(localStorage.getItem("superAdmins") || "[]");
-    if (existingAdmins.some(a => a.email === loginEmail) || loginEmail === "superadmin@highp.com") {
+    const admins = getStoredAdmins();
+    if (admins.some(a => a.email.toLowerCase() === cleanEmail)) {
       setLoginError("This operator email is already registered.");
       setLoginLoading(false);
       return;
     }
 
-    const newAdmin = { email: loginEmail, password: loginPassword };
-    localStorage.setItem("superAdmins", JSON.stringify([...existingAdmins, newAdmin]));
+    const isMaster = cleanEmail === MASTER_ADMIN_EMAIL;
+    const newAdmin = { 
+      email: cleanEmail, 
+      password: loginPassword,
+      isApproved: isMaster ? true : false, // Requires approval from shamsaifudheen@gmail.com unless master
+      role: isMaster ? "Master Super Admin" : "Platform Operator",
+      registeredAt: new Date().toISOString()
+    };
+
+    const updatedAdmins = [...admins, newAdmin];
+    localStorage.setItem("superAdmins", JSON.stringify(updatedAdmins));
+    setAdminList(updatedAdmins);
     
-    setLoginSuccess("Operator registered successfully! Toggle Sign In to access.");
+    if (isMaster) {
+      setLoginSuccess("Master Super Admin registered & pre-approved! You can now log in.");
+    } else {
+      setLoginSuccess(`Operator registered! Your account is pending approval by master administrator ${MASTER_ADMIN_EMAIL}.`);
+    }
+
     setLoginLoading(false);
     setLoginEmail("");
     setLoginPassword("");
@@ -76,6 +169,7 @@ export default function SuperAdminDashboard() {
 
   const handleSignOut = () => {
     localStorage.removeItem("isSuperAdmin");
+    localStorage.removeItem("superAdminEmail");
     setIsAuthenticated(false);
   };
 
@@ -127,11 +221,40 @@ export default function SuperAdminDashboard() {
     }
   };
 
+  // 👑 MASTER OPERATOR APPROVAL HANDLERS
+  const handleToggleOperatorApproval = (targetEmail, currentApprovalStatus) => {
+    setAdminActionMsg("");
+    const updated = adminList.map(admin => {
+      if (admin.email.toLowerCase() === targetEmail.toLowerCase()) {
+        return { ...admin, isApproved: !currentApprovalStatus };
+      }
+      return admin;
+    });
+    setAdminList(updated);
+    localStorage.setItem("superAdmins", JSON.stringify(updated));
+    setAdminActionMsg(`Operator status for ${targetEmail} updated to ${!currentApprovalStatus ? "Approved" : "Pending"}.`);
+    setTimeout(() => setAdminActionMsg(""), 4000);
+  };
+
+  const handleDeleteOperator = (targetEmail) => {
+    if (targetEmail.toLowerCase() === MASTER_ADMIN_EMAIL) {
+      alert("Master Super Admin account (shamsaifudheen@gmail.com) cannot be deleted.");
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to remove operator ${targetEmail}?`)) return;
+    
+    const updated = adminList.filter(admin => admin.email.toLowerCase() !== targetEmail.toLowerCase());
+    setAdminList(updated);
+    localStorage.setItem("superAdmins", JSON.stringify(updated));
+    setAdminActionMsg(`Operator account ${targetEmail} removed.`);
+    setTimeout(() => setAdminActionMsg(""), 4000);
+  };
+
   // 🔐 LOGIN / SIGNUP SCREEN
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-6 selection:bg-neutral-800 selection:text-white font-sans antialiased">
-        <div className="bg-white border border-[#F0EEEB] rounded-3xl p-8 max-w-sm w-full shadow-lg space-y-6 relative animate-fade-up">
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4 sm:p-6 selection:bg-neutral-800 selection:text-white font-sans antialiased">
+        <div className="bg-white border border-[#F0EEEB] rounded-3xl p-6 sm:p-8 max-w-sm w-full shadow-lg space-y-6 relative animate-fade-up max-h-[92vh] overflow-y-auto">
           <div className="text-center space-y-2">
             <div className="w-10 h-10 bg-[#F7EBEF] rounded-2xl flex items-center justify-center mx-auto mb-2">
               <ShieldCheck className="w-5 h-5 text-[#D03D56]" />
@@ -171,15 +294,15 @@ export default function SuperAdminDashboard() {
           </div>
 
           {loginError && (
-            <div className="p-3 bg-red-50 border border-red-100 text-red-705 text-[11px] font-semibold rounded-xl flex items-start gap-2">
-              <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-red-50 border border-red-100 text-red-700 text-[11px] font-semibold rounded-xl flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{loginError}</span>
             </div>
           )}
 
           {loginSuccess && (
-            <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-705 text-[11px] font-semibold rounded-xl flex items-start gap-2">
-              <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+            <div className="p-3 bg-emerald-50 border border-emerald-100 text-emerald-700 text-[11px] font-semibold rounded-xl flex items-start gap-2">
+              <CheckCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{loginSuccess}</span>
             </div>
           )}
@@ -191,7 +314,7 @@ export default function SuperAdminDashboard() {
                 <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
                 <input
                   required type="email"
-                  placeholder="e.g. superadmin@highp.com"
+                  placeholder="e.g. shamsaifudheen@gmail.com"
                   className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 pl-10 pr-4 py-2.5 text-xs rounded-xl focus:outline-none focus:border-[#D03D56]/40 focus:bg-white transition-all font-medium"
                   value={loginEmail} onChange={e => setLoginEmail(e.target.value)}
                 />
@@ -233,12 +356,15 @@ export default function SuperAdminDashboard() {
               {loginLoading ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <span>{isSignUpMode ? "Register Operator" : "Open Console Gateway"}</span>
+                <span>{isSignUpMode ? "Submit Operator Registration" : "Open Console Gateway"}</span>
               )}
             </button>
           </form>
 
-          <div className="text-center pt-2">
+          <div className="text-center pt-1 border-t border-[#F5F5F0]">
+            <p className="text-[9px] text-[#737373] font-semibold mb-2">
+              Note: Non-master super admin logins require approval from <span className="font-black text-neutral-900">shamsaifudheen@gmail.com</span>
+            </p>
             <Link to="/" className="text-[10px] text-neutral-450 hover:text-neutral-900 transition-colors font-bold">
               ← Return to Platform Hub
             </Link>
@@ -260,7 +386,9 @@ export default function SuperAdminDashboard() {
             </div>
             <div>
               <span className="font-black text-sm tracking-tight text-neutral-950 block">HighP Super Console</span>
-              <span className="text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">Platform Controller</span>
+              <span className="text-[9px] text-[#737373] font-bold uppercase tracking-widest block mt-0.5">
+                Logged in as: <span className="text-[#D03D56] font-black">{currentAdminEmail}</span>
+              </span>
             </div>
           </div>
 
@@ -279,11 +407,12 @@ export default function SuperAdminDashboard() {
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-10 space-y-8 animate-fade-up">
         
         {/* Quick Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
           {[
-            { label: "Platform Nodes", val: stores.length, color: "text-neutral-900 bg-white" },
-            { label: "Active Nodes", val: stores.filter(s => s.isApproved).length, color: "text-emerald-700 bg-white border-emerald-100" },
-            { label: "Approval Queue", val: stores.filter(s => !s.isApproved).length, color: "text-amber-700 bg-white border-amber-100" }
+            { label: "Platform Nodes", val: stores.length },
+            { label: "Active Stores", val: stores.filter(s => s.isApproved).length },
+            { label: "Store Queue", val: stores.filter(s => !s.isApproved).length },
+            { label: "Admin Approvals", val: adminList.filter(a => !a.isApproved).length }
           ].map((s, idx) => (
             <div key={idx} className="bg-white border border-[#F0EEEB] p-6 rounded-3xl space-y-1.5 shadow-sm">
               <span className="text-[9px] text-[#737373] uppercase tracking-widest font-black block">{s.label}</span>
@@ -292,6 +421,14 @@ export default function SuperAdminDashboard() {
           ))}
         </div>
 
+        {/* Global Action Messages */}
+        {adminActionMsg && (
+          <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs rounded-2xl flex items-center gap-3">
+            <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{adminActionMsg}</span>
+          </div>
+        )}
+
         {/* Global Error Banner */}
         {errorMsg && (
           <div className="p-4 bg-red-50 border border-red-250 text-red-800 text-xs rounded-2xl flex items-start gap-3.5">
@@ -299,6 +436,92 @@ export default function SuperAdminDashboard() {
             <span>{errorMsg}</span>
           </div>
         )}
+
+        {/* 👑 MASTER OPERATORS APPROVAL MANAGEMENT CARD */}
+        <div className="bg-white border border-[#F0EEEB] rounded-3xl shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-[#F5F5F0] bg-[#FAFAFA] flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-2">
+                <Crown className="w-4 h-4 text-amber-500" />
+                <h3 className="text-xs font-black uppercase tracking-wider text-neutral-900">Super Admin Access & Approvals</h3>
+              </div>
+              <p className="text-[9px] text-[#737373] uppercase tracking-widest font-black mt-0.5">
+                Master Admin: <span className="text-neutral-900 font-bold">{MASTER_ADMIN_EMAIL}</span>
+              </p>
+            </div>
+            <span className="text-[9px] font-black uppercase tracking-wider px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full">
+              {adminList.filter(a => !a.isApproved).length} Pending Approval
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-[#F5F5F0] text-[9px] font-black text-[#737373] uppercase tracking-wider bg-[#FAFAFA]/50">
+                  <th className="px-6 py-4">Operator Email</th>
+                  <th className="px-6 py-4">Role</th>
+                  <th className="px-6 py-4">Approval Status</th>
+                  <th className="px-6 py-4 text-right">Approval Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F5F5F0]">
+                {adminList.map((admin, idx) => {
+                  const isMaster = admin.email.toLowerCase() === MASTER_ADMIN_EMAIL;
+                  return (
+                    <tr key={idx} className="hover:bg-neutral-50/55 transition-colors">
+                      <td className="px-6 py-4 font-mono font-bold text-neutral-900">
+                        <div className="flex items-center gap-2">
+                          {isMaster && <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />}
+                          <span>{admin.email}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 font-semibold text-neutral-600 capitalize">
+                        {admin.role || (isMaster ? "Master Super Admin" : "Platform Operator")}
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${
+                          admin.isApproved || isMaster
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200" 
+                            : "bg-amber-50 text-amber-700 border-amber-200"
+                        }`}>
+                          {admin.isApproved || isMaster ? "🟢 Approved Access" : `🟡 Pending ${MASTER_ADMIN_EMAIL} Approval`}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        {isMaster ? (
+                          <span className="text-[9px] font-black uppercase text-neutral-400 tracking-wider">
+                            Master Admin (Pre-Approved)
+                          </span>
+                        ) : (
+                          <div className="flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => handleToggleOperatorApproval(admin.email, admin.isApproved)}
+                              className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                                admin.isApproved
+                                  ? "bg-white text-amber-700 border-amber-200 hover:bg-amber-50"
+                                  : "bg-emerald-600 text-white border-transparent hover:bg-emerald-700"
+                              }`}
+                            >
+                              {admin.isApproved ? "Revoke Access" : "Approve Operator"}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteOperator(admin.email)}
+                              className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                              title="Delete Operator"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
         {/* Stores Table Listing */}
         <div className="bg-white border border-[#F0EEEB] rounded-3xl shadow-sm overflow-hidden">
