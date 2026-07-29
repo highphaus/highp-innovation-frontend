@@ -93,6 +93,27 @@ export default function AddProductTab({
     }
   };
 
+  const handleToggleProductStock = async (product) => {
+    const isCurrentlyOut = product.inStock === false || product.isOutOfStock === true;
+    const newInStock = isCurrentlyOut;
+    try {
+      const response = await fetch(`/api/products/${product._id}/toggle-stock`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ inStock: newInStock })
+      });
+      if (response.ok) {
+        if (handleClearEditMode) handleClearEditMode();
+        window.location.reload();
+      } else {
+        alert("Failed to update stock status.");
+      }
+    } catch (err) {
+      console.error("Error toggling stock:", err);
+      alert("Error toggling product stock.");
+    }
+  };
+
   return (
     <div className="w-full space-y-8 font-sans text-[#2d3748] max-w-5xl mx-auto pb-16 px-1">
       
@@ -425,6 +446,18 @@ export default function AddProductTab({
                       <div className="flex items-center justify-end gap-2">
                         <button
                           type="button"
+                          onClick={() => handleToggleProductStock(product)}
+                          className={`px-2.5 py-1 rounded text-[10px] font-bold border transition-all cursor-pointer ${
+                            product.inStock === false || product.isOutOfStock === true
+                              ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                              : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                          }`}
+                          title="Click to toggle In Stock / Out of Stock"
+                        >
+                          {product.inStock === false || product.isOutOfStock === true ? "🔴 Out of Stock" : "🟢 In Stock"}
+                        </button>
+                        <button
+                          type="button"
                           onClick={() => {
                             setSelectedProductToEdit(product._id);
                             // Simulates loading target fields securely
@@ -475,6 +508,17 @@ export default function AddProductTab({
                   
                   {/* Action row switches configuration directly inside small block widths */}
                   <div className="flex items-center gap-1.5 flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleToggleProductStock(product)}
+                      className={`px-2 py-1 rounded text-[10px] font-bold border transition-all cursor-pointer ${
+                        product.inStock === false || product.isOutOfStock === true
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      }`}
+                    >
+                      {product.inStock === false || product.isOutOfStock === true ? "🔴 Out" : "🟢 In"}
+                    </button>
                     <button
                       type="button"
                       onClick={() => {

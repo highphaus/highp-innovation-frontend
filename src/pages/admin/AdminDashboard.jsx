@@ -289,6 +289,31 @@ export default function AdminDashboard() {
             </button>
           </div>
         </div>
+
+        {/* MOBILE HORIZONTAL TOUCH NAV PILLS */}
+        <div className="md:hidden border-t border-[#F0EEEB] pt-2 mt-2 overflow-x-auto no-scrollbar flex items-center gap-1.5">
+          {[
+            { to: `/${storeSlug}/admin`, label: "Dashboard", active: true },
+            { to: `/${storeSlug}/admin/inventory`, label: "Inventory" },
+            { to: `/${storeSlug}/admin/prices`, label: "Prices" },
+            { to: `/${storeSlug}/admin/campaigns`, label: "Campaigns" },
+            { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
+            { to: `/${storeSlug}/admin/staff`, label: "Staff" },
+            { to: `/${storeSlug}/kitchen`, label: adminLabels.kds },
+            { to: `/${storeSlug}/delivery`, label: adminLabels.delivery },
+          ].map(({ to, label, active }) => (
+            <Link
+              key={to} to={to}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${
+                active
+                  ? `${theme.bg} text-white shadow-xs`
+                  : "bg-neutral-100 text-[#737373] hover:text-neutral-900"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </header>
 
       {/* MOBILE NAV DROPDOWN */}

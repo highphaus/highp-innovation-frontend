@@ -75,10 +75,13 @@ export default function InventoryManagement() {
         price: Number(form.price),
         description: form.description,
         image: form.image || "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80",
-        category: form.category || ""
+        category: form.category || "",
+        stock: Number(form.stock || 0),
+        inStock: !form.isOutOfStock,
+        isOutOfStock: Boolean(form.isOutOfStock)
       });
       setSuccess("Product published in catalog successfully.");
-      setForm({ name: "", price: "", description: "", image: "", category: "" });
+      setForm({ name: "", price: "", description: "", image: "", category: "", stock: "", isOutOfStock: false });
       fetchProducts();
     } catch (err) {
       setError(err.response?.data?.error || "Failed to publish product.");
@@ -199,6 +202,31 @@ export default function InventoryManagement() {
             <ArrowLeft className="w-3.5 h-3.5" /> <span className="hidden xs:inline">Dashboard</span><span className="xs:hidden">Back</span>
           </Link>
         </div>
+
+        {/* MOBILE HORIZONTAL TOUCH NAV PILLS */}
+        <div className="md:hidden border-t border-[#F0EEEB] pt-2 mt-2 overflow-x-auto no-scrollbar flex items-center gap-1.5">
+          {[
+            { to: `/${storeSlug}/admin`, label: "Dashboard" },
+            { to: `/${storeSlug}/admin/inventory`, label: "Inventory", active: true },
+            { to: `/${storeSlug}/admin/prices`, label: "Prices" },
+            { to: `/${storeSlug}/admin/campaigns`, label: "Campaigns" },
+            { to: `/${storeSlug}/admin/analytics`, label: "Analytics" },
+            { to: `/${storeSlug}/admin/staff`, label: "Staff" },
+            { to: `/${storeSlug}/kitchen`, label: details.productLabel === "Item" ? "Kitchen KDS" : "KDS" },
+            { to: `/${storeSlug}/delivery`, label: "Delivery" },
+          ].map(({ to, label, active }) => (
+            <Link
+              key={to} to={to}
+              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all whitespace-nowrap flex-shrink-0 ${
+                active
+                  ? `${theme.bg} text-white shadow-xs`
+                  : "bg-neutral-100 text-[#737373] hover:text-neutral-900"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </header>
 
       <div className="max-w-7xl mx-auto px-6 lg:px-10 pt-8 space-y-8">
@@ -310,6 +338,34 @@ export default function InventoryManagement() {
                     onChange={e => setForm(p => ({ ...p, price: e.target.value }))}
                     className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900"
                   />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Stock Units</label>
+                    <input
+                      type="number"
+                      min="0"
+                      placeholder="10"
+                      value={form.stock || ""}
+                      onChange={e => setForm(p => ({ ...p, stock: e.target.value }))}
+                      className="w-full bg-[#FAFAFA] border border-[#F5F5F0] rounded-xl px-3.5 py-2.5 text-xs font-semibold focus:outline-none focus:border-neutral-300 focus:bg-white transition-all text-neutral-900"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">Stock Status</label>
+                    <button
+                      type="button"
+                      onClick={() => setForm(p => ({ ...p, isOutOfStock: !p.isOutOfStock }))}
+                      className={`w-full py-2.5 px-3 rounded-xl text-[11px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                        form.isOutOfStock
+                          ? "bg-red-50 text-red-700 border-red-200"
+                          : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                      }`}
+                    >
+                      {form.isOutOfStock ? "🔴 Out" : "🟢 In Stock"}
+                    </button>
+                  </div>
                 </div>
 
                 <div>
