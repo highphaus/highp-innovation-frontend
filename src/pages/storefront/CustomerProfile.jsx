@@ -397,7 +397,8 @@ export default function CustomerProfile() {
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-white border border-[#F0EEEB] rounded-3xl p-5 sm:p-6 shadow-xs space-y-5 text-center">
             
-            <div className="space-y-3">
+            {/* Show user avatar card on desktop, or on mobile when viewing Personal Profile */}
+            <div className={`space-y-3 ${activeTab === "orders" || activeTab === "wishlist" ? "hidden lg:block" : "block"}`}>
               <div className="w-16 h-16 rounded-2xl bg-[#F7EBEF] border border-[#F0EEEB] text-[#D03D56] font-black text-xl flex items-center justify-center mx-auto shadow-xs">
                 {name ? name.charAt(0).toUpperCase() : <User className="w-6 h-6" />}
               </div>
@@ -405,17 +406,16 @@ export default function CustomerProfile() {
                 <h2 className="text-sm font-black text-neutral-900 uppercase truncate px-1">{name || "Customer Account"}</h2>
                 <p className="text-[10px] text-neutral-400 font-medium truncate mt-0.5 px-1">{email}</p>
               </div>
+              <div className="h-px bg-[#F5F5F0]" />
             </div>
 
-            <div className="h-px bg-[#F5F5F0]" />
-
             {/* NAV TAB LINKS */}
-            <nav className="flex flex-row lg:flex-col gap-1 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0 scrollbar-none">
+            <nav className="flex flex-row lg:flex-col gap-1.5 overflow-x-auto lg:overflow-x-visible pb-1 lg:pb-0 scrollbar-none">
               {[
                 { id: "orders", label: "My Orders", icon: ShoppingBag, badge: orders.length },
-                { id: "wishlist", label: "Wishlist & Activity", icon: Heart, badge: likedItems.length },
-                { id: "info", label: "Personal Info", icon: User },
-                { id: "addresses", label: "Saved Drop Points", icon: MapPin }
+                { id: "wishlist", label: "Wishlist", icon: Heart, badge: likedItems.length },
+                { id: "info", label: "Personal Profile", icon: User },
+                { id: "addresses", label: "Saved Addresses", icon: MapPin }
               ].map(t => {
                 const Icon = t.icon;
                 const isActive = activeTab === t.id;
@@ -424,16 +424,16 @@ export default function CustomerProfile() {
                     key={t.id}
                     type="button"
                     onClick={() => { setActiveTab(t.id); setErrorMsg(""); setSuccessMsg(""); }}
-                    className={`text-left px-3.5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2.5 transition-all whitespace-nowrap flex-1 lg:flex-none cursor-pointer ${
+                    className={`text-left px-3.5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-wider flex items-center gap-2 transition-all whitespace-nowrap cursor-pointer shrink-0 lg:shrink ${
                       isActive 
                         ? "bg-[#D03D56] text-white shadow-md shadow-[#D03D56]/15" 
-                        : "text-[#737373] hover:text-neutral-900 hover:bg-[#FAFAFA]"
+                        : "text-[#737373] bg-neutral-50 border border-neutral-200/80 hover:text-neutral-900 hover:bg-neutral-100"
                     }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
-                    <span className="hidden sm:inline lg:inline">{t.label}</span>
+                    <span>{t.label}</span>
                     {t.badge > 0 && (
-                      <span className={`ml-auto text-[9px] font-black px-2 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-600"}`}>
+                      <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-full ${isActive ? "bg-white/20 text-white" : "bg-neutral-200 text-neutral-700"}`}>
                         {t.badge}
                       </span>
                     )}

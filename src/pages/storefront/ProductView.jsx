@@ -84,6 +84,31 @@ export default function ProductView() {
   }, [storeSlug, productId]);
 
   useEffect(() => {
+    if (product && product._id) {
+      try {
+        const likedIds = JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
+        setIsLiked(likedIds.includes(product._id));
+      } catch (_) {}
+    }
+  }, [product, storeSlug]);
+
+  const toggleLike = () => {
+    if (!product || !product._id) return;
+    try {
+      const likedIds = JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
+      let updated;
+      if (likedIds.includes(product._id)) {
+        updated = likedIds.filter(id => id !== product._id);
+        setIsLiked(false);
+      } else {
+        updated = [...likedIds, product._id];
+        setIsLiked(true);
+      }
+      localStorage.setItem(`likes_${storeSlug}`, JSON.stringify(updated));
+    } catch (_) {}
+  };
+
+  useEffect(() => {
     const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
     if (product && product.name) {
       document.title = `${product.name} - ${storeName} | HighP Platform`;
@@ -160,35 +185,26 @@ export default function ProductView() {
       });
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
-    setAdded(true);
     setCartCount(existing.reduce((s, i) => s + i.quantity, 0));
+    setAdded(true);
     setTimeout(() => setAdded(false), 2000);
-  };
-
-  const toggleLike = () => {
-    setIsLiked(!isLiked);
-    try {
-      const currentLikes = JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
-      const nextLikes = isLiked ? currentLikes.filter(id => id !== productId) : [...currentLikes, productId];
-      localStorage.setItem(`likes_${storeSlug}`, JSON.stringify(nextLikes));
-    } catch (e) { console.error(e); }
   };
 
   const theme = useMemo(() => getTheme(storeData), [storeData]);
 
   if (loading) return (
-    <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center p-4">
-      <Loader2 className="w-9 h-9 animate-spin text-[#d03d56] mb-3" />
-      <p className="text-xs font-black tracking-widest uppercase animate-pulse text-slate-300">Loading Product Details...</p>
+    <div className="min-h-screen bg-[#FAF5F6] text-[#801B2C] flex flex-col items-center justify-center p-4">
+      <Loader2 className="w-9 h-9 animate-spin text-[#801B2C] mb-3" />
+      <p className="text-xs font-black tracking-widest uppercase animate-pulse text-[#801B2C]">Loading Product Details...</p>
     </div>
   );
 
   if (!product) return (
-    <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4 text-center">
-      <div className="bg-slate-900/90 border border-white/10 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full backdrop-blur-xl text-white">
-        <h2 className="text-base font-black text-white uppercase tracking-tight mb-2 font-manrope">Item Not Found</h2>
-        <p className="text-slate-400 text-xs mb-6">The item you are attempting to query does not exist in our catalog index.</p>
-        <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#d03d56] hover:bg-[#a02240] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center shadow-lg transition-all active:scale-[0.98]">
+    <div className="min-h-screen bg-[#FAF5F6] flex items-center justify-center p-4 text-center">
+      <div className="bg-white border border-[#F0D5DA] p-6 sm:p-8 rounded-3xl shadow-md max-w-sm w-full text-[#2D0A10]">
+        <h2 className="text-base font-black text-[#801B2C] uppercase tracking-tight mb-2 font-manrope">Item Not Found</h2>
+        <p className="text-[#5C1524] text-xs mb-6">The item you are attempting to query does not exist in our catalog index.</p>
+        <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#801B2C] hover:bg-[#601421] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center shadow-md transition-all active:scale-[0.98]">
           ← Return to storefront
         </Link>
       </div>
@@ -197,17 +213,17 @@ export default function ProductView() {
 
   return (
     <>
-    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#111827] to-[#1e1b4b] text-white font-sans pb-24 selection:bg-neutral-800 selection:text-white">
+    <div className="min-h-screen bg-[#FAF5F6] text-[#2D0A10] font-sans pb-24 selection:bg-[#801B2C] selection:text-white">
       
       {/* BRAND NAVIGATION HEADER */}
-      <nav className="bg-[#0f172a]/95 border-b border-white/10 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-lg sticky top-0 z-40 backdrop-blur-md">
-        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-colors">
+      <nav className="bg-white/95 border-b border-[#F0D5DA] px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-40 backdrop-blur-md">
+        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-[#801B2C] hover:text-[#50101B] transition-colors">
           <ArrowLeft className="w-4 h-4" /> <span>Back to storefront</span>
         </Link>
-        <Link to={`/${storeSlug}/cart`} className="relative w-9 h-9 border border-white/20 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
-          <ShoppingCart className="w-4 h-4 text-white" />
+        <Link to={`/${storeSlug}/cart`} className="relative w-9 h-9 border border-[#F0D5DA] bg-[#FAF5F6] rounded-full flex items-center justify-center hover:bg-[#F3E2E6] transition-colors">
+          <ShoppingCart className="w-4 h-4 text-[#801B2C]" />
           {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-[#d03d56] text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-mono shadow-sm">
+            <span className="absolute -top-1 -right-1 bg-[#801B2C] text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-mono shadow-sm">
               {cartCount}
             </span>
           )}
@@ -219,7 +235,7 @@ export default function ProductView() {
         
         {/* LEFT COLUMN ASPECT WINDOW FRAME */}
         <div className="relative">
-          <div className="w-full aspect-square rounded-3xl overflow-hidden bg-white/5 border border-white/15 shadow-2xl relative group">
+          <div className="w-full aspect-square rounded-3xl overflow-hidden bg-white border border-[#F0D5DA] shadow-md relative group">
             <img 
               src={getFoodImage(product)} 
               alt={product.name} 
@@ -232,7 +248,7 @@ export default function ProductView() {
               <button 
                 type="button"
                 onClick={handleShareProduct} 
-                className="p-2.5 bg-slate-900/90 backdrop-blur rounded-full shadow-lg text-white/90 hover:text-white transition-colors cursor-pointer border border-white/20"
+                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-[#801B2C] hover:text-black transition-colors cursor-pointer border border-[#F0D5DA]"
                 title="Share product link"
               >
                 <Share2 className="w-4 h-4" />
@@ -241,17 +257,17 @@ export default function ProductView() {
               <button 
                 type="button"
                 onClick={toggleLike} 
-                className="p-2.5 bg-slate-900/90 backdrop-blur rounded-full shadow-lg text-white/60 hover:text-[#d03d56] transition-colors cursor-pointer border border-white/20"
+                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-400 hover:text-[#801B2C] transition-colors cursor-pointer border border-[#F0D5DA]"
                 title="Wishlist product"
               >
-                <Heart className={`w-4 h-4 ${isLiked ? 'fill-[#d03d56] text-[#d03d56]' : ''}`} />
+                <Heart className={`w-4 h-4 ${isLiked ? 'fill-[#801B2C] text-[#801B2C]' : ''}`} />
               </button>
             </div>
 
             {/* Zomato Style Veg/Non-Veg Corner Flag overlay */}
-            <div className="absolute left-4 top-4 z-10 bg-slate-900/90 px-2.5 py-1 rounded-md border border-white/20 backdrop-blur-md flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-200 shadow-lg">
-              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-500" : "border-emerald-500"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-500" : "bg-emerald-500"}`} />
+            <div className="absolute left-4 top-4 z-10 bg-white/95 px-2.5 py-1 rounded-md border border-[#F0D5DA] backdrop-blur-md flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#2D0A10] shadow-sm">
+              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-600" : "border-emerald-600"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
               </span>
               <span>{product.isNonVeg ? "Non-Veg" : "Veg"}</span>
             </div>
@@ -260,98 +276,98 @@ export default function ProductView() {
 
         {/* RIGHT COLUMN INFO SPECIFICATION DECK */}
         <div className="flex flex-col justify-between">
-          <div className="bg-slate-900/90 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl flex-1 space-y-5 backdrop-blur-xl">
+          <div className="bg-white border border-[#F0D5DA] rounded-3xl p-5 sm:p-6 shadow-md flex-1 space-y-5">
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 {/* Rating Badge Pill */}
-                <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-sm">
+                <div className="flex items-center gap-0.5 bg-[#801B2C] text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-xs">
                   <span>{product.rating || "4.6"}</span>
                   <span className="text-[8px]">★</span>
                 </div>
-                <span className="text-[9px] bg-white/10 border border-white/15 font-bold px-2 py-0.5 rounded text-slate-300 uppercase tracking-wide">
+                <span className="text-[9px] bg-[#FAF5F6] border border-[#F0D5DA] font-bold px-2 py-0.5 rounded text-[#801B2C] uppercase tracking-wide">
                   {currentVariant.name}
                 </span>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight uppercase font-manrope">
+              <h1 className="text-xl sm:text-2xl font-black text-[#2D0A10] tracking-tight leading-tight uppercase font-manrope">
                 {product.name}
               </h1>
             </div>
 
             <div className="flex items-baseline gap-2">
-              <span className="text-2xl sm:text-3xl font-black text-white font-mono">₹{unitPrice * quantity}</span>
-              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+              <span className="text-2xl sm:text-3xl font-black text-[#801B2C] font-mono">₹{unitPrice * quantity}</span>
+              <span className="text-[10px] text-[#5C1524] font-bold uppercase tracking-wider">
                 ({currentVariant.name} × {quantity})
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-[#5C1524] leading-relaxed font-medium">
               {product.description || "Fresh premium selections curated with organic high-quality baseline ingredients prepared natively for convenient fulfillment."}
             </p>
 
-            <div className="h-px bg-white/10" />
+            <div className="h-px bg-[#F0D5DA]" />
 
             {/* PORTION / QUANTITY DROPDOWN SELECTOR */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Portion / Quantity</span>
-                <span className="text-[10px] font-bold text-[#d03d56] uppercase tracking-wider">{currentVariant.name}</span>
+                <span className="text-[10px] font-black text-[#801B2C] uppercase tracking-widest">Select Portion / Quantity</span>
+                <span className="text-[10px] font-bold text-[#801B2C] uppercase tracking-wider">{currentVariant.name}</span>
               </div>
               <div className="relative">
                 <select
                   value={selectedVariantIndex}
                   onChange={(e) => setSelectedVariantIndex(Number(e.target.value))}
-                  className="w-full bg-slate-800 border border-white/20 rounded-2xl text-xs font-bold text-white px-4 py-3 focus:outline-none focus:border-[#d03d56] cursor-pointer appearance-none pr-8 shadow-inner"
+                  className="w-full bg-[#FAF5F6] border border-[#F0D5DA] rounded-2xl text-xs font-bold text-[#2D0A10] px-4 py-3 focus:outline-none focus:border-[#801B2C] cursor-pointer appearance-none pr-8 shadow-2xs"
                 >
                   {variants.map((v, idx) => (
-                    <option key={idx} value={idx} className="bg-slate-900 text-white">
+                    <option key={idx} value={idx} className="bg-white text-[#2D0A10]">
                       {v.name} &mdash; ₹{v.price}
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">▼</div>
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#801B2C] text-xs font-bold">▼</div>
               </div>
             </div>
 
-            <div className="h-px bg-white/10" />
+            <div className="h-px bg-[#F0D5DA]" />
 
             {/* FULFILLMENT INSIGHT BENEFITS ROW */}
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-slate-400" />
+              <div className="bg-[#FAF5F6] border border-[#F0D5DA] rounded-2xl p-3 flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-[#801B2C]" />
                 <div className="leading-tight">
-                  <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Assembly</span>
-                  <span className="text-xs font-extrabold text-white font-mono">{product.preparationTime || "15"} Mins</span>
+                  <span className="block text-[8px] font-black text-[#5C1524] uppercase tracking-widest">Assembly</span>
+                  <span className="text-xs font-extrabold text-[#2D0A10] font-mono">{product.preparationTime || "15"} Mins</span>
                 </div>
               </div>
 
-              <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
-                <Shield className="w-4 h-4 text-emerald-400" />
+              <div className="bg-[#FAF5F6] border border-[#F0D5DA] rounded-2xl p-3 flex items-center gap-2.5">
+                <Shield className="w-4 h-4 text-emerald-600" />
                 <div className="leading-tight">
-                  <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Quality</span>
-                  <span className="text-xs font-extrabold text-white uppercase">Certified</span>
+                  <span className="block text-[8px] font-black text-[#5C1524] uppercase tracking-widest">Quality</span>
+                  <span className="text-xs font-extrabold text-[#2D0A10] uppercase">Certified</span>
                 </div>
               </div>
             </div>
 
-            <div className="h-px bg-white/10" />
+            <div className="h-px bg-[#F0D5DA]" />
 
             {/* INTERACTIVE QUANTITY COUNTER DECK */}
             <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Count</span>
-              <div className="flex items-center gap-2 bg-slate-800 border border-white/15 rounded-xl p-1 shadow-inner select-none">
+              <span className="text-xs font-black text-[#801B2C] uppercase tracking-widest">Select Count</span>
+              <div className="flex items-center gap-2 bg-[#FAF5F6] border border-[#F0D5DA] rounded-xl p-1 shadow-2xs select-none">
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-7 h-7 rounded-lg bg-slate-700 shadow-sm flex items-center justify-center border border-white/10 text-white active:scale-75 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center border border-[#F0D5DA] text-[#801B2C] active:scale-75 transition-transform cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
-                <span className="text-xs font-black w-6 text-center text-white font-mono">{quantity}</span>
+                <span className="text-xs font-black w-6 text-center text-[#2D0A10] font-mono">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(q => q + 1)}
-                  className="w-7 h-7 rounded-lg bg-slate-700 shadow-sm flex items-center justify-center border border-white/10 text-white active:scale-75 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center border border-[#F0D5DA] text-[#801B2C] active:scale-75 transition-transform cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3 h-3" />
@@ -366,14 +382,14 @@ export default function ProductView() {
             {(product?.inStock === false || product?.isOutOfStock === true) ? (
               <button 
                 disabled
-                className="w-full py-3.5 bg-slate-800 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed border border-white/10"
+                className="w-full py-3.5 bg-neutral-200 text-neutral-500 font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed border border-neutral-300"
               >
                 Currently Out of Stock
               </button>
             ) : (
               <button 
                 onClick={addToCart}
-                className="w-full py-3.5 bg-gradient-to-r from-[#d03d56] to-[#e11d48] hover:from-[#be123c] hover:to-[#9f1239] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#d03d56]/30 cursor-pointer border-none"
+                className="w-full py-3.5 bg-gradient-to-r from-[#801B2C] to-[#A32A3E] hover:from-[#601421] hover:to-[#801B2C] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md shadow-[#801B2C]/20 cursor-pointer border-none"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
                 {added ? "Added To Basket! ✓" : `Add to Basket · ₹${unitPrice * quantity}`}
@@ -382,7 +398,7 @@ export default function ProductView() {
 
             <Link 
               to={`/${storeSlug}/cart`}
-              className="block text-center py-3 bg-white/10 hover:bg-white/15 active:scale-[0.98] text-slate-200 hover:text-white font-black text-[10px] uppercase tracking-wider rounded-2xl transition-all border border-white/10 shadow-sm"
+              className="block text-center py-3 bg-[#FAF5F6] hover:bg-[#F3E2E6] active:scale-[0.98] text-[#801B2C] font-black text-[10px] uppercase tracking-wider rounded-2xl transition-all border border-[#F0D5DA] shadow-2xs"
             >
               Proceed To Checkout Summary →
             </Link>
@@ -394,20 +410,20 @@ export default function ProductView() {
       {/* STORE OWNER INFO CARD */}
       {storeData && (
         <div className="mt-8 max-w-4xl mx-auto px-4">
-          <div className="bg-slate-900/90 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl text-white">
+          <div className="bg-white border border-[#F0D5DA] rounded-3xl p-5 sm:p-6 shadow-md flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[#2D0A10]">
             <div className="flex items-center gap-3.5">
               {storeData.logoUrl ? (
-                <img src={storeData.logoUrl} alt={storeData.name} className="w-12 h-12 rounded-2xl object-cover border border-white/15 shadow-sm" />
+                <img src={storeData.logoUrl} alt={storeData.name} className="w-12 h-12 rounded-2xl object-cover border border-[#F0D5DA] shadow-2xs" />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-[#d03d56]/20 text-[#d03d56] font-black text-lg flex items-center justify-center border border-[#d03d56]/30 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-[#801B2C]/10 text-[#801B2C] font-black text-lg flex items-center justify-center border border-[#801B2C]/20 shrink-0">
                   {storeData.name ? storeData.name.charAt(0).toUpperCase() : "S"}
                 </div>
               )}
               <div>
-                <h3 className="text-sm font-black text-white uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
-                {storeData.tagline && <p className="text-[11px] text-slate-400 font-medium italic">{storeData.tagline}</p>}
+                <h3 className="text-sm font-black text-[#2D0A10] uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
+                {storeData.tagline && <p className="text-[11px] text-[#5C1524] font-medium italic">{storeData.tagline}</p>}
                 {storeData.address && (
-                  <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
+                  <p className="text-[10px] text-[#5C1524] font-medium flex items-center gap-1 mt-0.5">
                     <span>📍</span> {storeData.address}
                   </p>
                 )}
@@ -417,7 +433,7 @@ export default function ProductView() {
             {(storeData.phone || storeData.whatsappNumber) && (
               <a 
                 href={`tel:${storeData.whatsappNumber || storeData.phone}`}
-                className="px-4 py-2.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto hover:bg-emerald-900/60 transition-colors shadow-sm"
+                className="px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto hover:bg-emerald-100 transition-colors shadow-2xs"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Call {storeData.whatsappNumber || storeData.phone}</span>
