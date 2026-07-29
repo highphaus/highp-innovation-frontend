@@ -540,8 +540,38 @@ export default function CustomerProfile() {
                             ))}
                           </div>
 
+                          {/* BILL SUMMARY RECEIPT BREAKDOWN */}
+                          <div className="space-y-1.5 pt-3 border-t border-[#F5F5F0] text-xs">
+                            {o.subtotal > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>Items Subtotal</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{o.subtotal}</span>
+                              </div>
+                            )}
+                            {o.taxAmount > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>GST Tax ({o.taxRate || 5}%)</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{o.taxAmount}</span>
+                              </div>
+                            )}
+                            {o.otherCharges > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>{o.otherChargesLabel || "Packaging & Service Fee"}</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{o.otherCharges}</span>
+                              </div>
+                            )}
+                            {o.deliveryFee !== undefined && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>Delivery Fee</span>
+                                <span className="font-mono font-bold text-neutral-800">
+                                  {o.deliveryFee === 0 ? "Free" : `₹${o.deliveryFee}`}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
                           {/* Order Footer Actions & Re-order */}
-                          <div className="flex justify-between items-center border-t border-[#F5F5F0] pt-3">
+                          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#F5F5F0] pt-3">
                             <div>
                               <span className="uppercase tracking-widest text-[9px] text-[#737373] block font-bold">Total Paid</span>
                               <span className="text-base font-black text-neutral-955 font-mono">₹{o.totalAmount}</span>
@@ -550,7 +580,7 @@ export default function CustomerProfile() {
                             <button
                               type="button"
                               onClick={() => handleReorderAll(o)}
-                              className="flex items-center gap-1.5 bg-[#0f172a] text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-black transition-all shadow-xs cursor-pointer"
+                              className="flex items-center gap-1.5 bg-[#0f172a] text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-black transition-all shadow-xs cursor-pointer active:scale-95"
                             >
                               <RefreshCw className="w-3.5 h-3.5" /> <span>Reorder All Items</span>
                             </button>

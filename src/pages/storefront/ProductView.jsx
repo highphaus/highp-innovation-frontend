@@ -177,18 +177,18 @@ export default function ProductView() {
   const theme = useMemo(() => getTheme(storeData), [storeData]);
 
   if (loading) return (
-    <div className="min-h-screen bg-white text-neutral-400 flex flex-col items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin text-[#d03d56] mb-2" />
-      <p className="text-xs font-bold tracking-wider animate-pulse">Loading product details...</p>
+    <div className="min-h-screen bg-[#0b0f19] text-white flex flex-col items-center justify-center p-4">
+      <Loader2 className="w-9 h-9 animate-spin text-[#d03d56] mb-3" />
+      <p className="text-xs font-black tracking-widest uppercase animate-pulse text-slate-300">Loading Product Details...</p>
     </div>
   );
 
   if (!product) return (
-    <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center p-6 text-center">
-      <div className="bg-white border border-neutral-200 p-8 rounded-3xl shadow-sm max-w-sm w-full">
-        <h2 className="text-sm font-black text-neutral-900 uppercase tracking-tight mb-2">Item Not Found</h2>
-        <p className="text-neutral-500 text-xs mb-6">The item you are attempting to query does not exist in our catalog index.</p>
-        <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#d03d56] hover:bg-[#a02240] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center shadow-sm">
+    <div className="min-h-screen bg-[#0b0f19] flex items-center justify-center p-4 text-center">
+      <div className="bg-slate-900/90 border border-white/10 p-6 sm:p-8 rounded-3xl shadow-2xl max-w-sm w-full backdrop-blur-xl text-white">
+        <h2 className="text-base font-black text-white uppercase tracking-tight mb-2 font-manrope">Item Not Found</h2>
+        <p className="text-slate-400 text-xs mb-6">The item you are attempting to query does not exist in our catalog index.</p>
+        <Link to={`/${storeSlug}`} className="px-5 py-3 bg-[#d03d56] hover:bg-[#a02240] text-white rounded-xl text-[10px] font-black uppercase tracking-wider block text-center shadow-lg transition-all active:scale-[0.98]">
           ← Return to storefront
         </Link>
       </div>
@@ -197,15 +197,15 @@ export default function ProductView() {
 
   return (
     <>
-    <div className="min-h-screen bg-[#F8FAFC] text-neutral-900 font-sans pb-24 selection:bg-neutral-800 selection:text-white">
+    <div className="min-h-screen bg-gradient-to-br from-[#0b0f19] via-[#111827] to-[#1e1b4b] text-white font-sans pb-24 selection:bg-neutral-800 selection:text-white">
       
       {/* BRAND NAVIGATION HEADER */}
-      <nav className="bg-white border-b border-neutral-100 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-xs sticky top-0 z-40 backdrop-blur-md bg-white/90">
-        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-neutral-500 hover:text-neutral-900 transition-colors">
+      <nav className="bg-[#0f172a]/95 border-b border-white/10 px-4 sm:px-6 py-3.5 flex items-center justify-between shadow-lg sticky top-0 z-40 backdrop-blur-md">
+        <Link to={`/${storeSlug}`} className="flex items-center gap-2 text-xs font-bold text-slate-300 hover:text-white transition-colors">
           <ArrowLeft className="w-4 h-4" /> <span>Back to storefront</span>
         </Link>
-        <Link to={`/${storeSlug}/cart`} className="relative w-9 h-9 border border-neutral-200 rounded-full flex items-center justify-center hover:bg-neutral-50 transition-colors">
-          <ShoppingCart className="w-4 h-4 text-neutral-600" />
+        <Link to={`/${storeSlug}/cart`} className="relative w-9 h-9 border border-white/20 bg-white/5 rounded-full flex items-center justify-center hover:bg-white/10 transition-colors">
+          <ShoppingCart className="w-4 h-4 text-white" />
           {cartCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-[#d03d56] text-white text-[8px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center font-mono shadow-sm">
               {cartCount}
@@ -219,12 +219,12 @@ export default function ProductView() {
         
         {/* LEFT COLUMN ASPECT WINDOW FRAME */}
         <div className="relative">
-          <div className="w-full aspect-square rounded-3xl overflow-hidden bg-neutral-100 border border-neutral-200 shadow-xs relative group">
+          <div className="w-full aspect-square rounded-3xl overflow-hidden bg-white/5 border border-white/15 shadow-2xl relative group">
             <img 
               src={getFoodImage(product)} 
               alt={product.name} 
               loading="lazy"
-              className="w-full h-full object-cover group-hover:scale-102 transition-transform duration-500" 
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
             />
             
             {/* Floating Top Share & Wishlist Toggle Actions */}
@@ -232,7 +232,7 @@ export default function ProductView() {
               <button 
                 type="button"
                 onClick={handleShareProduct} 
-                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-600 hover:text-black transition-colors cursor-pointer border border-neutral-100"
+                className="p-2.5 bg-slate-900/90 backdrop-blur rounded-full shadow-lg text-white/90 hover:text-white transition-colors cursor-pointer border border-white/20"
                 title="Share product link"
               >
                 <Share2 className="w-4 h-4" />
@@ -241,7 +241,7 @@ export default function ProductView() {
               <button 
                 type="button"
                 onClick={toggleLike} 
-                className="p-2.5 bg-white/95 backdrop-blur rounded-full shadow-md text-neutral-400 hover:text-[#d03d56] transition-colors cursor-pointer border border-neutral-100"
+                className="p-2.5 bg-slate-900/90 backdrop-blur rounded-full shadow-lg text-white/60 hover:text-[#d03d56] transition-colors cursor-pointer border border-white/20"
                 title="Wishlist product"
               >
                 <Heart className={`w-4 h-4 ${isLiked ? 'fill-[#d03d56] text-[#d03d56]' : ''}`} />
@@ -249,9 +249,9 @@ export default function ProductView() {
             </div>
 
             {/* Zomato Style Veg/Non-Veg Corner Flag overlay */}
-            <div className="absolute left-4 top-4 z-10 bg-white/95 px-2 py-1 rounded-md border border-neutral-100 backdrop-blur-xs flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-neutral-600 shadow-sm">
-              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-600" : "border-emerald-600"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
+            <div className="absolute left-4 top-4 z-10 bg-slate-900/90 px-2.5 py-1 rounded-md border border-white/20 backdrop-blur-md flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-slate-200 shadow-lg">
+              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-500" : "border-emerald-500"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-500" : "bg-emerald-500"}`} />
               </span>
               <span>{product.isNonVeg ? "Non-Veg" : "Veg"}</span>
             </div>
@@ -260,98 +260,98 @@ export default function ProductView() {
 
         {/* RIGHT COLUMN INFO SPECIFICATION DECK */}
         <div className="flex flex-col justify-between">
-          <div className="bg-white border border-neutral-200 rounded-3xl p-5 sm:p-6 shadow-xs flex-1 space-y-5">
+          <div className="bg-slate-900/90 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl flex-1 space-y-5 backdrop-blur-xl">
             
             <div className="space-y-2">
               <div className="flex items-center gap-2">
                 {/* Rating Badge Pill */}
-                <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-2xs">
+                <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[10px] px-2 py-0.5 rounded-md shadow-sm">
                   <span>{product.rating || "4.6"}</span>
                   <span className="text-[8px]">★</span>
                 </div>
-                <span className="text-[9px] bg-neutral-100 border border-neutral-200 font-bold px-2 py-0.5 rounded text-neutral-500 uppercase tracking-wide">
+                <span className="text-[9px] bg-white/10 border border-white/15 font-bold px-2 py-0.5 rounded text-slate-300 uppercase tracking-wide">
                   {currentVariant.name}
                 </span>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-black text-neutral-900 tracking-tight leading-tight uppercase font-manrope">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight uppercase font-manrope">
                 {product.name}
               </h1>
             </div>
 
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-2xl font-black text-neutral-950 font-mono">₹{unitPrice * quantity}</span>
-              <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl sm:text-3xl font-black text-white font-mono">₹{unitPrice * quantity}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
                 ({currentVariant.name} × {quantity})
               </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-neutral-500 leading-relaxed font-medium">
+            <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
               {product.description || "Fresh premium selections curated with organic high-quality baseline ingredients prepared natively for convenient fulfillment."}
             </p>
 
-            <div className="h-px bg-neutral-100" />
+            <div className="h-px bg-white/10" />
 
             {/* PORTION / QUANTITY DROPDOWN SELECTOR */}
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Select Portion / Quantity</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Select Portion / Quantity</span>
                 <span className="text-[10px] font-bold text-[#d03d56] uppercase tracking-wider">{currentVariant.name}</span>
               </div>
               <div className="relative">
                 <select
                   value={selectedVariantIndex}
                   onChange={(e) => setSelectedVariantIndex(Number(e.target.value))}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-2xl text-xs font-bold text-neutral-900 px-4 py-3 focus:outline-none focus:border-[#d03d56] cursor-pointer appearance-none pr-8 shadow-2xs"
+                  className="w-full bg-slate-800 border border-white/20 rounded-2xl text-xs font-bold text-white px-4 py-3 focus:outline-none focus:border-[#d03d56] cursor-pointer appearance-none pr-8 shadow-inner"
                 >
                   {variants.map((v, idx) => (
-                    <option key={idx} value={idx}>
+                    <option key={idx} value={idx} className="bg-slate-900 text-white">
                       {v.name} &mdash; ₹{v.price}
                     </option>
                   ))}
                 </select>
-                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-bold">▼</div>
+                <div className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-xs font-bold">▼</div>
               </div>
             </div>
 
-            <div className="h-px bg-neutral-100" />
+            <div className="h-px bg-white/10" />
 
             {/* FULFILLMENT INSIGHT BENEFITS ROW */}
             <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex items-center gap-2.5">
-                <Clock className="w-4 h-4 text-neutral-400" />
+              <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+                <Clock className="w-4 h-4 text-slate-400" />
                 <div className="leading-tight">
-                  <span className="block text-[8px] font-black text-neutral-400 uppercase tracking-widest">Assembly</span>
-                  <span className="text-xs font-extrabold text-neutral-800 font-mono">{product.preparationTime || "15"} Mins</span>
+                  <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Assembly</span>
+                  <span className="text-xs font-extrabold text-white font-mono">{product.preparationTime || "15"} Mins</span>
                 </div>
               </div>
 
-              <div className="bg-neutral-50 border border-neutral-200 rounded-2xl p-3 flex items-center gap-2.5">
-                <Shield className="w-4 h-4 text-emerald-500" />
+              <div className="bg-slate-800/80 border border-white/10 rounded-2xl p-3 flex items-center gap-2.5">
+                <Shield className="w-4 h-4 text-emerald-400" />
                 <div className="leading-tight">
-                  <span className="block text-[8px] font-black text-neutral-400 uppercase tracking-widest">Quality</span>
-                  <span className="text-xs font-extrabold text-neutral-800 uppercase">Certified</span>
+                  <span className="block text-[8px] font-black text-slate-400 uppercase tracking-widest">Quality</span>
+                  <span className="text-xs font-extrabold text-white uppercase">Certified</span>
                 </div>
               </div>
             </div>
 
-            <div className="h-px bg-neutral-100" />
+            <div className="h-px bg-white/10" />
 
             {/* INTERACTIVE QUANTITY COUNTER DECK */}
             <div className="flex items-center justify-between pt-1">
-              <span className="text-xs font-black text-neutral-400 uppercase tracking-widest">Select Count</span>
-              <div className="flex items-center gap-1.5 bg-neutral-50 border border-neutral-200 rounded-xl p-1 shadow-2xs select-none">
+              <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Select Count</span>
+              <div className="flex items-center gap-2 bg-slate-800 border border-white/15 rounded-xl p-1 shadow-inner select-none">
                 <button 
                   onClick={() => setQuantity(q => Math.max(1, q - 1))}
-                  className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center border border-neutral-200/60 text-neutral-500 active:scale-75 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-slate-700 shadow-sm flex items-center justify-center border border-white/10 text-white active:scale-75 transition-transform cursor-pointer"
                   aria-label="Decrease quantity"
                 >
                   <Minus className="w-3 h-3" />
                 </button>
-                <span className="text-xs font-black w-6 text-center text-neutral-800 font-mono">{quantity}</span>
+                <span className="text-xs font-black w-6 text-center text-white font-mono">{quantity}</span>
                 <button 
                   onClick={() => setQuantity(q => q + 1)}
-                  className="w-7 h-7 rounded-lg bg-white shadow-xs flex items-center justify-center border border-neutral-200/60 text-neutral-500 active:scale-75 transition-transform cursor-pointer"
+                  className="w-7 h-7 rounded-lg bg-slate-700 shadow-sm flex items-center justify-center border border-white/10 text-white active:scale-75 transition-transform cursor-pointer"
                   aria-label="Increase quantity"
                 >
                   <Plus className="w-3 h-3" />
@@ -366,14 +366,14 @@ export default function ProductView() {
             {(product?.inStock === false || product?.isOutOfStock === true) ? (
               <button 
                 disabled
-                className="w-full py-3.5 bg-neutral-200 text-neutral-500 font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed border-none"
+                className="w-full py-3.5 bg-slate-800 text-slate-500 font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed border border-white/10"
               >
                 Currently Out of Stock
               </button>
             ) : (
               <button 
                 onClick={addToCart}
-                className="w-full py-3.5 bg-[#d03d56] hover:bg-[#a02240] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md cursor-pointer border-none"
+                className="w-full py-3.5 bg-gradient-to-r from-[#d03d56] to-[#e11d48] hover:from-[#be123c] hover:to-[#9f1239] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-lg shadow-[#d03d56]/30 cursor-pointer border-none"
               >
                 <ShoppingCart className="w-3.5 h-3.5" />
                 {added ? "Added To Basket! ✓" : `Add to Basket · ₹${unitPrice * quantity}`}
@@ -382,7 +382,7 @@ export default function ProductView() {
 
             <Link 
               to={`/${storeSlug}/cart`}
-              className="block text-center py-3 bg-neutral-100 hover:bg-neutral-200 active:scale-[0.98] text-neutral-600 hover:text-neutral-900 font-black text-[10px] uppercase tracking-wider rounded-2xl transition-all shadow-2xs"
+              className="block text-center py-3 bg-white/10 hover:bg-white/15 active:scale-[0.98] text-slate-200 hover:text-white font-black text-[10px] uppercase tracking-wider rounded-2xl transition-all border border-white/10 shadow-sm"
             >
               Proceed To Checkout Summary →
             </Link>
@@ -391,23 +391,23 @@ export default function ProductView() {
 
       </div>
 
-      {/* STORE OWNER INFO CARD (FETCHED DYNAMICALLY FROM STORE SETTINGS) */}
+      {/* STORE OWNER INFO CARD */}
       {storeData && (
         <div className="mt-8 max-w-4xl mx-auto px-4">
-          <div className="bg-white border border-neutral-200 rounded-3xl p-5 sm:p-6 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-slate-900/90 border border-white/15 rounded-3xl p-5 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4 backdrop-blur-xl text-white">
             <div className="flex items-center gap-3.5">
               {storeData.logoUrl ? (
-                <img src={storeData.logoUrl} alt={storeData.name} className="w-12 h-12 rounded-2xl object-cover border border-neutral-100 shadow-2xs" />
+                <img src={storeData.logoUrl} alt={storeData.name} className="w-12 h-12 rounded-2xl object-cover border border-white/15 shadow-sm" />
               ) : (
-                <div className="w-12 h-12 rounded-2xl bg-[#d03d56]/10 text-[#d03d56] font-black text-lg flex items-center justify-center border border-[#d03d56]/20 shrink-0">
+                <div className="w-12 h-12 rounded-2xl bg-[#d03d56]/20 text-[#d03d56] font-black text-lg flex items-center justify-center border border-[#d03d56]/30 shrink-0">
                   {storeData.name ? storeData.name.charAt(0).toUpperCase() : "S"}
                 </div>
               )}
               <div>
-                <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
-                {storeData.tagline && <p className="text-[11px] text-neutral-500 font-medium italic">{storeData.tagline}</p>}
+                <h3 className="text-sm font-black text-white uppercase tracking-tight font-manrope">{getStoreDisplayName(storeData, storeSlug)}</h3>
+                {storeData.tagline && <p className="text-[11px] text-slate-400 font-medium italic">{storeData.tagline}</p>}
                 {storeData.address && (
-                  <p className="text-[10px] text-neutral-400 font-medium flex items-center gap-1 mt-0.5">
+                  <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1 mt-0.5">
                     <span>📍</span> {storeData.address}
                   </p>
                 )}
@@ -417,7 +417,7 @@ export default function ProductView() {
             {(storeData.phone || storeData.whatsappNumber) && (
               <a 
                 href={`tel:${storeData.whatsappNumber || storeData.phone}`}
-                className="px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto hover:bg-emerald-100 transition-colors shadow-2xs"
+                className="px-4 py-2.5 bg-emerald-950/60 border border-emerald-500/30 text-emerald-400 text-xs font-bold rounded-xl flex items-center gap-2 self-start sm:self-auto hover:bg-emerald-900/60 transition-colors shadow-sm"
               >
                 <Phone className="w-3.5 h-3.5" />
                 <span>Call {storeData.whatsappNumber || storeData.phone}</span>
