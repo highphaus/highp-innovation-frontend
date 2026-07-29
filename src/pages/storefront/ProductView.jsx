@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield, Clock, Loader2, Share2 } from "lucide-react";
+import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield, Clock, Loader2, Share2, Phone } from "lucide-react";
 import axios from "axios";
 import MobileBottomNav from "../../components/MobileBottomNav";
 import { getStoreDisplayName } from "./StorefrontHome";
@@ -73,7 +73,7 @@ export default function ProductView() {
     ]).then(([storeRes, productsRes]) => {
       setStoreData(storeRes.data);
       const fetchedProducts = Array.isArray(productsRes.data) ? productsRes.data : productsRes.data?.products || [];
-      const found = fetchedProducts.find(p => p._id === productId);
+      const found = fetchedProducts.find(p => String(p._id) === String(productId) || p.slug === productId || String(p.id) === String(productId));
       setProduct(found || null);
       setLoading(false);
     }).catch(() => {
