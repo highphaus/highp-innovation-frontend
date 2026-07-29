@@ -97,6 +97,17 @@ export default function InventoryManagement() {
     }
   };
 
+  const handleToggleStock = async (product) => {
+    const isCurrentlyOut = product.inStock === false || product.isOutOfStock === true;
+    const newInStock = isCurrentlyOut;
+    try {
+      const res = await axios.patch(`/api/products/${product._id}/toggle-stock`, { inStock: newInStock });
+      setProducts(products.map(p => p._id === product._id ? res.data : p));
+    } catch {
+      alert("Failed to update stock status.");
+    }
+  };
+
   const startEdit = (product) => {
     setEditingId(product._id);
     setEditForm({
@@ -456,11 +467,25 @@ export default function InventoryManagement() {
                           <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
                               <h3 className="font-black text-sm text-neutral-900 leading-snug truncate">{product.name}</h3>
-                              {product.category && (
-                                <span className="inline-flex items-center gap-1 text-[9px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full mt-1">
-                                  <Tag className="w-2.5 h-2.5" /> {product.category}
-                                </span>
-                              )}
+                              <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                                {product.category && (
+                                  <span className="inline-flex items-center gap-1 text-[9px] font-bold text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full">
+                                    <Tag className="w-2.5 h-2.5" /> {product.category}
+                                  </span>
+                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => handleToggleStock(product)}
+                                  className={`px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border transition-all cursor-pointer ${
+                                    product.inStock === false || product.isOutOfStock === true
+                                      ? "bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                                      : "bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                                  }`}
+                                  title="Click to toggle In Stock / Out of Stock"
+                                >
+                                  {product.inStock === false || product.isOutOfStock === true ? "🔴 Out of Stock" : "🟢 In Stock"}
+                                </button>
+                              </div>
                               <p className="text-[10px] text-[#737373] mt-1 leading-relaxed line-clamp-2">{product.description || "No description."}</p>
                             </div>
                             <span className="font-black text-base text-neutral-900 flex-shrink-0">₹{product.price}</span>

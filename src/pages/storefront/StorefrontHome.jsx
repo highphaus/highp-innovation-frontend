@@ -490,6 +490,7 @@ export default function Storefront() {
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
             {filteredProducts.map((product) => {
               const liked = likedProducts.includes(product._id);
+              const isOutOfStock = product.inStock === false || product.isOutOfStock === true;
               const variants = getProductVariants(product);
               const selectedIdx = selectedVariants[product._id] ?? 0;
               const currentVariant = variants[selectedIdx] || variants[0];
@@ -500,7 +501,15 @@ export default function Storefront() {
                 <div key={product._id} className="group flex flex-col rounded-2xl border border-neutral-200 bg-white shadow-xs overflow-hidden hover:shadow-sm transition-shadow">
                   
                   <Link to={`/${storeSlug}/product/${product._id}`} className="relative aspect-square bg-neutral-50 overflow-hidden block cursor-pointer">
-                    <img src={getFoodImage(product)} alt={product.name} loading="lazy" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-102" />
+                    <img src={getFoodImage(product)} alt={product.name} loading="lazy" className={`w-full h-full object-cover transition-transform duration-300 group-hover:scale-102 ${isOutOfStock ? "opacity-60 grayscale-[35%]" : ""}`} />
+                    
+                    {isOutOfStock && (
+                      <div className="absolute inset-0 bg-black/40 backdrop-blur-[1px] flex items-center justify-center z-10">
+                        <span className="bg-red-600 text-white font-black text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full shadow-md">
+                          Out of Stock
+                        </span>
+                      </div>
+                    )}
                     
                     <div className="absolute right-2 top-2 flex items-center gap-1 z-10">
                       <button 
@@ -594,7 +603,11 @@ export default function Storefront() {
                     <div className="flex items-center justify-between pt-1 border-t border-neutral-100 mt-auto">
                       <span className="text-xs sm:text-sm font-black text-neutral-955 font-mono">₹{currentVariant.price}</span>
                       
-                      {quantityInCart > 0 ? (
+                      {isOutOfStock ? (
+                        <button type="button" disabled className="bg-neutral-100 border border-neutral-200 text-neutral-400 font-bold text-[9px] uppercase tracking-wider px-2.5 py-1 rounded-lg cursor-not-allowed">
+                          Out of Stock
+                        </button>
+                      ) : quantityInCart > 0 ? (
                         <div className="flex items-center bg-[#d03d56] text-white rounded-lg h-7 px-1 font-bold text-xs select-none">
                           <button onClick={(e) => { e.stopPropagation(); updateCartQty(cartItemId, -1); }} className="w-5 h-full bg-transparent border-none text-white text-sm font-bold cursor-pointer">-</button>
                           <span className="w-4 text-center text-[11px] font-black">{quantityInCart}</span>

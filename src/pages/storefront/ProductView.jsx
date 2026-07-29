@@ -363,13 +363,22 @@ export default function ProductView() {
 
           {/* ACTION SUBMISSIONS TRAY */}
           <div className="space-y-3 mt-6">
-            <button 
-              onClick={addToCart}
-              className="w-full py-3.5 bg-[#d03d56] hover:bg-[#a02240] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md cursor-pointer border-none"
-            >
-              <ShoppingCart className="w-3.5 h-3.5" />
-              {added ? "Added To Basket! ✓" : `Add to Basket · ₹${unitPrice * quantity}`}
-            </button>
+            {(product?.inStock === false || product?.isOutOfStock === true) ? (
+              <button 
+                disabled
+                className="w-full py-3.5 bg-neutral-200 text-neutral-500 font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 cursor-not-allowed border-none"
+              >
+                Currently Out of Stock
+              </button>
+            ) : (
+              <button 
+                onClick={addToCart}
+                className="w-full py-3.5 bg-[#d03d56] hover:bg-[#a02240] text-white font-black text-[11px] uppercase tracking-wider rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-[0.98] shadow-md cursor-pointer border-none"
+              >
+                <ShoppingCart className="w-3.5 h-3.5" />
+                {added ? "Added To Basket! ✓" : `Add to Basket · ₹${unitPrice * quantity}`}
+              </button>
+            )}
 
             <Link 
               to={`/${storeSlug}/cart`}
