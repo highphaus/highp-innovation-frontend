@@ -15,6 +15,10 @@ export default function PlatformLogin() {
   const [loading, setLoading]   = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  useEffect(() => {
+    document.title = "Sign In | HighP Platform";
+  }, []);
+
   // ── Step 1: send OTP ────────────────────────────────────────
   const handleSendOTP = async (e) => {
     e.preventDefault();

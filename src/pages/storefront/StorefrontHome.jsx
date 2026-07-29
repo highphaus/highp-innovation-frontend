@@ -142,6 +142,11 @@ export default function Storefront() {
     fetchStoreAndProducts();
   }, [storeSlug]);
 
+  useEffect(() => {
+    const displayName = getStoreDisplayName(storeData, storeSlug);
+    document.title = `${displayName} | HighP Platform`;
+  }, [storeData, storeSlug]);
+
   const filteredProducts = useMemo(() => {
     let result = [...products];
     if (searchQuery.trim()) {

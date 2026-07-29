@@ -19,6 +19,10 @@ export default function StoreRegister() {
   const [loading, setLoading]     = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  useEffect(() => {
+    document.title = "Register Store | HighP Platform";
+  }, []);
+
   // ── Step 1: validate details and send OTP ──────────────────
   const handleSendOTP = async (e) => {
     e.preventDefault();

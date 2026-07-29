@@ -74,6 +74,11 @@ export default function LiveKDSFeed() {
   }, [storeSlug]);
 
   useEffect(() => {
+    const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
+    document.title = `${storeName} Operations Board | HighP Platform`;
+  }, [storeData, storeSlug]);
+
+  useEffect(() => {
     fetchActiveTickets();
     const interval = setInterval(fetchActiveTickets, 5000);
     return () => clearInterval(interval);

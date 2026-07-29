@@ -15,6 +15,10 @@ export default function PlamHome() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   useEffect(() => {
+    document.title = "HighP Platform | Enterprise E-Commerce Platform";
+  }, []);
+
+  useEffect(() => {
     if (mobileMenuOpen) {
       document.body.style.overflow = "hidden";
     } else {

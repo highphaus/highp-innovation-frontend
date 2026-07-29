@@ -83,6 +83,15 @@ export default function ProductView() {
     });
   }, [storeSlug, productId]);
 
+  useEffect(() => {
+    const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
+    if (product && product.name) {
+      document.title = `${product.name} - ${storeName} | HighP Platform`;
+    } else {
+      document.title = `${storeName} | HighP Platform`;
+    }
+  }, [product, storeData, storeSlug]);
+
   // Track recently viewed products
   useEffect(() => {
     if (product && product._id) {

@@ -468,6 +468,11 @@ export default function StoreOwnerProfile() {
     }
   }, [isAuthenticated, slug]);
 
+  useEffect(() => {
+    const storeName = storeData?.name || name || (slug ? slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
+    document.title = `${storeName} Dashboard | HighP Platform`;
+  }, [storeData, name, slug]);
+
   // Real-time background polling for new orders (every 7 seconds)
   useEffect(() => {
     if (!isAuthenticated || !slug) return;

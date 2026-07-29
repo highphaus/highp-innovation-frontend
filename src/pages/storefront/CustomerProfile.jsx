@@ -150,6 +150,11 @@ export default function CustomerProfile() {
     }
   }, [storeSlug]);
 
+  useEffect(() => {
+    const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
+    document.title = `My Account & Orders - ${storeName} | HighP Platform`;
+  }, [storeData, storeSlug]);
+
   // Wishlist & Activity Items Computation
   const likedItems = useMemo(() => {
     try {

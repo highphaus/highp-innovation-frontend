@@ -86,6 +86,11 @@ export default function CustomerCart() {
   }, [storeSlug]);
 
   useEffect(() => {
+    const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
+    document.title = `Cart & Checkout - ${storeName} | HighP Platform`;
+  }, [storeData, storeSlug]);
+
+  useEffect(() => {
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(cart));
   }, [cart, storeSlug]);
 
