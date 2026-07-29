@@ -11,7 +11,12 @@ export default function OrdersTab({
   setTimeRange,
   handleExportOrders
 }) {
+  const [expandedOrderId, setExpandedOrderId] = React.useState(null);
   const currentFilter = ordersFilter || "all";
+
+  const toggleExpand = (id) => {
+    setExpandedOrderId(prev => prev === id ? null : id);
+  };
 
   // Filter labels as seen in the navigation sub-header row
   const filterTabs = [
@@ -129,24 +134,99 @@ export default function OrdersTab({
             </thead>
             <tbody className="divide-y divide-[#e2e8f0] text-sm text-[#334155]">
               {orders.map((item) => (
-                <tr key={item._id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-mono font-semibold text-[#0f172a]">#{item.orderNumber || item._id.slice(-6)}</td>
-                  <td className="p-4 font-medium">{item.customerName || "Walk-in Guest"}</td>
-                  <td className="p-4">
-                    <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
-                      item.status === "pending" ? "bg-amber-50 text-amber-600 border-amber-200" :
-                      item.status === "confirmed" ? "bg-blue-50 text-blue-600 border-blue-200" :
-                      item.status === "shipped" ? "bg-indigo-50 text-indigo-600 border-indigo-200" :
-                      "bg-emerald-50 text-emerald-600 border-emerald-200"
-                    }`}>
-                      {item.status}
-                    </span>
-                  </td>
-                  <td className="p-4 font-bold text-[#0f172a]">₹{item.totalAmount}</td>
-                  <td className="p-4 text-right text-xs font-medium text-[#64748b]">
-                    {new Date(item.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
-                  </td>
-                </tr>
+                <React.Fragment key={item._id}>
+                  <tr 
+                    onClick={() => toggleExpand(item._id)} 
+                    className="hover:bg-slate-50 transition-colors cursor-pointer select-none"
+                  >
+                    <td className="p-4 font-mono font-semibold text-[#0f172a] flex items-center gap-2">
+                      <span className="text-[10px] text-neutral-400 font-bold">{expandedOrderId === item._id ? "▲" : "▼"}</span>
+                      <span>#{item.orderNumber || item._id.slice(-6)}</span>
+                    </td>
+                    <td className="p-4 font-medium">{item.customerName || "Walk-in Guest"}</td>
+                    <td className="p-4">
+                      <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full uppercase border ${
+                        item.status === "pending" ? "bg-amber-50 text-amber-600 border-amber-200" :
+                        item.status === "confirmed" ? "bg-blue-50 text-blue-600 border-blue-200" :
+                        item.status === "shipped" ? "bg-indigo-50 text-indigo-600 border-indigo-200" :
+                        "bg-emerald-50 text-emerald-600 border-emerald-200"
+                      }`}>
+                        {item.status}
+                      </span>
+                    </td>
+                    <td className="p-4 font-bold text-[#0f172a]">₹{item.totalAmount}</td>
+                    <td className="p-4 text-right text-xs font-medium text-[#64748b]">
+                      {new Date(item.createdAt).toLocaleDateString("en-IN", { dateStyle: "medium" })}
+                    </td>
+                  </tr>
+
+                  {expandedOrderId === item._id && (
+                    <tr className="bg-neutral-50/70 border-b border-[#e2e8f0]">
+                      <td colSpan={5} className="p-4 sm:p-5">
+                        <div className="bg-white border border-neutral-200 rounded-2xl p-4 sm:p-5 space-y-4 shadow-sm max-w-2xl">
+                          <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                            <h4 className="font-black text-xs uppercase tracking-wider text-neutral-900">
+                              Bill Breakdown &amp; Receipt Details
+                            </h4>
+                            <span className="text-[10px] font-bold text-neutral-500 font-mono">
+                              Phone: {item.phone || "N/A"}
+                            </span>
+                          </div>
+
+                          {/* ITEM LIST */}
+                          <div className="space-y-1.5 text-xs font-medium text-neutral-700">
+                            {item.items && item.items.map((it, idx) => (
+                              <div key={idx} className="flex justify-between items-center py-1 border-b border-neutral-100">
+                                <span>{it.name} <strong className="text-neutral-900 font-bold">x{it.quantity}</strong></span>
+                                <span className="font-mono font-bold text-neutral-900">₹{it.price * it.quantity}</span>
+                              </div>
+                            ))}
+                          </div>
+
+                          {/* BILL SUMMARY */}
+                          <div className="space-y-1 pt-2 text-xs border-t border-neutral-100">
+                            {item.subtotal > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>Items Subtotal</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{item.subtotal}</span>
+                              </div>
+                            )}
+                            {item.taxAmount > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>GST Tax ({item.taxRate || 5}%)</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{item.taxAmount}</span>
+                              </div>
+                            )}
+                            {item.otherCharges > 0 && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>{item.otherChargesLabel || "Packaging & Service Fee"}</span>
+                                <span className="font-mono font-bold text-neutral-800">₹{item.otherCharges}</span>
+                              </div>
+                            )}
+                            {item.deliveryFee !== undefined && (
+                              <div className="flex justify-between text-neutral-500">
+                                <span>Delivery Fee</span>
+                                <span className="font-mono font-bold text-neutral-800">
+                                  {item.deliveryFee === 0 ? "Free" : `₹${item.deliveryFee}`}
+                                </span>
+                              </div>
+                            )}
+                            <div className="flex justify-between pt-2 text-sm font-black text-neutral-950 border-t border-neutral-200">
+                              <span>Final Order Total</span>
+                              <span className="font-mono text-[#D03D56]">₹{item.totalAmount}</span>
+                            </div>
+                          </div>
+
+                          {item.address && (
+                            <p className="text-[11px] text-neutral-500 font-medium pt-1">
+                              📍 <strong className="text-neutral-800">Delivery Address:</strong> {item.address}
+                            </p>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </React.Fragment>
               ))}
             </tbody>
           </table>

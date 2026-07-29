@@ -106,8 +106,11 @@ export default function CustomerCart() {
   const storeDeliveryFee = isFreeDelivery ? 0 : (storeData?.deliveryFee !== undefined ? storeData.deliveryFee : 40);
   const storeCodEnabled = storeData?.codEnabled !== false;
   const storeUpiId = storeData?.upiId || "";
-  const calculatedTax = Math.round(subtotalAmount * 0.05); // 5% standard tax
-  const grandTotal = subtotalAmount + storeDeliveryFee + calculatedTax;
+  const gstTaxRate = storeData?.gstTaxRate !== undefined ? Number(storeData.gstTaxRate) : 5;
+  const calculatedTax = Math.round(subtotalAmount * (gstTaxRate / 100));
+  const otherChargesAmount = Number(storeData?.otherChargesAmount || 0);
+  const otherChargesLabel = storeData?.otherChargesLabel || "Packaging & Service Fee";
+  const grandTotal = subtotalAmount + storeDeliveryFee + calculatedTax + otherChargesAmount;
 
   // Formats UPI payment deep link for QR code and WhatsApp checkout redirection
   const getUpiPaymentUri = () => {
@@ -176,6 +179,12 @@ export default function CustomerCart() {
           quantity: Number(i.quantity) || 1,
           price: Number(i.price) || 0
         })),
+        subtotal: subtotalAmount,
+        taxAmount: calculatedTax,
+        taxRate: gstTaxRate,
+        otherCharges: otherChargesAmount,
+        otherChargesLabel: otherChargesLabel,
+        deliveryFee: storeDeliveryFee,
         totalAmount: grandTotal,
         estimatedPrepTime: storeData?.busyModeActive ? (20 + storeData.busyModeDuration) : 20,
         deliveryInstructions: deliveryInstructions.trim(),
@@ -575,10 +584,18 @@ export default function CustomerCart() {
                   <span>Subtotal</span>
                   <span className="font-semibold text-neutral-800 font-numbers">Rs.{subtotalAmount}</span>
                 </div>
-                <div className="flex justify-between text-neutral-500">
-                  <span>Tax (5% GST)</span>
-                  <span className="font-semibold text-neutral-800 font-numbers">Rs.{calculatedTax}</span>
-                </div>
+                {gstTaxRate > 0 && (
+                  <div className="flex justify-between text-neutral-500">
+                    <span>GST Tax ({gstTaxRate}%)</span>
+                    <span className="font-semibold text-neutral-800 font-numbers">Rs.{calculatedTax}</span>
+                  </div>
+                )}
+                {otherChargesAmount > 0 && (
+                  <div className="flex justify-between text-neutral-500">
+                    <span>{otherChargesLabel}</span>
+                    <span className="font-semibold text-neutral-800 font-numbers">Rs.{otherChargesAmount}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-neutral-500">
                   <span>Delivery Fee</span>
                   <span className="font-semibold text-neutral-800">

@@ -77,6 +77,12 @@ export default function SettingsTab({
   setUpiId,
   deliveryFee,
   setDeliveryFee,
+  gstTaxRate,
+  setGstTaxRate,
+  otherChargesAmount,
+  setOtherChargesAmount,
+  otherChargesLabel,
+  setOtherChargesLabel,
   checkoutMode,
   setCheckoutMode,
   storeIsOpen,
@@ -414,6 +420,56 @@ export default function SettingsTab({
                       onChange={(e) => setFreeDeliveryAbove(Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
+                  </div>
+                </div>
+              </div>
+
+              {/* TAXES & OTHER CHARGES CONFIGURATION CARD */}
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-2xs space-y-4">
+                <div>
+                  <h3 className="text-xs font-bold text-[#334155] uppercase tracking-wider">GST Tax &amp; Additional Fees Customization</h3>
+                  <p className="text-xs text-[#64748b]">Configure GST tax rate % and custom service/packaging fees applied dynamically on checkout &amp; order receipts.</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#334155]">GST Tax Rate (%)</label>
+                    <input 
+                      type="number"
+                      step="0.1"
+                      min="0"
+                      max="100"
+                      placeholder="5"
+                      value={gstTaxRate !== undefined ? gstTaxRate : 5} 
+                      onChange={(e) => setGstTaxRate(Number(e.target.value))} 
+                      className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
+                    />
+                    <span className="text-[9px] text-[#64748b] block">Set to 0 for no tax.</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#334155]">Other Fee Amount (₹)</label>
+                    <input 
+                      type="number"
+                      min="0"
+                      placeholder="0"
+                      value={otherChargesAmount || ""} 
+                      onChange={(e) => setOtherChargesAmount(Number(e.target.value))} 
+                      className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
+                    />
+                    <span className="text-[9px] text-[#64748b] block">Optional packaging/service fee.</span>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-[#334155]">Fee Label Description</label>
+                    <input 
+                      type="text"
+                      placeholder="Packaging & Service Fee"
+                      value={otherChargesLabel || ""} 
+                      onChange={(e) => setOtherChargesLabel(e.target.value)} 
+                      className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-medium" 
+                    />
+                    <span className="text-[9px] text-[#64748b] block">Label shown on order receipts.</span>
                   </div>
                 </div>
               </div>

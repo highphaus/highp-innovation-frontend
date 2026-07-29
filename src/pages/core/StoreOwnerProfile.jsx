@@ -114,6 +114,9 @@ export default function StoreOwnerProfile() {
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(40);
+  const [gstTaxRate, setGstTaxRate] = useState(5);
+  const [otherChargesAmount, setOtherChargesAmount] = useState(0);
+  const [otherChargesLabel, setOtherChargesLabel] = useState("Packaging & Service Fee");
   const [selfPickup, setSelfPickup] = useState(true);
 
   // UX states
@@ -382,6 +385,9 @@ export default function StoreOwnerProfile() {
       setUpiId(res.data.upiId || "");
       setCodEnabled(res.data.codEnabled !== false);
       setDeliveryFee(res.data.deliveryFee !== undefined ? res.data.deliveryFee : 40);
+      setGstTaxRate(res.data.gstTaxRate !== undefined ? res.data.gstTaxRate : 5);
+      setOtherChargesAmount(res.data.otherChargesAmount || 0);
+      setOtherChargesLabel(res.data.otherChargesLabel || "Packaging & Service Fee");
       setSelfPickup(res.data.selfPickup !== false);
       setCheckoutMode(res.data.checkoutMode || "website");
       setStoreIsOpen(res.data.storeIsOpen !== false);
@@ -1017,6 +1023,9 @@ export default function StoreOwnerProfile() {
         vibrationAlertsEnabled,
         codEnabled,
         deliveryFee,
+        gstTaxRate: Number(gstTaxRate),
+        otherChargesAmount: Number(otherChargesAmount),
+        otherChargesLabel,
         selfPickup,
         upiId,
         checkoutMode,
@@ -1721,6 +1730,12 @@ export default function StoreOwnerProfile() {
               setUpiId={setUpiId}
               deliveryFee={deliveryFee}
               setDeliveryFee={setDeliveryFee}
+              gstTaxRate={gstTaxRate}
+              setGstTaxRate={setGstTaxRate}
+              otherChargesAmount={otherChargesAmount}
+              setOtherChargesAmount={setOtherChargesAmount}
+              otherChargesLabel={otherChargesLabel}
+              setOtherChargesLabel={setOtherChargesLabel}
               selfPickup={selfPickup}
               setSelfPickup={setSelfPickup}
               storeIsOpen={storeIsOpen}
