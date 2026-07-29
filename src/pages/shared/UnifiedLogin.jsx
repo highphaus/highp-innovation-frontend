@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import {
   Mail, Lock, ShieldCheck, AlertCircle, CheckCircle,
-  ArrowRight, LayoutDashboard, ChefHat, Bike, User, Shield, MessageSquare
+  ArrowRight, LayoutDashboard, ChefHat, Bike, User, Shield, MessageSquare, Eye, EyeOff
 } from "lucide-react";
 import axios from "axios";
 import { getTheme, getVerticalDetails } from "../storefront/StorefrontHome";
@@ -17,6 +17,7 @@ export default function UnifiedLogin() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [phone, setPhone] = useState("");
 
   const [errorMsg, setErrorMsg] = useState("");
@@ -229,11 +230,19 @@ export default function UnifiedLogin() {
               <div className="relative">
                 <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
                 <input
-                  required type="password"
+                  required type={showPassword ? "text" : "password"}
                   placeholder="Enter security password"
-                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-4 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-10 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
                   value={password} onChange={e => setPassword(e.target.value)}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 transition-colors z-10 cursor-pointer"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
               </div>
             </div>
           )}
