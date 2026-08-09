@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ShoppingCart, Star, Minus, Plus, Heart, Shield, Clock, Loader2, Share2, Phone } from "lucide-react";
 import axios from "axios";
 import MobileBottomNav from "../../components/MobileBottomNav";
-import { getStoreDisplayName } from "./StorefrontHome";
+import { getStoreDisplayName, checkIsNonVeg } from "./StorefrontHome";
 
 // Safe inline local theme declarations matching your core storefront layout parameters
 export function getTheme(storeData) {
@@ -266,10 +266,10 @@ export default function ProductView() {
 
             {/* Zomato Style Veg/Non-Veg Corner Flag overlay */}
             <div className="absolute left-4 top-4 z-10 bg-white/95 px-2.5 py-1 rounded-md border border-[#F0D5DA] backdrop-blur-md flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider text-[#2D0A10] shadow-sm">
-              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-600" : "border-emerald-600"}`}>
-                <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
+              <span className={`w-2.5 h-2.5 border-2 rounded-sm flex items-center justify-center p-[1px] ${checkIsNonVeg(product) ? "border-red-600" : "border-emerald-600"}`}>
+                <span className={`w-1.5 h-1.5 rounded-full ${checkIsNonVeg(product) ? "bg-red-600" : "bg-emerald-600"}`} />
               </span>
-              <span>{product.isNonVeg ? "Non-Veg" : "Veg"}</span>
+              <span>{checkIsNonVeg(product) ? "Non-Veg" : "Veg"}</span>
             </div>
           </div>
         </div>
@@ -290,9 +290,14 @@ export default function ProductView() {
                 </span>
               </div>
 
-              <h1 className="text-xl sm:text-2xl font-black text-[#2D0A10] tracking-tight leading-tight uppercase font-manrope">
-                {product.name}
-              </h1>
+              <div className="flex items-center gap-2">
+                <span className={`w-4 h-4 border-2 rounded-xs flex items-center justify-center p-[1.5px] shrink-0 ${checkIsNonVeg(product) ? "border-red-600" : "border-emerald-600"}`} title={checkIsNonVeg(product) ? "Non-Veg" : "Veg"}>
+                  <span className={`w-2 h-2 rounded-full ${checkIsNonVeg(product) ? "bg-red-600" : "bg-emerald-600"}`} />
+                </span>
+                <h1 className="text-xl sm:text-2xl font-black text-[#2D0A10] tracking-tight leading-tight uppercase font-manrope">
+                  {product.name}
+                </h1>
+              </div>
             </div>
 
             <div className="flex items-baseline gap-2">

@@ -6,7 +6,7 @@ import {
   Phone as PhoneIcon, Clock, Hash, ExternalLink, ArrowRight, Check
 } from "lucide-react";
 import axios from "axios";
-import { getTheme, getVerticalDetails } from "./StorefrontHome";
+import { getTheme, getVerticalDetails, checkIsNonVeg } from "./StorefrontHome";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
 import MobileBottomNav from "../../components/MobileBottomNav";
 
@@ -455,28 +455,13 @@ export default function CustomerCart() {
   return (
     <div className="min-h-screen bg-white font-sans pb-24 selection:bg-neutral-800 selection:text-white">
       
-      {/* ── HEADER WITH DYNAMIC STORE OWNER DETAILS ── */}
+      {/* ── HEADER WITH CLEAN BACK TO MENU NAVIGATION ── */}
       <div className="bg-white border-b border-neutral-200">
-        <div className="max-w-2xl mx-auto px-5 py-3.5 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {storeData?.logoUrl ? (
-              <img src={storeData.logoUrl} alt={storeData.name} className="w-8 h-8 rounded-xl object-cover border border-neutral-200" />
-            ) : (
-              <div className="w-8 h-8 rounded-xl bg-[#d03d56]/10 text-[#d03d56] font-black text-xs flex items-center justify-center border border-[#d03d56]/20">
-                {storeData?.name ? storeData.name.charAt(0).toUpperCase() : "S"}
-              </div>
-            )}
-            <div>
-              <h1 className="font-black text-xs sm:text-sm text-neutral-900 uppercase tracking-tight font-manrope leading-none">
-                {storeData?.name || storeSlug} Basket
-              </h1>
-              {storeData?.tagline && <span className="text-[10px] text-neutral-400 font-medium italic block mt-0.5">{storeData.tagline}</span>}
-            </div>
-          </div>
-
+        <div className="max-w-2xl mx-auto px-4 sm:px-5 py-3 flex items-center justify-between gap-3">
           <Link to={`/${storeSlug}`}
-            className="flex items-center gap-1.5 text-neutral-500 hover:text-neutral-900 text-xs font-bold transition-colors">
-            <ArrowLeft className="w-4 h-4" /> Back to menu
+            className="flex items-center gap-1.5 text-neutral-700 hover:text-neutral-900 bg-neutral-100 hover:bg-neutral-200 px-3 py-1.5 rounded-full text-xs font-bold transition-all shrink-0 cursor-pointer">
+            <ArrowLeft className="w-4 h-4" />
+            <span>Back to menu</span>
           </Link>
         </div>
       </div>
@@ -508,35 +493,40 @@ export default function CustomerCart() {
           ) : (
             <div className="border border-neutral-200 rounded-xl bg-white divide-y divide-neutral-100 overflow-hidden shadow-sm">
               {cart.map((item, idx) => (
-                <div key={item._id} className="p-4 flex items-center justify-between gap-4">
-                  <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-neutral-400 text-xs font-mono w-4 font-numbers">{idx + 1}.</span>
+                <div key={item._id} className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0 w-full sm:w-auto">
+                    <span className="text-neutral-400 text-xs font-mono w-4 font-numbers shrink-0">{idx + 1}.</span>
                     {item.image && (
-                      <img src={item.image} alt={item.name} className="w-12 h-12 rounded object-cover border border-neutral-100 flex-shrink-0" />
+                      <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover border border-neutral-100 shrink-0" />
                     )}
-                    <div className="min-w-0">
-                      <p className="font-bold text-xs text-neutral-900 truncate">{item.name}</p>
-                      <p className="text-[10px] text-neutral-400 mt-0.5 font-numbers">Rs.{item.price} each</p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-start gap-1.5">
+                        <span className={`w-3.5 h-3.5 border rounded-xs flex items-center justify-center p-[1px] shrink-0 mt-0.5 ${checkIsNonVeg(item) ? "border-red-600" : "border-emerald-600"}`} title={checkIsNonVeg(item) ? "Non-Veg" : "Veg"}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${checkIsNonVeg(item) ? "bg-red-600" : "bg-emerald-600"}`} />
+                        </span>
+                        <p className="font-bold text-xs sm:text-sm text-neutral-900 leading-snug break-words">{item.name}</p>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-neutral-500 mt-0.5 font-numbers">Rs.{item.price} each</p>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4 flex-shrink-0">
-                    <div className="flex items-center rounded border border-neutral-200 bg-neutral-50 h-8">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 sm:gap-4 w-full sm:w-auto pt-2 sm:pt-0 border-t sm:border-t-0 border-neutral-100 shrink-0">
+                    <div className="flex items-center rounded-lg border border-neutral-200 bg-neutral-50 h-8">
                       <button onClick={() => updateQty(item._id, -1)}
-                        className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-150 transition-colors">
+                        className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition-colors rounded-l-lg cursor-pointer">
                         <Minus className="w-3.5 h-3.5" />
                       </button>
                       <span className="w-7 text-center text-xs font-bold text-neutral-800 font-numbers">{item.quantity}</span>
                       <button onClick={() => updateQty(item._id, 1)}
-                        className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-150 transition-colors">
+                        className="w-8 h-full flex items-center justify-center text-neutral-500 hover:bg-neutral-200 transition-colors rounded-r-lg cursor-pointer">
                         <Plus className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
-                    <span className="text-xs font-bold text-neutral-900 w-16 text-right font-numbers">Rs.{item.price * item.quantity}</span>
+                    <span className="text-xs sm:text-sm font-bold text-neutral-900 font-numbers min-w-[3.5rem] text-right">Rs.{item.price * item.quantity}</span>
 
                     <button onClick={() => removeItem(item._id)}
-                      className="text-neutral-300 hover:text-red-500 transition-colors p-1.5 rounded">
+                      className="text-neutral-400 hover:text-red-500 hover:bg-red-50 transition-colors p-1.5 rounded-lg cursor-pointer">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>

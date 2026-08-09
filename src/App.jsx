@@ -29,8 +29,9 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 1. SaaS Hub - Onboard New Merchants Globally */}
-        <Route path="/" element={<PlatformHome />} />
+        {/* 1. SaaS Hub - Default Redirect to Storefront */}
+        <Route path="/" element={<Navigate to="/demo-store" replace />} />
+        <Route path="/platform" element={<PlatformHome />} />
         <Route path="/admin" element={<SuperAdminDashboard />} />
         <Route path="/login" element={<PlatformLogin />} />
         <Route path="/register" element={<StoreRegister />} />

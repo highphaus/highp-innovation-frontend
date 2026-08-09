@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  ShoppingCart, Loader2, Search, User, Clock, Heart, Store, Info, MapPin, Phone, AlertTriangle, Sparkles, X, Check, Share2
+  ShoppingCart, Loader2, Search, User, Clock, Heart, Store, Info, MapPin, Phone, AlertTriangle, Sparkles, X, Check, Share2, MoreVertical
 } from "lucide-react";
 import axios from "axios";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
@@ -17,6 +17,16 @@ export function getStoreDisplayName(storeData, storeSlug) {
     return storeSlug.trim().replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   }
   return "Storefront";
+}
+
+export function checkIsNonVeg(product) {
+  if (!product) return false;
+  if (product.isNonVeg === true || product.vegNonVeg === "non-veg" || product.vegNonVeg === "egg") {
+    return true;
+  }
+  const name = (product.name || "").toLowerCase();
+  const primaryMeat = ["chicken", "mutton", "fish", "prawn", "beef", "pork", "meat", "seafood", "wings", "kebab", "kabab", "tikka", "alfham", "shawaya", "shawarma", "mandi", "biriyani", "biryani"];
+  return primaryMeat.some(kw => name.includes(kw));
 }
 
 // ─── ADDED BACK FOR PRODUCTVIEW.JSX COMPATIBILITY ───────────
@@ -95,6 +105,7 @@ export default function Storefront() {
   
   const [openFaq, setOpenFaq] = useState(null);
   const [vegFilter, setVegFilter] = useState("all");
+  const [vegFilterMenuOpen, setVegFilterMenuOpen] = useState(false);
   const [likedProducts, setLikedProducts] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
@@ -161,10 +172,10 @@ export default function Storefront() {
       result = result.filter((p) => (p.category || "").toLowerCase().trim() === selectedCategory.toLowerCase().trim());
     }
     if (vegFilter === "veg") {
-      result = result.filter(p => p.vegNonVeg === "veg" || p.isNonVeg === false || (!p.isNonVeg && p.vegNonVeg !== "non-veg"));
+      result = result.filter(p => !checkIsNonVeg(p));
     }
     if (vegFilter === "non-veg") {
-      result = result.filter(p => p.vegNonVeg === "non-veg" || p.isNonVeg === true);
+      result = result.filter(p => checkIsNonVeg(p));
     }
     return result;
   }, [products, searchQuery, selectedCategory, vegFilter]);
@@ -188,7 +199,8 @@ export default function Storefront() {
         price: selected.price,
         variantLabel: selected.name,
         quantity: 1,
-        image: getFoodImage(product)
+        image: getFoodImage(product),
+        isNonVeg: checkIsNonVeg(product)
       });
     }
     localStorage.setItem(`cart_${storeSlug}`, JSON.stringify(existing));
@@ -463,19 +475,93 @@ export default function Storefront() {
 
       {/* DYNAMIC CATEGORY FILTER CAROUSEL (FROM STORE OWNER CATEGORIES) */}
       <section className="max-w-4xl mx-auto px-4 pt-6 pb-2">
-        <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1">
-          <button onClick={() => setVegFilter(vegFilter === "veg" ? "all" : "veg")} className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${vegFilter === "veg" ? "bg-emerald-50 border-emerald-400 text-emerald-700" : "bg-white border-neutral-200 text-neutral-600"}`}>
-            Veg
-          </button>
-          <button onClick={() => setVegFilter(vegFilter === "non-veg" ? "all" : "non-veg")} className={`px-3 py-1.5 rounded-full text-[11px] font-bold border transition-all cursor-pointer ${vegFilter === "non-veg" ? "bg-red-50 border-red-400 text-red-700" : "bg-white border-neutral-200 text-neutral-600"}`}>
-            Non-Veg
-          </button>
-          <div className="w-px h-4 bg-neutral-200 mx-1 shrink-0" />
-          {categories.map((cat) => (
-            <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-1.5 rounded-full text-[11px] font-bold border whitespace-nowrap transition-all cursor-pointer ${selectedCategory === cat ? "bg-[#d03d56] border-[#d03d56] text-white" : "bg-white border-neutral-200 text-neutral-500"}`}>
-              {cat}
+        <div className="flex items-center gap-2 relative">
+          {/* COMPACT 3-DOTS MENU BUTTON WITH VEG / NON-VEG DROPDOWN OPTIONS */}
+          <div className="relative shrink-0 z-30">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setVegFilterMenuOpen(!vegFilterMenuOpen);
+              }}
+              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+                vegFilter === "veg"
+                  ? "bg-emerald-50 border-emerald-400 text-emerald-700 shadow-2xs"
+                  : vegFilter === "non-veg"
+                  ? "bg-red-50 border-red-400 text-red-700 shadow-2xs"
+                  : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 shadow-2xs"
+              }`}
+              title="Dietary Filter Options"
+            >
+              {vegFilter === "veg" ? (
+                <span className="w-3.5 h-3.5 border border-emerald-600 rounded-xs flex items-center justify-center p-[1px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                </span>
+              ) : vegFilter === "non-veg" ? (
+                <span className="w-3.5 h-3.5 border border-red-600 rounded-xs flex items-center justify-center p-[1px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                </span>
+              ) : (
+                <MoreVertical className="w-4 h-4 text-neutral-600" />
+              )}
             </button>
-          ))}
+
+            {/* DROPDOWN MENU SHOWING VEG AND NON-VEG */}
+            {vegFilterMenuOpen && (
+              <>
+                <div 
+                  className="fixed inset-0 z-40" 
+                  onClick={() => setVegFilterMenuOpen(false)} 
+                />
+                <div className="absolute left-0 top-full mt-2 w-36 bg-white border border-neutral-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVegFilter(vegFilter === "veg" ? "all" : "veg");
+                      setVegFilterMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
+                      vegFilter === "veg" ? "bg-emerald-50 text-emerald-700" : "text-neutral-700 hover:bg-emerald-50/50"
+                    }`}
+                  >
+                    <span className="w-3.5 h-3.5 border border-emerald-600 rounded-xs flex items-center justify-center p-[1px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                    </span>
+                    <span>Veg</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setVegFilter(vegFilter === "non-veg" ? "all" : "non-veg");
+                      setVegFilterMenuOpen(false);
+                    }}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
+                      vegFilter === "non-veg" ? "bg-red-50 text-red-700" : "text-neutral-700 hover:bg-red-50/50"
+                    }`}
+                  >
+                    <span className="w-3.5 h-3.5 border border-red-600 rounded-xs flex items-center justify-center p-[1px]">
+                      <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+                    </span>
+                    <span>Non-Veg</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+
+          <div className="w-px h-4 bg-neutral-200 mx-0.5 shrink-0" />
+
+          {/* SCROLLABLE CATEGORIES ROW */}
+          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 flex-1 min-w-0">
+            {categories.map((cat) => (
+              <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-1.5 rounded-full text-[11px] font-bold border whitespace-nowrap transition-all cursor-pointer ${selectedCategory === cat ? "bg-[#d03d56] border-[#d03d56] text-white" : "bg-white border-neutral-200 text-neutral-500"}`}>
+                {cat}
+              </button>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -554,8 +640,8 @@ export default function Storefront() {
                     </div>
 
                     <div className="absolute left-2 top-2 bg-white/90 p-1 rounded border border-neutral-100 backdrop-blur-xs">
-                      <span className={`w-2.5 h-2.5 border rounded-xs flex items-center justify-center p-[1px] ${product.isNonVeg ? "border-red-600" : "border-emerald-600"}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${product.isNonVeg ? "bg-red-600" : "bg-emerald-600"}`} />
+                      <span className={`w-2.5 h-2.5 border rounded-xs flex items-center justify-center p-[1px] ${checkIsNonVeg(product) ? "border-red-600" : "border-emerald-600"}`} title={checkIsNonVeg(product) ? "Non-Veg" : "Veg"}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${checkIsNonVeg(product) ? "bg-red-600" : "bg-emerald-600"}`} />
                       </span>
                     </div>
 
@@ -572,7 +658,7 @@ export default function Storefront() {
                           <h4 className="text-xs sm:text-sm font-bold text-neutral-900 tracking-tight leading-tight line-clamp-2 min-h-[2rem]">
                             {product.name}
                           </h4>
-                          <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[8px] px-1 rounded shrink-0">
+                          <div className="flex items-center gap-0.5 bg-emerald-600 text-white font-bold text-[8px] px-1 rounded shrink-0 mt-0.5">
                             <span>{product.rating || "4.5"}</span>
                             <span>★</span>
                           </div>
