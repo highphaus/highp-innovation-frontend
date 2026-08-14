@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios";
+import { API_BASE_URL } from "../../config/api";
 import {
   ArrowRight, Mail, Lock, User, Globe, Shield,
   ChevronRight, CheckCircle, Star, Sparkles,
   Utensils, BookOpen, Scissors, Droplets, ShoppingBag, Dumbbell, Wrench,
   BarChart2, Users, Bell, Truck, CreditCard, Zap, Package, PieChart,
   HelpCircle, Settings, Layers, ShoppingCart, MessageSquare, ShieldAlert,
-  Menu, X
+  Menu, X, Search
 } from "lucide-react";
 
 export default function PlatformHome() {
@@ -14,9 +16,37 @@ export default function PlatformHome() {
   const [activeFaq, setActiveFaq] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  // Store Search State
+  const [storeSearchQuery, setStoreSearchQuery] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
+  const [storesList, setStoresList] = useState([]);
+
   useEffect(() => {
     document.title = "HighP Platform | Enterprise E-Commerce Platform";
+
+    // Fetch registered active stores for search bar
+    axios.get(`${API_BASE_URL}/stores`)
+      .then(res => {
+        if (Array.isArray(res.data)) {
+          setStoresList(res.data);
+        }
+      })
+      .catch(err => {
+        console.warn("Could not fetch stores for search:", err.message);
+      });
   }, []);
+
+  const filteredStores = storesList.filter(st => 
+    (st.name || "").toLowerCase().includes(storeSearchQuery.toLowerCase()) ||
+    (st.slug || "").toLowerCase().includes(storeSearchQuery.toLowerCase())
+  );
+
+  const handleStoreSearchSubmit = (e) => {
+    e.preventDefault();
+    if (!storeSearchQuery.trim()) return;
+    const clean = storeSearchQuery.trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    navigate(`/${clean}`);
+  };
 
   useEffect(() => {
     if (mobileMenuOpen) {
@@ -106,7 +136,7 @@ export default function PlatformHome() {
         </div>
       )}
 
-      {/* 2. HERO SECTION (TOWNCART STYLE) */}
+      {/* 2. HERO SECTION WITH STORE SEARCH */}
       <section className="section-shell px-4 pb-16 pt-12 text-center sm:px-6 sm:pt-20 sm:pb-20 lg:px-8">
         <div className="mx-auto inline-flex items-center gap-2 rounded-full border border-[var(--brand)]/15 bg-[var(--brand-light)] px-3.5 py-1.5 text-[9px] font-semibold uppercase tracking-[0.24em] text-[var(--brand)] animate-fade-in">
           <span className="h-1.5 w-1.5 rounded-full bg-[var(--brand)] animate-pulse" />
@@ -120,8 +150,76 @@ export default function PlatformHome() {
             <span className="text-[var(--brand)]">in seconds</span>
           </h1>
           <p className="mx-auto max-w-2xl text-base leading-8 text-[var(--text-3)] sm:text-lg">
-            Start selling online without technical friction. Share your store link and receive customer orders directly on WhatsApp or KDS consoles — zero commission.
+            Start selling online without technical friction. Share your store link or search any store below.
           </p>
+        </div>
+
+        {/* 🔍 LIVE STORE SEARCH BAR */}
+        <div className="mx-auto mt-8 max-w-xl text-left relative z-30">
+          <form onSubmit={handleStoreSearchSubmit} className="relative flex items-center">
+            <div className="relative w-full">
+              <input
+                type="text"
+                value={storeSearchQuery}
+                onChange={(e) => {
+                  setStoreSearchQuery(e.target.value);
+                  setIsSearching(true);
+                }}
+                onFocus={() => setIsSearching(true)}
+                placeholder="Search store by name or slug (e.g. tastenpark)..."
+                className="w-full rounded-2xl border-2 border-neutral-200 bg-white py-4 pl-12 pr-32 text-sm font-semibold text-neutral-900 placeholder:text-neutral-400 shadow-lg focus:border-[var(--brand)] focus:outline-none focus:ring-4 focus:ring-[var(--brand)]/10 transition-all"
+              />
+              <Search className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+              <button
+                type="submit"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded-xl bg-[var(--brand)] px-4 py-2 text-xs font-bold text-white shadow-md hover:bg-[var(--brand-dark)] transition-all cursor-pointer"
+              >
+                Visit Store
+              </button>
+            </div>
+          </form>
+
+          {/* Live Search Suggestions Dropdown */}
+          {isSearching && storeSearchQuery.trim().length > 0 && (
+            <div className="absolute left-0 right-0 mt-2 max-h-72 overflow-y-auto rounded-2xl border border-neutral-200 bg-white p-2 shadow-2xl z-50 animate-fade-in no-scrollbar">
+              {filteredStores.length > 0 ? (
+                filteredStores.map((st) => (
+                  <div
+                    key={st._id || st.slug}
+                    onClick={() => {
+                      setIsSearching(false);
+                      navigate(`/${st.slug}`);
+                    }}
+                    className="flex items-center justify-between rounded-xl p-3 hover:bg-neutral-50 cursor-pointer transition-colors border-b border-neutral-100 last:border-0"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-[#D03D56] to-[#3F0712] text-white font-black text-xs uppercase shadow-sm">
+                        {st.name?.charAt(0) || "S"}
+                      </div>
+                      <div>
+                        <span className="block text-sm font-black text-neutral-900">{st.name}</span>
+                        <span className="block text-[11px] font-semibold text-neutral-400">highp.in/{st.slug}</span>
+                      </div>
+                    </div>
+                    <span className="rounded-lg bg-neutral-100 px-3 py-1 text-[10px] font-bold text-[var(--brand)] group-hover:bg-[var(--brand)] group-hover:text-white transition-colors">
+                      Open →
+                    </span>
+                  </div>
+                ))
+              ) : (
+                <div className="p-4 text-center">
+                  <p className="text-xs font-bold text-neutral-500">No store matching "{storeSearchQuery}"</p>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/${storeSearchQuery.toLowerCase().replace(/[^a-z0-9]/g, "")}`)}
+                    className="mt-2 text-[11px] font-bold text-[var(--brand)] hover:underline cursor-pointer"
+                  >
+                    Try opening "/{storeSearchQuery.toLowerCase().replace(/[^a-z0-9]/g, "")}" anyway →
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="mt-8 space-y-4">
