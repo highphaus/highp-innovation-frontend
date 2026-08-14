@@ -89,7 +89,7 @@ export default function CustomerDashboard() {
   const TopBar = ({ title }) => (
     <div className="flex items-center justify-between px-5 pt-6 pb-4">
       <div>
-        <p className="label-upper mb-0.5">Taste N Park</p>
+        <p className="label-upper mb-0.5">HighP Store</p>
         <h1 className="heading-lg" style={{ color: "var(--text-primary)" }}>{title}</h1>
       </div>
       <button

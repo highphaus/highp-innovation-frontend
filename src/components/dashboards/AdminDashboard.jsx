@@ -74,7 +74,7 @@ export default function AdminDashboard() {
           <h1 className="text-xl md:text-2xl font-black text-gray-950 flex items-center gap-1.5">
             <ShieldAlert className="w-7 h-7 text-orange-600" /> Executive Dashboard
           </h1>
-          <p className="text-gray-400 text-xs font-semibold mt-0.5">Taste N Park administrative command center</p>
+          <p className="text-gray-400 text-xs font-semibold mt-0.5">HighP Store administrative command center</p>
         </div>
         
         {/* Navigation buttons */}

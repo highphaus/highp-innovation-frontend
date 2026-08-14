@@ -47,8 +47,8 @@ export function Sidebar() {
             <UtensilsCrossed className="h-5 w-5 text-white" />
           </div>
           <div className="min-w-0">
-            <p className="text-[15px] font-semibold leading-none text-[var(--text-primary)]">Taste N Park</p>
-            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--text-3)]">Premium Bakery</p>
+            <p className="text-[15px] font-semibold leading-none text-[var(--text-primary)]">HighP Store</p>
+            <p className="mt-1 text-[11px] font-medium uppercase tracking-[0.2em] text-[var(--text-3)]">Official Storefront</p>
           </div>
         </div>
       </div>
