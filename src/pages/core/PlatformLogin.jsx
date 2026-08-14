@@ -22,7 +22,7 @@ export default function PlatformLogin() {
     document.title = "Sign In | HighP Platform";
   }, []);
 
-  // ── Step 1: Verify Password and Send 6-Digit OTP ──────────────
+  // ── Step 1: Send 6-Digit Email OTP ──────────────
   const handleStep1Submit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
@@ -35,17 +35,11 @@ export default function PlatformLogin() {
       return;
     }
 
-    if (!password || password.length < 4) {
-      setErrorMsg("Please enter your account password (minimum 4 characters).");
-      return;
-    }
-
     setLoading(true);
 
     try {
       await axios.post(`${API_BASE_URL}/stores/send-otp`, {
         email: cleanEmail,
-        password: password,
         purpose: "login"
       });
       setStep(2);
@@ -58,7 +52,7 @@ export default function PlatformLogin() {
       } else if (!err.response) {
         setErrorMsg("Unable to connect to backend service. Please ensure local backend server is running.");
       } else {
-        setErrorMsg(resp?.message || "Authentication failed. Incorrect password or invalid details.");
+        setErrorMsg(resp?.message || "Failed to send verification code. Please check your email address.");
       }
     } finally {
       setLoading(false);
@@ -80,7 +74,6 @@ export default function PlatformLogin() {
     try {
       const res = await axios.post(`${API_BASE_URL}/stores/login`, {
         email: email.trim(),
-        password: password,
         otp:   otpValue
       });
       localStorage.setItem("isOwnerAuthenticated", "true");
@@ -187,7 +180,7 @@ export default function PlatformLogin() {
             </div>
           )}
 
-          {/* ── STEP 1: Email & Password Form ── */}
+          {/* ── STEP 1: Email Verification Form ── */}
           {step === 1 && (
             <form onSubmit={handleStep1Submit} className="space-y-4">
               <div>
@@ -206,29 +199,6 @@ export default function PlatformLogin() {
                 </div>
               </div>
 
-              <div>
-                <label htmlFor="login-password" className="form-label ml-1">Account Password</label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] z-10" />
-                  <input
-                    required
-                    id="login-password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your security password"
-                    className="input pl-10 pr-10 text-sm"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1 rounded-lg z-10"
-                  >
-                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                  </button>
-                </div>
-              </div>
-
               <button
                 type="submit"
                 disabled={loading}
@@ -238,7 +208,7 @@ export default function PlatformLogin() {
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <>
-                    <span>Verify Password &amp; Send OTP</span>
+                    <span>Send Verification Code</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

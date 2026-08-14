@@ -387,7 +387,7 @@ export default function Storefront() {
             </div>
           </div>
 
-          <div className="hidden md:flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {customerUser ? (
               <div className="relative">
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="w-8 h-8 rounded-full bg-white/20 text-white border border-white/10 font-bold text-xs flex items-center justify-center cursor-pointer">
@@ -547,14 +547,14 @@ export default function Storefront() {
 
       {/* ZOMATO STYLE CLEAN FILTER BAR */}
       <section className="max-w-4xl mx-auto px-4 pt-3 pb-1 space-y-2">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* DIETARY TOGGLE SWITCHES & QUICK FILTERS */}
-          <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          {/* DIETARY TOGGLE SWITCHES & QUICK FILTERS (HORIZONTALLY SCROLLABLE ON MOBILE) */}
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs select-none">
             {/* VEG ONLY TOGGLE SWITCH */}
             <button
               type="button"
               onClick={() => setVegFilter(vegFilter === "veg" ? "all" : "veg")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none shrink-0 ${
                 vegFilter === "veg"
                   ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs font-extrabold"
                   : "bg-white border-neutral-200 text-neutral-600 hover:border-emerald-300 font-bold"
@@ -573,7 +573,7 @@ export default function Storefront() {
             <button
               type="button"
               onClick={() => setVegFilter(vegFilter === "non-veg" ? "all" : "non-veg")}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none shrink-0 ${
                 vegFilter === "non-veg"
                   ? "bg-red-50 border-red-500 text-red-900 shadow-2xs font-extrabold"
                   : "bg-white border-neutral-200 text-neutral-600 hover:border-red-300 font-bold"
@@ -592,7 +592,7 @@ export default function Storefront() {
             <button
               type="button"
               onClick={() => setOffersOnly(!offersOnly)}
-              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
                 offersOnly ? "bg-amber-500 border-amber-500 text-white shadow-2xs" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
               }`}
             >
@@ -604,7 +604,7 @@ export default function Storefront() {
             <button
               type="button"
               onClick={() => setFastPrepOnly(!fastPrepOnly)}
-              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
                 fastPrepOnly ? "bg-[#d03d56] border-[#d03d56] text-white shadow-2xs" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
               }`}
             >
@@ -616,7 +616,7 @@ export default function Storefront() {
             <button
               type="button"
               onClick={() => setShowFilterModal(true)}
-              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
                 (vegFilter !== "all" || offersOnly || fastPrepOnly || sortBy !== "default") ? "bg-neutral-900 border-neutral-900 text-white" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
               }`}
             >
@@ -646,8 +646,8 @@ export default function Storefront() {
           )}
         </div>
 
-        {/* ALL CATEGORIES WRAPPED CHIPS */}
-        <div className="flex flex-wrap items-center gap-1.5 py-1">
+        {/* ALL CATEGORIES HORIZONTALLY SCROLLABLE CHIPS ON MOBILE */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1.5 px-0.5">
           {categories.map((cat) => {
             const isSelected = selectedCategory === cat;
             const count = categoryCounts[cat] || (cat === "All" ? products.length : 0);
@@ -656,7 +656,7 @@ export default function Storefront() {
               <button
                 key={cat}
                 onClick={() => setSelectedCategory(cat)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                className={`shrink-0 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1.5 shadow-2xs ${
                   isSelected
                     ? "bg-[#d03d56] text-white border border-[#d03d56] shadow-md shadow-[#d03d56]/20 font-black scale-[1.02]"
                     : "bg-white text-neutral-800 border border-neutral-200/90 hover:bg-neutral-50 hover:border-neutral-300"
