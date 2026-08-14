@@ -110,10 +110,10 @@ export default function ProductView() {
 
   useEffect(() => {
     const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
-    if (product && product.name) {
-      document.title = `${product.name} - ${storeName} | HighP Platform`;
+    if (product) {
+      document.title = `${product.name} - ${storeName} | HighP Store`;
     } else {
-      document.title = `${storeName} | HighP Platform`;
+      document.title = `${storeName} | HighP Store`;
     }
   }, [product, storeData, storeSlug]);
 

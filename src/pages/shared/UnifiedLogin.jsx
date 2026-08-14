@@ -32,7 +32,7 @@ export default function UnifiedLogin() {
 
   useEffect(() => {
     const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
-    document.title = `Login & Registration - ${storeName} | HighP Platform`;
+    document.title = `Login & Registration - ${storeName} | HighP Store`;
   }, [storeData, storeSlug]);
 
   const theme = getTheme(storeData);

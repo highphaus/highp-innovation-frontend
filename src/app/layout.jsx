@@ -11,7 +11,7 @@ export const viewport = {
 };
 
 export const metadata = {
-  title: "HighP Platform",
+  title: "HighP Store",
   description: "Premium storefront and operations platform for modern local businesses",
 };
 

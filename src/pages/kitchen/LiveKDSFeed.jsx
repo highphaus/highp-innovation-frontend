@@ -75,7 +75,7 @@ export default function LiveKDSFeed() {
 
   useEffect(() => {
     const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
-    document.title = `${storeName} Operations Board | HighP Platform`;
+    document.title = `${storeName} Operations Board | HighP Store`;
   }, [storeData, storeSlug]);
 
   useEffect(() => {

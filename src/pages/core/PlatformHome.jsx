@@ -22,7 +22,7 @@ export default function PlatformHome() {
   const [storesList, setStoresList] = useState([]);
 
   useEffect(() => {
-    document.title = "HighP Platform | Enterprise E-Commerce Platform";
+    document.title = "HighP Store | Enterprise E-Commerce Platform";
 
     // Fetch registered active stores for search bar
     axios.get(`${API_BASE_URL}/stores`)
@@ -74,7 +74,7 @@ export default function PlatformHome() {
               <span className="text-xs font-black text-white">HP</span>
             </div>
             <div className="min-w-0">
-              <span className="block truncate text-[11px] font-semibold tracking-[0.2em] text-[var(--text-primary)] sm:text-sm">HighP Platform</span>
+              <span className="block truncate text-[11px] font-semibold tracking-[0.2em] text-[var(--text-primary)] sm:text-sm">HighP Store</span>
               <span className="mt-0.5 block text-[8px] font-semibold uppercase tracking-[0.25em] text-[var(--text-3)] sm:text-[9px]">Enterprise Cloud</span>
             </div>
           </Link>
@@ -509,7 +509,7 @@ export default function PlatformHome() {
               <div className="flex h-7 w-7 items-center justify-center rounded-xl bg-[var(--brand)]">
                 <span className="text-[9px] font-black text-white">HP</span>
               </div>
-              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-primary)]">HighP Platform</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.24em] text-[var(--text-primary)]">HighP Store</span>
             </div>
             <p className="text-sm leading-7 text-[var(--text-3)]">The fastest way for local shops to start selling online with absolute control.</p>
           </div>

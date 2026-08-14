@@ -19,7 +19,7 @@ export default function PlatformLogin() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
-    document.title = "Sign In | HighP Platform";
+    document.title = "Sign In | HighP Store";
   }, []);
 
   // ── Step 1: Send 6-Digit Email OTP ──────────────
@@ -153,7 +153,7 @@ export default function PlatformLogin() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--brand)] shadow-sm">
               {step === 1 ? <Store className="h-6 w-6 text-white" /> : <ShieldCheck className="h-6 w-6 text-white" />}
             </div>
-            <h2 className="text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">HighP Platform</h2>
+            <h2 className="text-xl font-black tracking-[-0.02em] text-[var(--text-primary)]">HighP Store</h2>
             <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[var(--text-3)]">
               {step === 1 ? "Sign in to your store dashboard" : `OTP sent to ${email}`}
             </p>

@@ -499,7 +499,7 @@ export default function StoreOwnerProfile() {
 
   useEffect(() => {
     const storeName = storeData?.name || name || (slug ? slug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
-    document.title = `${storeName} Dashboard | HighP Platform`;
+    document.title = `${storeName} Dashboard | HighP Store`;
   }, [storeData, name, slug]);
 
   // Real-time background polling for new orders (every 7 seconds)
@@ -1207,7 +1207,7 @@ export default function StoreOwnerProfile() {
       <table><thead><tr><th style="text-align:left">Item</th><th>Qty</th><th>Price</th></tr></thead><tbody>${items}</tbody></table>
       <div class="total">Total: ₹${order.totalAmount || 0} | ${(order.paymentMethod || "COD").toUpperCase()}</div>
       ${order.notes ? `<p><strong>Notes:</strong> ${order.notes}</p>` : ""}
-      <div class="footer">Thank you! Powered by HighP Platform</div>
+      <div class="footer">Thank you! Powered by HighP Store</div>
       </body></html>
     `);
     win.document.close();

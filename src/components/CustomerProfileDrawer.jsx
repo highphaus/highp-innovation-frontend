@@ -192,7 +192,7 @@ export default function CustomerProfileDrawer({ isOpen, onClose, storeSlug, them
         {/* FOOTER */}
         <div className="p-6 border-t border-[#F5F5F0] bg-[#FAFAFA] text-center">
           <p className="text-[9px] text-[#737373] uppercase tracking-widest font-black">
-            HighP Platform · customer ledger
+            HighP Store · customer ledger
           </p>
         </div>
       </div>

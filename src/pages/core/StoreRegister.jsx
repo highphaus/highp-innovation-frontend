@@ -22,7 +22,7 @@ export default function StoreRegister() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   useEffect(() => {
-    document.title = "Register Store | HighP Platform";
+    document.title = "Register Store | HighP Store";
   }, []);
 
   // ── Step 1: validate details and send OTP ──────────────────

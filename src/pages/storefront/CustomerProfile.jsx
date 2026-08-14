@@ -152,7 +152,7 @@ export default function CustomerProfile() {
 
   useEffect(() => {
     const storeName = storeData?.name || (storeSlug ? storeSlug.replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "Store");
-    document.title = `My Account & Orders - ${storeName} | HighP Platform`;
+    document.title = `My Account & Orders - ${storeName} | HighP Store`;
   }, [storeData, storeSlug]);
 
   // Wishlist & Activity Items Computation

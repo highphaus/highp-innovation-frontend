@@ -158,7 +158,7 @@ export default function OrderHistoryDrawer({ isOpen, onClose, storeSlug, theme }
         {/* FOOTER */}
         <div className="p-6 border-t border-[#F5F5F0] bg-[#FAFAFA] text-center">
           <p className="text-[9px] text-[#737373] uppercase tracking-widest font-black">
-            HighP Platform · secure ledger node
+            HighP Store · secure ledger node
           </p>
         </div>
       </div>

@@ -183,7 +183,7 @@ export default function Storefront() {
 
   useEffect(() => {
     const displayName = getStoreDisplayName(storeData, storeSlug);
-    document.title = `${displayName} | HighP Platform`;
+    document.title = `${displayName} | HighP Store`;
   }, [storeData, storeSlug]);
 
   const filteredProducts = useMemo(() => {
@@ -690,7 +690,7 @@ export default function Storefront() {
               This store catalog does not have any matching products at the moment.
             </p>
             <Link to="/platform" className="mt-2 px-4 py-2.5 bg-[#d03d56] hover:bg-[#a02240] text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-xs">
-              ← Visit HighP Platform Home
+              ← Visit HighP Store Home
             </Link>
           </div>
         ) : (
