@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
-import { X, Mail, User, Phone, AlertCircle, Loader2, ShieldCheck, RefreshCw, ArrowRight } from "lucide-react";
+import { X, Mail, User, Phone, AlertCircle, Loader2, ShieldCheck, RefreshCw, ArrowRight, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import axios from "axios";
 import { API_BASE_URL } from "../config/api";
 
 export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, onAuthSuccess }) {
   const [isSignUp, setIsSignUp] = useState(false);
-  const [step, setStep] = useState(1); // 1 = details, 2 = OTP
-  const [formData, setFormData] = useState({ name: "", email: "", phone: "" });
+  const [authMethod, setAuthMethod] = useState("password"); // "password" or "otp"
+  const [step, setStep] = useState(1); // 1 = details/login, 2 = OTP
+  const [formData, setFormData] = useState({ name: "", email: "", password: "", phone: "" });
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -68,8 +70,8 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     setResendCooldown(30);
   };
 
-  // Step 1: Send OTP
-  const handleSendOTP = async (e) => {
+  // Step 1: Verify Password and Send OTP
+  const handleStep1Submit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -77,6 +79,11 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
       setErrorMsg("Please enter a valid email address (e.g. name@example.com).");
+      return;
+    }
+
+    if (!formData.password || formData.password.length < 4) {
+      setErrorMsg("Please enter your account password (minimum 4 characters).");
       return;
     }
 
@@ -96,6 +103,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
     const payload = {
       storeSlug,
       email,
+      password: formData.password,
       purpose: isSignUp ? "register" : "login",
       name: formData.name.trim()
     };
@@ -112,20 +120,22 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
       } else if (resp?.alreadyRegistered) {
         setErrorMsg("An account already exists for this email. Switching to Sign In...");
         setIsSignUp(false);
+      } else if (!err.response) {
+        setErrorMsg("Unable to connect to backend service. Please ensure local backend server is running.");
       } else {
-        setErrorMsg(resp?.message || "Failed to send verification code. Please check details.");
+        setErrorMsg(resp?.message || "Authentication failed. Incorrect password or invalid details.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // Step 2: Verify OTP
+  // Step 2: Verify OTP and finalize login
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     const otpValue = otp.join("");
     if (otpValue.length < 6) {
-      setErrorMsg("Please enter the complete 6-digit OTP.");
+      setErrorMsg("Please enter the complete 6-digit OTP code.");
       return;
     }
 
@@ -138,19 +148,19 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
 
     const payload = isSignUp
       ? { storeSlug, otp: otpValue, ...formData }
-      : { storeSlug, email: formData.email.trim(), otp: otpValue };
+      : { storeSlug, email: formData.email.trim(), password: formData.password, otp: otpValue };
 
     try {
       const res = await axios.post(url, payload);
       const customer = res.data.customer || {
         id: res.data.customerId || `server-${Date.now()}`,
-        name: formData.name.trim() || "Guest Customer",
+        name: formData.name.trim() || "Customer",
         email: formData.email.trim(),
         phone: formData.phone.trim() || ""
       };
       finalizeAuth(customer, res.data.token);
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || "Authentication failed. Incorrect code.");
+      setErrorMsg(err.response?.data?.message || "Authentication failed. Incorrect 6-digit OTP code.");
     } finally {
       setLoading(false);
     }
@@ -242,7 +252,7 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
 
         {/* STEP 1: Info Form */}
         {step === 1 && (
-          <form onSubmit={handleSendOTP} className="space-y-4">
+          <form onSubmit={handleStep1Submit} className="space-y-4">
             {isSignUp && (
               <div>
                 <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
@@ -281,6 +291,31 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
               </div>
             </div>
 
+            <div>
+              <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
+                Account Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400 pointer-events-none z-10" />
+                <input
+                  required
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  placeholder={isSignUp ? "Create account password" : "Enter your password"}
+                  className="w-full bg-[#FAFAFA] border border-[#F0EEEB] text-neutral-900 placeholder:text-neutral-400 placeholder:font-normal pl-11 pr-10 py-3 text-xs rounded-xl focus:outline-none focus:border-[#D03D56] focus:bg-white transition-all font-semibold relative z-0"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1 rounded-lg z-10"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
             {isSignUp && (
               <div>
                 <label className="block text-[9px] font-black text-[#737373] uppercase tracking-widest mb-1.5 ml-1">
@@ -309,11 +344,11 @@ export default function CustomerAuthModal({ isOpen, onClose, storeSlug, theme, o
                 {loading ? (
                   <>
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                    <span>Sending Code...</span>
+                    <span>Verifying Credentials...</span>
                   </>
                 ) : (
                   <>
-                    <span>Send Verification Code</span>
+                    <span>Verify Password &amp; Send OTP</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

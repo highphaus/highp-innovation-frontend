@@ -30,6 +30,10 @@ export default function AddProductTab({
   setNewProdOrigin,
   newProdDietaryInfo,
   setNewProdDietaryInfo,
+  newProdVegType,
+  setNewProdVegType,
+  newProdPrepTime,
+  setNewProdPrepTime,
   newProdImage,
   newProdVariants,
   setNewProdVariants,
@@ -181,13 +185,13 @@ export default function AddProductTab({
           {/* ATTRIBUTE INPUT FIELDS */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#334155]">Product Name *</label>
+              <label className="text-xs font-bold text-[#334155]">Product / Dish Name *</label>
               <input 
                 type="text" 
                 value={newProdName}
                 onChange={(e) => setNewProdName(e.target.value)}
-                placeholder="Fresh Tomatoes"
-                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400"
+                placeholder="e.g. Chicken Biryani / Chocolate Cake"
+                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400 font-medium"
                 required
               />
             </div>
@@ -199,13 +203,13 @@ export default function AddProductTab({
                 value={newProdPrice}
                 onChange={(e) => setNewProdPrice(e.target.value)}
                 placeholder="0"
-                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400"
+                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400 font-medium"
                 required
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#334155]">Discounted Price (₹)</label>
+              <label className="text-xs font-bold text-[#334155]">Discounted Sale Price (₹)</label>
               <input 
                 type="number" 
                 value={newProdDiscountPrice}
@@ -216,7 +220,33 @@ export default function AddProductTab({
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-[#334155]">Stock Level</label>
+              <label className="text-xs font-bold text-[#334155]">Food Preparation / Cooking Time ⏱️</label>
+              <input 
+                type="text" 
+                value={newProdPrepTime}
+                onChange={(e) => setNewProdPrepTime?.(e.target.value)}
+                placeholder="e.g. 15-20 mins (or 10 mins, 25 mins)"
+                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400 font-medium text-emerald-800 bg-emerald-50/40"
+              />
+              <p className="text-[10px] text-[#64748b]">Custom preparation time shown to customers on product cards (e.g. 15-20 mins).</p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#334155]">Dietary Category (Veg / Non-Veg)</label>
+              <select
+                value={newProdVegType || "veg"}
+                onChange={(e) => setNewProdVegType?.(e.target.value)}
+                className="w-full border border-[#cbd5e1] rounded px-3 py-2 text-sm focus:outline-none focus:border-neutral-400 bg-white font-medium cursor-pointer"
+              >
+                <option value="veg">🟢 Veg</option>
+                <option value="non-veg">🔴 Non-Veg</option>
+                <option value="egg">🟡 Contains Egg</option>
+                <option value="vegan">🌱 Vegan</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-[#334155]">Stock Quantity</label>
               <input 
                 type="number" 
                 value={newProdStock}
@@ -283,39 +313,57 @@ export default function AddProductTab({
                 <p className="text-[11px] text-[#64748b]">Configure quantity options (e.g. Half, Full, 1 Kg, 2 Kg) with individual prices.</p>
               </div>
               
-              <button
-                type="button"
-                onClick={() => {
-                  const baseP = Number(newProdPrice) || 200;
-                  const presets = [
-                    { variantLabel: "Half", name: "Half", price: Math.round(baseP * 0.6) },
-                    { variantLabel: "Full", name: "Full", price: baseP },
-                    { variantLabel: "1 Kg", name: "1 Kg", price: Math.round(baseP * 1.8) },
-                    { variantLabel: "2 Kg", name: "2 Kg", price: Math.round(baseP * 3.4) }
-                  ];
-                  setNewProdVariants(presets);
-                }}
-                className="text-[10px] font-bold bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] px-2.5 py-1.5 rounded hover:bg-neutral-200 cursor-pointer self-start sm:self-auto"
-              >
-                + Auto Presets (Half, Full, 1Kg, 2Kg)
-              </button>
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const baseP = Number(newProdPrice) || 200;
+                    const presets = [
+                      { variantLabel: "Half", name: "Half", price: Math.round(baseP * 0.6) },
+                      { variantLabel: "Full", name: "Full", price: baseP },
+                      { variantLabel: "1 Kg", name: "1 Kg", price: Math.round(baseP * 1.8) },
+                      { variantLabel: "2 Kg", name: "2 Kg", price: Math.round(baseP * 3.4) }
+                    ];
+                    setNewProdVariants(presets);
+                  }}
+                  className="text-[10px] font-bold bg-[#F7EBEF] border border-[#D03D56]/30 text-[#D03D56] px-2.5 py-1.5 rounded-lg hover:bg-[#D03D56] hover:text-white transition-all cursor-pointer shadow-2xs"
+                >
+                  + Auto Presets (Half, Full, 1Kg, 2Kg)
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const baseP = Number(newProdPrice) || 200;
+                    const presets = [
+                      { variantLabel: "Small", name: "Small", price: Math.round(baseP * 0.7) },
+                      { variantLabel: "Medium", name: "Medium", price: baseP },
+                      { variantLabel: "Large", name: "Large", price: Math.round(baseP * 1.4) }
+                    ];
+                    setNewProdVariants(presets);
+                  }}
+                  className="text-[10px] font-bold bg-[#f1f5f9] border border-[#cbd5e1] text-[#334155] px-2.5 py-1.5 rounded-lg hover:bg-neutral-200 cursor-pointer"
+                >
+                  + Small / Medium / Large
+                </button>
+              </div>
             </div>
 
             {/* Custom Variant Adder Inputs */}
-            <div className="flex flex-wrap gap-2 items-center bg-[#f8fafc] border border-[#e2e8f0] p-3 rounded-lg">
+            <div className="flex flex-wrap gap-2 items-center bg-[#f8fafc] border border-[#e2e8f0] p-3 rounded-xl">
               <input
                 type="text"
                 placeholder="Option Name (e.g. 1 Kg, Half, Full)"
                 value={variantInputText}
                 onChange={(e) => setVariantInputText(e.target.value)}
-                className="flex-1 min-w-[140px] border border-[#cbd5e1] rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-neutral-400 font-medium"
+                className="flex-1 min-w-[140px] border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-[#D03D56] font-medium"
               />
               <input
                 type="number"
-                placeholder="Price ₹ (e.g. 650)"
+                placeholder="Price ₹ (e.g. 250)"
                 value={variantInputUnit}
                 onChange={(e) => setVariantInputUnit(e.target.value)}
-                className="w-28 border border-[#cbd5e1] rounded px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-neutral-400 font-mono"
+                className="w-28 border border-[#cbd5e1] rounded-lg px-3 py-1.5 text-xs bg-white focus:outline-none focus:border-[#D03D56] font-mono"
               />
               <button
                 type="button"
@@ -324,7 +372,7 @@ export default function AddProductTab({
                     alert("Please enter a variant option name (e.g. 1 Kg, Half, Full).");
                     return;
                   }
-                  const priceNum = variantInputUnit ? Number(variantInputUnit) : (Number(newProdPrice) || 0);
+                  const priceNum = variantInputUnit !== "" ? Number(variantInputUnit) : (Number(newProdPrice) || 0);
                   const newEntry = {
                     variantLabel: variantInputText.trim(),
                     name: variantInputText.trim(),
@@ -334,37 +382,64 @@ export default function AddProductTab({
                   setVariantInputText("");
                   setVariantInputUnit("");
                 }}
-                className="bg-[#0f172a] text-white font-bold text-xs px-4 py-1.5 rounded hover:bg-black cursor-pointer shadow-xs"
+                className="bg-[#D03D56] text-white font-bold text-xs px-4 py-1.5 rounded-lg hover:bg-[#a02240] cursor-pointer shadow-2xs flex items-center gap-1"
               >
-                Add Option
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Option</span>
               </button>
             </div>
 
-            {/* Active Variants List Chips */}
-            {newProdVariants && newProdVariants.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {newProdVariants.map((v, idx) => {
-                  const label = v.variantLabel || v.name || `Option ${idx + 1}`;
-                  const price = v.price ?? newProdPrice ?? 0;
-                  return (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-2 bg-[#f1f5f9] border border-[#cbd5e1] px-3 py-1 rounded text-xs font-bold text-[#0f172a] shadow-xs"
-                    >
-                      <span>{label} &mdash; ₹{price}</span>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setNewProdVariants(prev => prev.filter((_, i) => i !== idx));
-                        }}
-                        className="text-neutral-400 hover:text-red-500 cursor-pointer ml-1"
-                        title="Remove Variant Option"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  );
-                })}
+            {/* Editable Active Portion Variants Cards List */}
+            {newProdVariants && newProdVariants.length > 0 ? (
+              <div className="space-y-2 pt-1">
+                <span className="text-[10px] font-bold text-[#64748b] uppercase tracking-wider block">Active Portion &amp; Quantity Options ({newProdVariants.length}):</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {newProdVariants.map((v, idx) => {
+                    const label = v.variantLabel || v.name || `Option ${idx + 1}`;
+                    const price = v.price !== undefined ? v.price : (Number(newProdPrice) || 0);
+                    return (
+                      <div key={idx} className="flex items-center gap-2 bg-white border border-[#cbd5e1] p-2 rounded-xl shadow-2xs hover:border-[#D03D56] transition-colors">
+                        <input 
+                          type="text" 
+                          value={label} 
+                          onChange={(e) => {
+                            const updated = [...newProdVariants];
+                            updated[idx] = { ...updated[idx], variantLabel: e.target.value, name: e.target.value };
+                            setNewProdVariants(updated);
+                          }}
+                          placeholder="Option name"
+                          className="flex-1 border border-[#e2e8f0] rounded-lg px-2.5 py-1 text-xs bg-[#f8fafc] font-bold text-[#0f172a] focus:outline-none focus:border-[#D03D56] focus:bg-white"
+                        />
+                        <div className="flex items-center gap-1">
+                          <span className="text-xs font-bold text-neutral-500">₹</span>
+                          <input 
+                            type="number" 
+                            value={price} 
+                            onChange={(e) => {
+                              const updated = [...newProdVariants];
+                              updated[idx] = { ...updated[idx], price: Number(e.target.value) };
+                              setNewProdVariants(updated);
+                            }}
+                            placeholder="Price"
+                            className="w-20 border border-[#e2e8f0] rounded-lg px-2 py-1 text-xs bg-[#f8fafc] font-mono font-black text-[#D03D56] focus:outline-none focus:border-[#D03D56] focus:bg-white"
+                          />
+                        </div>
+                        <button 
+                          type="button" 
+                          onClick={() => setNewProdVariants(prev => prev.filter((_, i) => i !== idx))} 
+                          className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer shrink-0"
+                          title="Remove variant option"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div className="p-3 bg-[#f8fafc] border border-dashed border-[#cbd5e1] rounded-xl text-center">
+                <p className="text-xs font-semibold text-[#64748b]">No portion options added yet. Click <span className="font-bold text-[#D03D56]">+ Auto Presets</span> above to generate options automatically.</p>
               </div>
             )}
           </div>

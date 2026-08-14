@@ -193,7 +193,7 @@ export default function OrdersTab({
                             )}
                             {item.taxAmount > 0 && (
                               <div className="flex justify-between text-neutral-500">
-                                <span>GST Tax ({item.taxRate || 5}%)</span>
+                                <span>GST Tax ({(item.taxRate !== undefined && item.taxRate !== null) ? item.taxRate : 0}%)</span>
                                 <span className="font-mono font-bold text-neutral-800">₹{item.taxAmount}</span>
                               </div>
                             )}

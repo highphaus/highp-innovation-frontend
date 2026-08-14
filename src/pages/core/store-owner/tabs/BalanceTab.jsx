@@ -27,34 +27,45 @@ export default function BalanceTab({
   const platformFee = 0.18;           // 18 % platform commission
   const taxRate    = 0.00;            // 0% GST passed through
   const available  = Number((salesTotal * (1 - platformFee - taxRate)).toFixed(2));
-  const pending    = withdrawalRequests
-    .filter(r => r.status === "pending")
+  const pending    = (withdrawalRequests || [])
+    .filter(r => {
+      const s = (r.status || "").toLowerCase();
+      return s === "pending" || s === "requested" || s === "processing";
+    })
     .reduce((s, r) => s + (r.amount || 0), 0);
-  const paid       = withdrawalRequests
-    .filter(r => r.status === "approved" || r.status === "paid")
+  const paid       = (withdrawalRequests || [])
+    .filter(r => {
+      const s = (r.status || "").toLowerCase();
+      return s === "approved" || s === "paid" || s === "completed";
+    })
     .reduce((s, r) => s + (r.amount || 0), 0);
 
-  const completedOrders = ordersList.filter(
+  const completedOrders = (ordersList || []).filter(
     o => o.status === "completed" || o.status === "delivered"
   );
   const avgOrderValue = completedOrders.length
     ? Math.round(completedOrders.reduce((s, o) => s + (o.totalAmount || 0), 0) / completedOrders.length)
     : 0;
 
-  const hasBankDetails =
-    bankAccountHolder?.trim() &&
-    bankAccountNumber?.trim() &&
-    bankIfsc?.trim();
+  const hasBankDetails = Boolean(
+    (bankAccountHolder?.trim() && bankAccountNumber?.trim() && bankIfsc?.trim()) ||
+    upiId?.trim()
+  );
 
   // ── Status badge helper ────────────────────────────────────────────────────
   const StatusBadge = ({ status }) => {
+    const norm = (status || "pending").toLowerCase();
     const map = {
-      pending:  { label: "Pending",  cls: "bg-amber-50 text-amber-700 border-amber-200",   icon: <Clock className="w-3 h-3" /> },
-      approved: { label: "Approved", cls: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle className="w-3 h-3" /> },
-      paid:     { label: "Paid",     cls: "bg-blue-50 text-blue-700 border-blue-200",       icon: <CheckCircle className="w-3 h-3" /> },
-      rejected: { label: "Rejected", cls: "bg-red-50 text-red-700 border-red-200",          icon: <XCircle className="w-3 h-3" /> },
+      pending:    { label: "Pending",    cls: "bg-amber-50 text-amber-700 border-amber-200",     icon: <Clock className="w-3 h-3" /> },
+      requested:  { label: "Pending",    cls: "bg-amber-50 text-amber-700 border-amber-200",     icon: <Clock className="w-3 h-3" /> },
+      processing: { label: "Processing", cls: "bg-amber-50 text-amber-700 border-amber-200",     icon: <Clock className="w-3 h-3" /> },
+      approved:   { label: "Approved",   cls: "bg-emerald-50 text-emerald-700 border-emerald-200", icon: <CheckCircle className="w-3 h-3" /> },
+      completed:  { label: "Paid",       cls: "bg-blue-50 text-blue-700 border-blue-200",         icon: <CheckCircle className="w-3 h-3" /> },
+      paid:       { label: "Paid",       cls: "bg-blue-50 text-blue-700 border-blue-200",         icon: <CheckCircle className="w-3 h-3" /> },
+      rejected:   { label: "Rejected",   cls: "bg-red-50 text-red-700 border-red-200",            icon: <XCircle className="w-3 h-3" /> },
+      failed:     { label: "Failed",     cls: "bg-red-50 text-red-700 border-red-200",            icon: <XCircle className="w-3 h-3" /> },
     };
-    const m = map[status] || map.pending;
+    const m = map[norm] || map.pending;
     return (
       <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider border ${m.cls}`}>
         {m.icon} {m.label}

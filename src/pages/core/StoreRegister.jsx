@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
   Store, Mail, User, ArrowRight,
-  AlertCircle, CheckCircle, ShieldCheck, RefreshCw
+  AlertCircle, CheckCircle, ShieldCheck, RefreshCw, Lock, Eye, EyeOff
 } from "lucide-react";
 import axios from "axios";
 import { API_BASE_URL } from "../../config/api";
@@ -13,6 +13,8 @@ export default function StoreRegister() {
   const [step, setStep]           = useState(1); // 1 = details, 2 = OTP
   const [storeName, setStoreName] = useState("");
   const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp]             = useState(["", "", "", "", "", ""]);
   const [errorMsg, setErrorMsg]   = useState("");
   const [infoMsg, setInfoMsg]     = useState("");
@@ -42,6 +44,11 @@ export default function StoreRegister() {
       return;
     }
 
+    if (!password || password.length < 4) {
+      setErrorMsg("Please set a password (minimum 4 characters) for your store account.");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -57,6 +64,8 @@ export default function StoreRegister() {
       const resp = err.response?.data;
       if (resp?.alreadyRegistered) {
         setErrorMsg("An account with this email already exists. Please log in.");
+      } else if (!err.response) {
+        setErrorMsg("Unable to connect to backend service. Please ensure local backend server is running.");
       } else {
         setErrorMsg(resp?.message || "Failed to send verification code. Please check your details.");
       }
@@ -79,9 +88,10 @@ export default function StoreRegister() {
 
     try {
       const res = await axios.post(`${API_BASE_URL}/stores/register`, {
-        name:  storeName.trim(),
-        email: email.trim(),
-        otp:   otpValue
+        name:     storeName.trim(),
+        email:    email.trim(),
+        password: password,
+        otp:      otpValue
       });
 
       // Auto-login after registration
@@ -231,6 +241,30 @@ export default function StoreRegister() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                   />
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label htmlFor="reg-password" className="form-label ml-1">Account Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] pointer-events-none z-10" />
+                  <input
+                    required
+                    id="reg-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Create security password"
+                    className="input pl-11 pr-10 text-sm relative z-0"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1 rounded-lg z-10"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
                 </div>
               </div>
 

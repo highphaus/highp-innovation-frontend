@@ -17,7 +17,7 @@ export default function OverviewTab({
   handleCopyLink
 }) {
   // Fallback URL if storeUrl is missing initially
-  const dynamicStoreUrl = storeUrl || `https://towncart.co.in/store/${storeData?.slug || "trying-to-do"}`;
+  const dynamicStoreUrl = storeUrl || `${window.location.origin}/${storeData?.slug || "tastenpark"}`;
 
   // Encodes the unique store URL dynamically into a standard open API generator link
   const qrCodeApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(dynamicStoreUrl)}`;

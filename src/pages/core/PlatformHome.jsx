@@ -9,7 +9,7 @@ import {
   Menu, X
 } from "lucide-react";
 
-export default function PlamHome() {
+export default function PlatformHome() {
   const navigate = useNavigate();
   const [activeFaq, setActiveFaq] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);

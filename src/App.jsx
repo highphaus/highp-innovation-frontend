@@ -29,8 +29,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        {/* 1. SaaS Hub - Default Redirect to Storefront */}
-        <Route path="/" element={<Navigate to="/demo-store" replace />} />
+        {/* 1. SaaS Hub - Main Platform Landing Page */}
+        <Route path="/" element={<PlatformHome />} />
         <Route path="/platform" element={<PlatformHome />} />
         <Route path="/admin" element={<SuperAdminDashboard />} />
         <Route path="/login" element={<PlatformLogin />} />
@@ -45,6 +45,7 @@ export default function App() {
         <Route path="/analytics" element={<StoreOwnerProfile />} />
         <Route path="/staff" element={<StoreOwnerProfile />} />
         <Route path="/settings" element={<StoreOwnerProfile />} />
+        <Route path="/settings/*" element={<StoreOwnerProfile />} />
         <Route path="/products/new" element={<StoreOwnerProfile />} />
 
         {/* 2. Isolated Tenant Navigation Pipeline Mapping */}
@@ -56,8 +57,9 @@ export default function App() {
           <Route path="product/:productId" element={<ProductView />} />
           <Route path="products/:productId" element={<ProductView />} />
 
-          {/* Customer Cart & Checkout */}
-          <Route path="cart" element={<CustomerCart />} />
+          {/* Customer Cart & Checkout (Two-Step Architecture) */}
+          <Route path="cart" element={<CustomerCart mode="cart" />} />
+          <Route path="checkout" element={<CustomerCart mode="checkout" />} />
 
           {/* Customer Profile Management */}
           <Route path="profile" element={<CustomerProfile />} />

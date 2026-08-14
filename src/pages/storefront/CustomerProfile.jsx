@@ -550,7 +550,7 @@ export default function CustomerProfile() {
                             )}
                             {o.taxAmount > 0 && (
                               <div className="flex justify-between text-neutral-500">
-                                <span>GST Tax ({o.taxRate || 5}%)</span>
+                                <span>GST Tax ({(o.taxRate !== undefined && o.taxRate !== null) ? o.taxRate : 0}%)</span>
                                 <span className="font-mono font-bold text-neutral-800">₹{o.taxAmount}</span>
                               </div>
                             )}

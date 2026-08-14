@@ -52,7 +52,7 @@ export default function PricesTab({
               {productsList
                 .filter(p => 
                   !priceSearchQuery || 
-                  p.name.toLowerCase().includes(priceSearchQuery.toLowerCase())
+                  (p?.name || "").toLowerCase().includes(priceSearchQuery.toLowerCase())
                 )
                 .map((product) => (
                   <tr key={product._id} className="hover:bg-slate-50 transition-colors">

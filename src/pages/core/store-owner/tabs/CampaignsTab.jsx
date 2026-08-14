@@ -160,7 +160,7 @@ export default function CampaignsTab({
           {campaignsList
             .filter(c => 
               !campaignsSearchQuery || 
-              c.title.toLowerCase().includes(campaignsSearchQuery.toLowerCase())
+              (c?.title || "").toLowerCase().includes(campaignsSearchQuery.toLowerCase())
             )
             .map((campaign) => (
               <div key={campaign._id} className="bg-white border border-[#e2e8f0] rounded-lg p-5 shadow-sm space-y-3">

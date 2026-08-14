@@ -55,11 +55,20 @@ export default function UnifiedLogin() {
         storeSlug, email: cleanEmail, password, loginRole: selectedRole
       });
       localStorage.setItem(`token_${storeSlug}`, res.data.token);
-      localStorage.setItem(`role_${storeSlug}`, res.data.role);
+      localStorage.setItem(`role_${storeSlug}`, res.data.role || "admin");
+      localStorage.setItem("userRole", res.data.role || "admin");
+      localStorage.setItem("ownerAuthToken", res.data.token);
+      localStorage.setItem("ownerStoreSlug", storeSlug);
+      localStorage.setItem("isOwnerAuthenticated", "true");
 
-      if (res.data.role === "admin") navigate(`/${storeSlug}/admin`);
-      else if (res.data.role === "kitchen") navigate(`/${storeSlug}/kitchen`);
-      else if (res.data.role === "delivery") navigate(`/${storeSlug}/delivery`);
+      const role = (res.data.role || "admin").toLowerCase();
+      if (role.includes("kitchen")) {
+        navigate(`/${storeSlug}/kitchen`);
+      } else if (role.includes("delivery") || role.includes("driver")) {
+        navigate(`/${storeSlug}/delivery`);
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err) {
       const resp = err.response?.data;
       if (resp?.notRegistered || err.response?.status === 404) {

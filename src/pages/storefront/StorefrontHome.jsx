@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
-  ShoppingCart, Loader2, Search, User, Clock, Heart, Store, Info, MapPin, Phone, AlertTriangle, Sparkles, X, Check, Share2, MoreVertical
+  ShoppingCart, Loader2, Search, User, Clock, Heart, Store, Info, MapPin, Phone, AlertTriangle, Sparkles, X, Check, Share2, MoreVertical, UtensilsCrossed, SlidersHorizontal, Tag
 } from "lucide-react";
 import axios from "axios";
 import CustomerAuthModal from "../../components/CustomerAuthModal";
@@ -39,6 +39,21 @@ export function getVerticalDetails(softwareType) {
 }
 
 // ─── THEME RESOLVER FOR SOFTWARE VERTICALS ─────────────────
+export function getCategoryIcon(categoryName) {
+  const cat = (categoryName || "").toLowerCase().trim();
+  if (cat === "all") return "🍽️";
+  if (cat.includes("alfham") || cat.includes("alfaham") || cat.includes("grill")) return "🔥";
+  if (cat.includes("shawarma") || cat.includes("wrap") || cat.includes("roll")) return "🌯";
+  if (cat.includes("mandi") || cat.includes("kuzhi")) return "🍚";
+  if (cat.includes("shawaya") || cat.includes("roast")) return "🍗";
+  if (cat.includes("biriyani") || cat.includes("biryani") || cat.includes("rice")) return "🍲";
+  if (cat.includes("drink") || cat.includes("beverage") || cat.includes("juice") || cat.includes("shake") || cat.includes("coffee") || cat.includes("tea")) return "🥤";
+  if (cat.includes("dessert") || cat.includes("cake") || cat.includes("sweet") || cat.includes("ice cream")) return "🍰";
+  if (cat.includes("starter") || cat.includes("snack") || cat.includes("appetizer") || cat.includes("fried")) return "🍢";
+  if (cat.includes("bread") || cat.includes("nan") || cat.includes("roti") || cat.includes("parotta")) return "🫓";
+  return "🏷️";
+}
+
 export function getFoodImage(product) {
   if (product?.image && typeof product.image === "string" && product.image.trim()) {
     return product.image.trim();
@@ -53,6 +68,7 @@ export function getTheme(storeData) {
   return { 
     bg: "bg-[#d03d56]", 
     hoverBg: "hover:bg-[#a02240]",
+    lightBg: "bg-[#FAF5F6]",
     colorCode: "#d03d56", 
     primary: "text-[#d03d56]",
     borderCode: "border-[#d03d56]",
@@ -104,8 +120,12 @@ export default function Storefront() {
   const [profileDrawerOpen, setProfileDrawerOpen] = useState(false);
   
   const [openFaq, setOpenFaq] = useState(null);
-  const [vegFilter, setVegFilter] = useState("all");
-  const [vegFilterMenuOpen, setVegFilterMenuOpen] = useState(false);
+  const [vegFilter, setVegFilter] = useState("all"); // all | veg | non-veg
+  const [sortBy, setSortBy] = useState("default"); // default, price-low, price-high, prep-time, rating
+  const [offersOnly, setOffersOnly] = useState(false);
+  const [fastPrepOnly, setFastPrepOnly] = useState(false);
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  
   const [likedProducts, setLikedProducts] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(`likes_${storeSlug}`)) || [];
@@ -151,6 +171,14 @@ export default function Storefront() {
 
   useEffect(() => {
     fetchStoreAndProducts();
+    const interval = setInterval(() => {
+      fetchStoreAndProducts();
+    }, 8000); // Live sync polling every 8s
+    window.addEventListener("focus", fetchStoreAndProducts);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener("focus", fetchStoreAndProducts);
+    };
   }, [storeSlug]);
 
   useEffect(() => {
@@ -177,8 +205,33 @@ export default function Storefront() {
     if (vegFilter === "non-veg") {
       result = result.filter(p => checkIsNonVeg(p));
     }
+    if (offersOnly) {
+      result = result.filter(p => Number(p.offerPrice || p.discountPrice || 0) > 0);
+    }
+    if (fastPrepOnly) {
+      result = result.filter(p => {
+        const timeStr = String(p.prepTime || p.preparationTime || "").toLowerCase();
+        const mins = parseInt(timeStr, 10);
+        return mins <= 15 || timeStr.includes("10") || timeStr.includes("15") || timeStr.includes("5");
+      });
+    }
+
+    if (sortBy === "price-low") {
+      result.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
+    } else if (sortBy === "price-high") {
+      result.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
+    } else if (sortBy === "prep-time") {
+      result.sort((a, b) => {
+        const aMins = parseInt(String(a.prepTime || 15), 10) || 15;
+        const bMins = parseInt(String(b.prepTime || 15), 10) || 15;
+        return aMins - bMins;
+      });
+    } else if (sortBy === "rating") {
+      result.sort((a, b) => Number(b.rating || 4.5) - Number(a.rating || 4.5));
+    }
+
     return result;
-  }, [products, searchQuery, selectedCategory, vegFilter]);
+  }, [products, searchQuery, selectedCategory, vegFilter, offersOnly, fastPrepOnly, sortBy]);
 
   const addToCart = (product, variantObj) => {
     const variants = getProductVariants(product);
@@ -249,6 +302,16 @@ export default function Storefront() {
     }
     return combined;
   }, [storeData, products]);
+
+  const categoryCounts = useMemo(() => {
+    const map = {};
+    products.forEach(p => {
+      const c = p.category ? p.category.trim() : "All";
+      map[c] = (map[c] || 0) + 1;
+    });
+    map["All"] = products.length;
+    return map;
+  }, [products]);
 
   const theme = useMemo(() => getTheme(storeData), [storeData]);
 
@@ -370,6 +433,29 @@ export default function Storefront() {
         </div>
       </div>
 
+      {/* SINGLE UNIFIED LIVE ANNOUNCEMENT BANNER (STORE CLOSED / BUSY MODE) */}
+      {storeData?.storeIsOpen === false && (
+        <div className="max-w-3xl mx-auto px-4 mt-4">
+          <div className="bg-red-50 border border-red-300 rounded-2xl p-3.5 flex items-center gap-3 text-red-950 shadow-2xs animate-pulse">
+            <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+            <p className="text-xs font-bold leading-snug">
+              🔴 Store is currently CLOSED — Orders are temporarily paused. You can still browse products.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {storeData?.storeIsOpen !== false && storeData?.busyModeActive === true && (
+        <div className="max-w-3xl mx-auto px-4 mt-4">
+          <div className="bg-amber-50 border border-amber-300 rounded-2xl p-3.5 flex items-center gap-3 text-amber-950 shadow-2xs">
+            <Clock className="w-4 h-4 text-amber-600 shrink-0 animate-spin" />
+            <p className="text-xs font-bold leading-snug">
+              {storeData?.busyModeMessage || "High order volume! Deliveries may take slightly longer than usual."}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* FREE DELIVERY PROGRESS BAR BANNER */}
       {freeDeliveryThreshold > 0 && (
         <div className="max-w-4xl mx-auto px-4 mt-4">
@@ -389,20 +475,6 @@ export default function Storefront() {
                 style={{ width: `${freeDeliveryProgress}%` }}
               />
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* BUSY MODE / CLOSED NOTICE BANNER */}
-      {(storeData?.busyModeActive || storeData?.storeIsOpen === false) && (
-        <div className="max-w-4xl mx-auto px-4 mt-3">
-          <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-3 flex items-center gap-2.5 text-amber-900">
-            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-            <p className="text-xs font-semibold leading-snug">
-              {storeData?.storeIsOpen === false 
-                ? "This store is currently not taking immediate orders, but you can browse the menu and schedule."
-                : (storeData?.busyModeMessage || `High order volume! Orders may take extra ${storeData?.busyModeDuration || 20} mins.`)}
-            </p>
           </div>
         </div>
       )}
@@ -473,104 +545,153 @@ export default function Storefront() {
         </div>
       )}
 
-      {/* DYNAMIC CATEGORY FILTER CAROUSEL (FROM STORE OWNER CATEGORIES) */}
-      <section className="max-w-4xl mx-auto px-4 pt-6 pb-2">
-        <div className="flex items-center gap-2 relative">
-          {/* COMPACT 3-DOTS MENU BUTTON WITH VEG / NON-VEG DROPDOWN OPTIONS */}
-          <div className="relative shrink-0 z-30">
+      {/* ZOMATO STYLE CLEAN FILTER BAR */}
+      <section className="max-w-4xl mx-auto px-4 pt-3 pb-1 space-y-2">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* DIETARY TOGGLE SWITCHES & QUICK FILTERS */}
+          <div className="flex flex-wrap items-center gap-2">
+            {/* VEG ONLY TOGGLE SWITCH */}
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                setVegFilterMenuOpen(!vegFilterMenuOpen);
-              }}
-              className={`w-8 h-8 rounded-full border flex items-center justify-center transition-all cursor-pointer ${
+              onClick={() => setVegFilter(vegFilter === "veg" ? "all" : "veg")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none ${
                 vegFilter === "veg"
-                  ? "bg-emerald-50 border-emerald-400 text-emerald-700 shadow-2xs"
-                  : vegFilter === "non-veg"
-                  ? "bg-red-50 border-red-400 text-red-700 shadow-2xs"
-                  : "bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50 shadow-2xs"
+                  ? "bg-emerald-50 border-emerald-500 text-emerald-900 shadow-2xs font-extrabold"
+                  : "bg-white border-neutral-200 text-neutral-600 hover:border-emerald-300 font-bold"
               }`}
-              title="Dietary Filter Options"
             >
-              {vegFilter === "veg" ? (
-                <span className="w-3.5 h-3.5 border border-emerald-600 rounded-xs flex items-center justify-center p-[1px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                </span>
-              ) : vegFilter === "non-veg" ? (
-                <span className="w-3.5 h-3.5 border border-red-600 rounded-xs flex items-center justify-center p-[1px]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                </span>
-              ) : (
-                <MoreVertical className="w-4 h-4 text-neutral-600" />
-              )}
+              <span className="w-3.5 h-3.5 border border-emerald-600 rounded-xs flex items-center justify-center p-[1px] bg-white shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+              </span>
+              <span className="text-[11px] tracking-tight">Veg Only</span>
+              <div className={`w-6 h-3 rounded-full p-0.5 transition-colors duration-200 shrink-0 ${vegFilter === "veg" ? "bg-emerald-600" : "bg-neutral-300"}`}>
+                <div className={`w-2 h-2 rounded-full bg-white transition-transform duration-200 ${vegFilter === "veg" ? "translate-x-3" : "translate-x-0"}`} />
+              </div>
             </button>
 
-            {/* DROPDOWN MENU SHOWING VEG AND NON-VEG */}
-            {vegFilterMenuOpen && (
-              <>
-                <div 
-                  className="fixed inset-0 z-40" 
-                  onClick={() => setVegFilterMenuOpen(false)} 
-                />
-                <div className="absolute left-0 top-full mt-2 w-36 bg-white border border-neutral-200 rounded-2xl shadow-xl p-1.5 z-50 animate-in fade-in zoom-in-95">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVegFilter(vegFilter === "veg" ? "all" : "veg");
-                      setVegFilterMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
-                      vegFilter === "veg" ? "bg-emerald-50 text-emerald-700" : "text-neutral-700 hover:bg-emerald-50/50"
-                    }`}
-                  >
-                    <span className="w-3.5 h-3.5 border border-emerald-600 rounded-xs flex items-center justify-center p-[1px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                    </span>
-                    <span>Veg</span>
-                  </button>
+            {/* NON-VEG ONLY TOGGLE SWITCH */}
+            <button
+              type="button"
+              onClick={() => setVegFilter(vegFilter === "non-veg" ? "all" : "non-veg")}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition-all duration-200 cursor-pointer select-none ${
+                vegFilter === "non-veg"
+                  ? "bg-red-50 border-red-500 text-red-900 shadow-2xs font-extrabold"
+                  : "bg-white border-neutral-200 text-neutral-600 hover:border-red-300 font-bold"
+              }`}
+            >
+              <span className="w-3.5 h-3.5 border border-red-600 rounded-xs flex items-center justify-center p-[1px] bg-white shrink-0">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
+              </span>
+              <span className="text-[11px] tracking-tight">Non-Veg</span>
+              <div className={`w-6 h-3 rounded-full p-0.5 transition-colors duration-200 shrink-0 ${vegFilter === "non-veg" ? "bg-red-600" : "bg-neutral-300"}`}>
+                <div className={`w-2 h-2 rounded-full bg-white transition-transform duration-200 ${vegFilter === "non-veg" ? "translate-x-3" : "translate-x-0"}`} />
+              </div>
+            </button>
 
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setVegFilter(vegFilter === "non-veg" ? "all" : "non-veg");
-                      setVegFilterMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold rounded-xl transition-colors cursor-pointer ${
-                      vegFilter === "non-veg" ? "bg-red-50 text-red-700" : "text-neutral-700 hover:bg-red-50/50"
-                    }`}
-                  >
-                    <span className="w-3.5 h-3.5 border border-red-600 rounded-xs flex items-center justify-center p-[1px]">
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-600" />
-                    </span>
-                    <span>Non-Veg</span>
-                  </button>
-                </div>
-              </>
-            )}
+            {/* OFFERS ONLY CHIP */}
+            <button
+              type="button"
+              onClick={() => setOffersOnly(!offersOnly)}
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                offersOnly ? "bg-amber-500 border-amber-500 text-white shadow-2xs" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              <Tag className="w-3 h-3" />
+              <span>Offers</span>
+            </button>
+
+            {/* FAST PREP CHIP */}
+            <button
+              type="button"
+              onClick={() => setFastPrepOnly(!fastPrepOnly)}
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                fastPrepOnly ? "bg-[#d03d56] border-[#d03d56] text-white shadow-2xs" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              <Clock className="w-3 h-3" />
+              <span>Under 15 Mins</span>
+            </button>
+
+            {/* FULL FILTERS MODAL BUTTON */}
+            <button
+              type="button"
+              onClick={() => setShowFilterModal(true)}
+              className={`px-2.5 py-1 rounded-full border text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                (vegFilter !== "all" || offersOnly || fastPrepOnly || sortBy !== "default") ? "bg-neutral-900 border-neutral-900 text-white" : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+              }`}
+            >
+              <SlidersHorizontal className="w-3 h-3" />
+              <span>Filters</span>
+              {(vegFilter !== "all" || offersOnly || fastPrepOnly || sortBy !== "default") && (
+                <span className="w-4 h-4 rounded-full bg-[#d03d56] text-white text-[9px] font-black flex items-center justify-center">
+                  {(vegFilter !== "all" ? 1 : 0) + (offersOnly ? 1 : 0) + (fastPrepOnly ? 1 : 0) + (sortBy !== "default" ? 1 : 0)}
+                </span>
+              )}
+            </button>
           </div>
 
-          <div className="w-px h-4 bg-neutral-200 mx-0.5 shrink-0" />
+          {(selectedCategory !== "All" || vegFilter !== "all" || offersOnly || fastPrepOnly || sortBy !== "default") && (
+            <button
+              onClick={() => {
+                setSelectedCategory("All");
+                setVegFilter("all");
+                setOffersOnly(false);
+                setFastPrepOnly(false);
+                setSortBy("default");
+              }}
+              className="text-[10px] font-bold text-[#d03d56] hover:underline cursor-pointer flex items-center gap-1"
+            >
+              <span>✕ Clear Filters</span>
+            </button>
+          )}
+        </div>
 
-          {/* SCROLLABLE CATEGORIES ROW */}
-          <div className="flex items-center gap-2 overflow-x-auto scrollbar-none py-1 flex-1 min-w-0">
-            {categories.map((cat) => (
-              <button key={cat} onClick={() => setSelectedCategory(cat)} className={`px-4 py-1.5 rounded-full text-[11px] font-bold border whitespace-nowrap transition-all cursor-pointer ${selectedCategory === cat ? "bg-[#d03d56] border-[#d03d56] text-white" : "bg-white border-neutral-200 text-neutral-500"}`}>
-                {cat}
+        {/* ALL CATEGORIES WRAPPED CHIPS */}
+        <div className="flex flex-wrap items-center gap-1.5 py-1">
+          {categories.map((cat) => {
+            const isSelected = selectedCategory === cat;
+            const count = categoryCounts[cat] || (cat === "All" ? products.length : 0);
+
+            return (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all duration-150 cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                  isSelected
+                    ? "bg-[#d03d56] text-white border border-[#d03d56] shadow-md shadow-[#d03d56]/20 font-black scale-[1.02]"
+                    : "bg-white text-neutral-800 border border-neutral-200/90 hover:bg-neutral-50 hover:border-neutral-300"
+                }`}
+              >
+                <span className="tracking-tight">{cat}</span>
+                {count > 0 && (
+                  <span
+                    className={`text-[10px] font-mono font-extrabold px-1.5 py-0.2 rounded-full leading-none transition-colors ${
+                      isSelected ? "bg-white/20 text-white" : "bg-neutral-100 text-neutral-600"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
               </button>
-            ))}
-          </div>
+            );
+          })}
         </div>
       </section>
 
       {/* 2-COLUMN APP RESPONSIVE PRODUCT GRID */}
       <section className="max-w-4xl mx-auto px-2 sm:px-4 mt-4">
         {filteredProducts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-20 text-center text-neutral-400 space-y-3">
-            <Store className="w-12 h-12 text-neutral-200" />
-            <p className="text-xs font-bold">No products found</p>
+          <div className="flex flex-col items-center justify-center py-16 px-4 text-center space-y-3 bg-neutral-50/60 border border-neutral-200/80 rounded-3xl my-6 shadow-2xs">
+            <div className="w-14 h-14 rounded-2xl bg-[#d03d56]/10 text-[#d03d56] flex items-center justify-center mb-1 border border-[#d03d56]/20">
+              <Store className="w-7 h-7" />
+            </div>
+            <h3 className="text-sm font-black text-neutral-900 uppercase tracking-tight font-manrope">No Products Found</h3>
+            <p className="text-xs text-neutral-500 max-w-xs font-medium">
+              This store catalog does not have any matching products at the moment.
+            </p>
+            <Link to="/platform" className="mt-2 px-4 py-2.5 bg-[#d03d56] hover:bg-[#a02240] text-white text-[10px] font-black uppercase tracking-wider rounded-xl transition-all shadow-xs">
+              ← Visit HighP Platform Home
+            </Link>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
@@ -647,7 +768,7 @@ export default function Storefront() {
 
                     <div className="absolute bottom-2 left-2 flex items-center gap-1 rounded bg-neutral-900/80 px-2 py-0.5 text-[9px] font-bold text-white tracking-wide">
                       <Clock className="h-2.5 w-2.5 text-neutral-300" />
-                      <span>{product.preparationTime || "15"} MINS</span>
+                      <span className="uppercase font-mono">{product.prepTime || product.preparationTime || "15-20 mins"}</span>
                     </div>
                   </Link>
 
@@ -729,6 +850,111 @@ export default function Storefront() {
               </span>
             </div>
           </Link>
+        </div>
+      )}
+
+      {/* ZOMATO STYLE FILTERS DRAWER MODAL */}
+      {showFilterModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-xs p-0 sm:p-4 animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200 border border-neutral-200">
+            {/* MODAL HEADER */}
+            <div className="px-5 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/60">
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-[#d03d56]" />
+                <h3 className="text-sm font-black uppercase tracking-wider text-neutral-900 font-manrope">Filters &amp; Sorting</h3>
+              </div>
+              <button 
+                onClick={() => setShowFilterModal(false)}
+                className="p-1 rounded-full hover:bg-neutral-200 text-neutral-500 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* SORT BY SECTION */}
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-neutral-500 block">Sort Dishes By</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "default", label: "Relevance" },
+                    { id: "price-low", label: "Price: Low to High" },
+                    { id: "price-high", label: "Price: High to Low" },
+                    { id: "prep-time", label: "Fastest Prep Time" }
+                  ].map(item => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setSortBy(item.id)}
+                      className={`p-2.5 rounded-xl border text-xs font-bold text-left transition-all cursor-pointer ${
+                        sortBy === item.id 
+                          ? "bg-[#d03d56]/10 border-[#d03d56] text-[#d03d56] shadow-2xs font-extrabold" 
+                          : "bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-50"
+                      }`}
+                    >
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* QUICK SPECIAL FILTERS */}
+              <div className="space-y-2">
+                <label className="text-xs font-black uppercase tracking-wider text-neutral-500 block">Special Food Filters</label>
+                <div className="space-y-2">
+                  <label className="flex items-center justify-between p-3 rounded-2xl border border-neutral-200 bg-white hover:bg-neutral-50 cursor-pointer">
+                    <span className="text-xs font-bold text-neutral-800 flex items-center gap-2">
+                      <Tag className="w-4 h-4 text-amber-500" />
+                      <span>Special Sale Offers Only</span>
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      checked={offersOnly} 
+                      onChange={(e) => setOffersOnly(e.target.checked)}
+                      className="w-4 h-4 accent-[#d03d56] cursor-pointer"
+                    />
+                  </label>
+
+                  <label className="flex items-center justify-between p-3 rounded-2xl border border-neutral-200 bg-white hover:bg-neutral-50 cursor-pointer">
+                    <span className="text-xs font-bold text-neutral-800 flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-[#d03d56]" />
+                      <span>Fast Preparation (Under 15 mins)</span>
+                    </span>
+                    <input 
+                      type="checkbox" 
+                      checked={fastPrepOnly} 
+                      onChange={(e) => setFastPrepOnly(e.target.checked)}
+                      className="w-4 h-4 accent-[#d03d56] cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* FOOTER ACTIONS */}
+            <div className="p-4 bg-neutral-50 border-t border-neutral-100 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setSortBy("default");
+                  setOffersOnly(false);
+                  setFastPrepOnly(false);
+                  setVegFilter("all");
+                }}
+                className="text-xs font-bold text-neutral-600 hover:text-black cursor-pointer px-3 py-2"
+              >
+                Reset All
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowFilterModal(false)}
+                className="flex-1 bg-[#d03d56] hover:bg-[#a02240] text-white font-bold text-xs py-2.5 rounded-xl uppercase tracking-wider transition-all cursor-pointer shadow-md text-center"
+              >
+                Apply Filters ({filteredProducts.length} items)
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

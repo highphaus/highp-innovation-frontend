@@ -1,14 +1,17 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { Mail, ArrowRight, AlertCircle, Store, ShieldCheck, RefreshCw } from "lucide-react";
+import { Mail, ArrowRight, AlertCircle, Store, ShieldCheck, RefreshCw, Lock, Eye, EyeOff, KeyRound } from "lucide-react";
 import axios from "axios";
 import { API_BASE_URL } from "../../config/api";
 
 export default function PlatformLogin() {
   const navigate = useNavigate();
 
-  const [step, setStep]         = useState(1); // 1 = email, 2 = OTP
+  const [authMethod, setAuthMethod] = useState("password"); // "password" or "otp"
+  const [step, setStep]         = useState(1); // 1 = input, 2 = OTP verification
   const [email, setEmail]       = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp]           = useState(["", "", "", "", "", ""]);
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg]   = useState("");
@@ -19,8 +22,8 @@ export default function PlatformLogin() {
     document.title = "Sign In | HighP Platform";
   }, []);
 
-  // ── Step 1: send OTP ────────────────────────────────────────
-  const handleSendOTP = async (e) => {
+  // ── Step 1: Verify Password and Send 6-Digit OTP ──────────────
+  const handleStep1Submit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
     setInfoMsg("");
@@ -32,11 +35,17 @@ export default function PlatformLogin() {
       return;
     }
 
+    if (!password || password.length < 4) {
+      setErrorMsg("Please enter your account password (minimum 4 characters).");
+      return;
+    }
+
     setLoading(true);
 
     try {
       await axios.post(`${API_BASE_URL}/stores/send-otp`, {
         email: cleanEmail,
+        password: password,
         purpose: "login"
       });
       setStep(2);
@@ -46,20 +55,22 @@ export default function PlatformLogin() {
       const resp = err.response?.data;
       if (resp?.notRegistered || err.response?.status === 404) {
         setErrorMsg("No store account found with this email. Click 'Register Store' below to create your store account.");
+      } else if (!err.response) {
+        setErrorMsg("Unable to connect to backend service. Please ensure local backend server is running.");
       } else {
-        setErrorMsg(resp?.message || "Failed to send verification code. Please check your email.");
+        setErrorMsg(resp?.message || "Authentication failed. Incorrect password or invalid details.");
       }
     } finally {
       setLoading(false);
     }
   };
 
-  // ── Step 2: verify OTP & login ──────────────────────────────
+  // ── Step 2: Verify OTP & Sign In ──────────────────────────────
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     const otpValue = otp.join("");
     if (otpValue.length < 6) {
-      setErrorMsg("Please enter the complete 6-digit OTP.");
+      setErrorMsg("Please enter the complete 6-digit OTP code.");
       return;
     }
     setErrorMsg("");
@@ -69,6 +80,7 @@ export default function PlatformLogin() {
     try {
       const res = await axios.post(`${API_BASE_URL}/stores/login`, {
         email: email.trim(),
+        password: password,
         otp:   otpValue
       });
       localStorage.setItem("isOwnerAuthenticated", "true");
@@ -76,9 +88,10 @@ export default function PlatformLogin() {
       localStorage.setItem("ownerEmail",       email.trim());
       localStorage.setItem("ownerStoreName",   res.data.name  || "");
       localStorage.setItem("ownerAuthToken",   res.data.token || "");
+      localStorage.setItem("userRole",         res.data.role  || "admin");
       navigate("/dashboard");
     } catch (err) {
-      setErrorMsg(err?.response?.data?.message || "Invalid OTP. Please try again.");
+      setErrorMsg(err?.response?.data?.message || "Invalid OTP code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -174,13 +187,13 @@ export default function PlatformLogin() {
             </div>
           )}
 
-          {/* ── STEP 1: Email ── */}
+          {/* ── STEP 1: Email & Password Form ── */}
           {step === 1 && (
-            <form onSubmit={handleSendOTP} className="space-y-4">
+            <form onSubmit={handleStep1Submit} className="space-y-4">
               <div>
                 <label htmlFor="login-email" className="form-label ml-1">Email Address</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)]" />
+                  <Mail className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] z-10" />
                   <input
                     required
                     id="login-email"
@@ -192,12 +205,43 @@ export default function PlatformLogin() {
                   />
                 </div>
               </div>
+
+              <div>
+                <label htmlFor="login-password" className="form-label ml-1">Account Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--text-4)] z-10" />
+                  <input
+                    required
+                    id="login-password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your security password"
+                    className="input pl-10 pr-10 text-sm"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-700 p-1 rounded-lg z-10"
+                  >
+                    {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={loading}
-                className="btn-primary w-full rounded-2xl px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.24em] disabled:opacity-70"
+                className="btn-primary w-full rounded-2xl px-4 py-3 text-[10px] font-semibold uppercase tracking-[0.24em] disabled:opacity-70 flex items-center justify-center gap-2 cursor-pointer"
               >
-                {loading ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <><span>Send OTP</span><ArrowRight className="w-3.5 h-3.5" /></>}
+                {loading ? (
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>Verify Password &amp; Send OTP</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </>
+                )}
               </button>
             </form>
           )}

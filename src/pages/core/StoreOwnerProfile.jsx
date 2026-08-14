@@ -30,17 +30,30 @@ export default function StoreOwnerProfile() {
 
   // Sync active tab state from path
   useEffect(() => {
-    const path = location.pathname;
-    if (path === "/dashboard") setActiveTab("overview");
-    else if (path === "/orders") setActiveTab("orders");
-    else if (path === "/catalog") setActiveTab("catalog");
-    else if (path === "/prices") setActiveTab("prices");
-    else if (path === "/campaigns") setActiveTab("campaigns");
-    else if (path === "/analytics") setActiveTab("analytics");
-    else if (path === "/balance") setActiveTab("balance");
-    else if (path === "/staff") setActiveTab("staff");
-    else if (path === "/settings") setActiveTab("settings");
-    else if (path === "/products/new") setActiveTab("add-product");
+    const path = (location.pathname || "").toLowerCase();
+    if (path === "/dashboard" || path === "/") setActiveTab("overview");
+    else if (path.startsWith("/orders")) setActiveTab("orders");
+    else if (path.startsWith("/catalog")) setActiveTab("catalog");
+    else if (path.startsWith("/prices")) setActiveTab("prices");
+    else if (path.startsWith("/campaigns")) setActiveTab("campaigns");
+    else if (path.startsWith("/analytics")) setActiveTab("analytics");
+    else if (path.startsWith("/balance")) setActiveTab("balance");
+    else if (path.startsWith("/staff")) setActiveTab("staff");
+    else if (path.startsWith("/settings")) {
+      setActiveTab("settings");
+      if (path.includes("shipping") || path.includes("delivery") || path.includes("rule")) {
+        setSettingsSubTab("shipping");
+      } else if (path.includes("operations") || path.includes("status")) {
+        setSettingsSubTab("operations");
+      } else if (path.includes("payments") || path.includes("bank")) {
+        setSettingsSubTab("payments");
+      } else if (path.includes("alerts") || path.includes("sound")) {
+        setSettingsSubTab("alerts");
+      } else if (path.includes("banners") || path.includes("promo")) {
+        setSettingsSubTab("banners");
+      }
+    }
+    else if (path.startsWith("/products/new")) setActiveTab("add-product");
   }, [location.pathname]);
 
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
@@ -48,7 +61,11 @@ export default function StoreOwnerProfile() {
   });
 
   const [slug, setSlug] = useState(() => localStorage.getItem("ownerStoreSlug") || "");
+  const [userRole, setUserRole] = useState(() => {
+    return localStorage.getItem("userRole") || localStorage.getItem("role") || localStorage.getItem("ownerRole") || "admin";
+  });
   const [storeData, setStoreData] = useState(null);
+  const storeUrl = `${window.location.origin}/${slug || storeData?.slug || "tastenpark"}`;
 
   // Real-time stats
   const [productsList, setProductsList] = useState([]);
@@ -109,15 +126,17 @@ export default function StoreOwnerProfile() {
   // Payments / Shipping options
   const [codEnabled, setCodEnabled] = useState(true);
   const [upiId, setUpiId] = useState("");
+  const [upiEnabled, setUpiEnabled] = useState(true);
   const [bankAccountHolder, setBankAccountHolder] = useState("");
   const [bankName, setBankName] = useState("");
   const [bankAccountNumber, setBankAccountNumber] = useState("");
   const [bankIfsc, setBankIfsc] = useState("");
   const [deliveryFee, setDeliveryFee] = useState(40);
-  const [gstTaxRate, setGstTaxRate] = useState(5);
+  const [gstTaxRate, setGstTaxRate] = useState(0);
   const [otherChargesAmount, setOtherChargesAmount] = useState(0);
   const [otherChargesLabel, setOtherChargesLabel] = useState("Packaging & Service Fee");
   const [selfPickup, setSelfPickup] = useState(true);
+  const [dineInEnabled, setDineInEnabled] = useState(true);
 
   // UX states
   const [activeTab, setActiveTab] = useState("overview"); // overview, orders, catalog, prices, campaigns, balance, settings
@@ -240,6 +259,7 @@ export default function StoreOwnerProfile() {
       bankAccountNumber: "",
       bankIfsc: "",
       upiId: "",
+      upiEnabled: true,
       codEnabled: true,
       deliveryFee: 40,
       selfPickup: true,
@@ -282,6 +302,7 @@ export default function StoreOwnerProfile() {
     setBankAccountNumber(fallbackStore.bankAccountNumber || "");
     setBankIfsc(fallbackStore.bankIfsc || "");
     setUpiId(fallbackStore.upiId || "");
+    setUpiEnabled(fallbackStore.upiEnabled !== false);
     setCodEnabled(fallbackStore.codEnabled !== false);
     setDeliveryFee(fallbackStore.deliveryFee !== undefined ? fallbackStore.deliveryFee : 40);
     setSelfPickup(fallbackStore.selfPickup !== false);
@@ -383,12 +404,14 @@ export default function StoreOwnerProfile() {
       setBankAccountNumber(res.data.bankAccountNumber || "");
       setBankIfsc(res.data.bankIfsc || "");
       setUpiId(res.data.upiId || "");
+      setUpiEnabled(res.data.upiEnabled !== false);
       setCodEnabled(res.data.codEnabled !== false);
       setDeliveryFee(res.data.deliveryFee !== undefined ? res.data.deliveryFee : 40);
-      setGstTaxRate(res.data.gstTaxRate !== undefined ? res.data.gstTaxRate : 5);
+      setGstTaxRate((res.data.gstTaxRate !== undefined && res.data.gstTaxRate !== null) ? Number(res.data.gstTaxRate) : 0);
       setOtherChargesAmount(res.data.otherChargesAmount || 0);
       setOtherChargesLabel(res.data.otherChargesLabel || "Packaging & Service Fee");
       setSelfPickup(res.data.selfPickup !== false);
+      setDineInEnabled(res.data.dineInEnabled !== false);
       setCheckoutMode(res.data.checkoutMode || "website");
       setStoreIsOpen(res.data.storeIsOpen !== false);
       setBusyModeActive(res.data.busyModeActive === true);
@@ -763,7 +786,7 @@ export default function StoreOwnerProfile() {
         dietaryInfo: newProdDietaryInfo.trim(),
         // Restaurant-specific fields
         vegNonVeg: newProdVegType,
-        prepTime: parseInt(newProdPrepTime || "0", 10),
+        prepTime: newProdPrepTime ? String(newProdPrepTime).trim() : "15-20 mins",
         spiceLevel: newProdSpiceLevel,
         allergens: newProdAllergens,
         addons: newProdAddons.filter(a => a.name.trim()),
@@ -877,7 +900,14 @@ export default function StoreOwnerProfile() {
     setNewProdOrigin(product.origin || "");
     setNewProdDietaryInfo(product.dietaryInfo || "");
     setNewProdImage(product.image || "");
-    setNewProdVariants(Array.isArray(product.variants) ? product.variants : []);
+    const baseP = Number(product.price) || 200;
+    const defaultPresets = [
+      { variantLabel: "Half", name: "Half", price: Math.round(baseP * 0.6) },
+      { variantLabel: "Full", name: "Full", price: baseP },
+      { variantLabel: "1 Kg", name: "1 Kg", price: Math.round(baseP * 1.8) },
+      { variantLabel: "2 Kg", name: "2 Kg", price: Math.round(baseP * 3.4) }
+    ];
+    setNewProdVariants(Array.isArray(product.variants) && product.variants.length > 0 ? product.variants : defaultPresets);
     setNewProdVegType(product.vegNonVeg || "veg");
     setNewProdPrepTime(product.prepTime?.toString() || "");
     setNewProdSpiceLevel(product.spiceLevel || "none");
@@ -1008,8 +1038,8 @@ export default function StoreOwnerProfile() {
         tagline,
         softwareType,
         subscriptionPlan,
-        logoUrl: logoUrl || undefined,
-        faviconUrl: faviconUrl || undefined,
+        logoUrl: logoUrl || "",
+        faviconUrl: faviconUrl || "",
         phone,
         whatsappNumber,
         address,
@@ -1023,11 +1053,13 @@ export default function StoreOwnerProfile() {
         vibrationAlertsEnabled,
         codEnabled,
         deliveryFee,
-        gstTaxRate: Number(gstTaxRate),
-        otherChargesAmount: Number(otherChargesAmount),
+        gstTaxRate: gstTaxRate === "" ? 0 : Number(gstTaxRate),
+        otherChargesAmount: otherChargesAmount === "" ? 0 : Number(otherChargesAmount),
         otherChargesLabel,
         selfPickup,
+        dineInEnabled,
         upiId,
+        upiEnabled,
         checkoutMode,
         storeIsOpen,
         busyModeActive,
@@ -1099,9 +1131,12 @@ export default function StoreOwnerProfile() {
   const handleToggleStoreOpen = async (val) => {
     setStoreIsOpen(val);
     try {
-      await axios.put(`/api/stores/${slug}`, { storeIsOpen: val });
+      const res = await axios.put(`/api/stores/${slug}`, { storeIsOpen: val });
+      if (res.data) setStoreData(res.data);
+      setSuccessMsg(`Store status updated: ${val ? "🟢 Open" : "🔴 Closed"}`);
     } catch (err) {
       console.error("Failed to toggle store status.");
+      setErrorMsg("Failed to toggle store status.");
     }
   };
 
@@ -1182,8 +1217,11 @@ export default function StoreOwnerProfile() {
   const handleRequestWithdrawal = async () => {
     const availableBalance = Number((salesTotal * 0.82).toFixed(2));
 
-    if (!bankAccountHolder || !bankAccountNumber || !bankIfsc) {
-      alert("Please complete your bank account details before requesting a payout.");
+    const hasBank = Boolean(bankAccountHolder?.trim() && bankAccountNumber?.trim() && bankIfsc?.trim());
+    const hasUpi = Boolean(upiId?.trim());
+
+    if (!hasBank && !hasUpi) {
+      alert("Please enter either complete Bank Account details or a valid UPI ID before requesting a payout.");
       return;
     }
 
@@ -1196,10 +1234,11 @@ export default function StoreOwnerProfile() {
     try {
       await axios.post(`/api/stores/${slug}/payouts`, {
         amount: availableBalance,
-        accountHolder: bankAccountHolder,
-        bankName: bankName || "Primary Bank",
-        accountNumber: bankAccountNumber,
-        ifscCode: bankIfsc
+        accountHolder: bankAccountHolder || "Store Owner",
+        bankName: bankName || (hasUpi ? "UPI Payment Rail" : "Primary Bank"),
+        accountNumber: bankAccountNumber || upiId,
+        ifscCode: bankIfsc || "UPI",
+        upiId: upiId || ""
       });
 
       await fetchWithdrawals();
@@ -1378,10 +1417,9 @@ export default function StoreOwnerProfile() {
     );
   }
 
-  const storeUrl = `${window.location.origin}/${slug}`;
-
   // Filtered orders list
   const filteredOrders = ordersList.filter(o => {
+    if (!o) return false;
     if (statusFilter === "pending" && o.status !== "pending") return false;
     if (statusFilter === "confirmed" && o.status !== "preparing") return false;
     if (statusFilter === "out-for-delivery" && o.status !== "completed") return false;
@@ -1389,13 +1427,13 @@ export default function StoreOwnerProfile() {
 
     if (orderSearchQuery.trim()) {
       const q = orderSearchQuery.toLowerCase();
-      const matchCustomer = o.customerName.toLowerCase().includes(q);
-      const matchItems = o.items.some(item => item.name.toLowerCase().includes(q));
+      const matchCustomer = (o.customerName || "").toLowerCase().includes(q);
+      const matchItems = Array.isArray(o.items) && o.items.some(item => (item?.name || "").toLowerCase().includes(q));
       if (!matchCustomer && !matchItems) return false;
     }
 
     if (orderTimeFilter !== "all-time") {
-      const date = new Date(o.createdAt);
+      const date = new Date(o.createdAt || Date.now());
       const today = new Date();
       if (orderTimeFilter === "today") {
         if (date.toDateString() !== today.toDateString()) return false;
@@ -1414,8 +1452,9 @@ export default function StoreOwnerProfile() {
 
   // Filtered prices list
   const filteredProducts = productsList.filter(p => {
+    if (!p) return false;
     if (priceSearchQuery.trim()) {
-      return p.name.toLowerCase().includes(priceSearchQuery.toLowerCase());
+      return (p.name || "").toLowerCase().includes(priceSearchQuery.toLowerCase());
     }
     return true;
   });
@@ -1423,76 +1462,121 @@ export default function StoreOwnerProfile() {
   const toggleSidebar = () => setSidebarOpen(prev => !prev);
   const closeSidebar = () => setSidebarOpen(false);
 
+  const roleBadges = {
+    admin: { label: "👑 Primary Owner", color: "bg-red-50 text-[#D03D56] border-[#D03D56]/20" },
+    owner: { label: "👑 Primary Owner", color: "bg-red-50 text-[#D03D56] border-[#D03D56]/20" },
+    "store-manager": { label: "👔 Store Manager", color: "bg-blue-50 text-blue-700 border-blue-200" },
+    manager: { label: "👔 Store Manager", color: "bg-blue-50 text-blue-700 border-blue-200" },
+    "delivery-partner": { label: "🚚 Delivery Partner", color: "bg-amber-50 text-amber-800 border-amber-200" },
+    delivery: { label: "🚚 Delivery Partner", color: "bg-amber-50 text-amber-800 border-amber-200" },
+    driver: { label: "🚚 Delivery Partner", color: "bg-amber-50 text-amber-800 border-amber-200" },
+    "kitchen-staff": { label: "👨‍🍳 Kitchen Cook / KDS", color: "bg-orange-50 text-orange-800 border-orange-200" },
+    kitchen: { label: "👨‍🍳 Kitchen Cook / KDS", color: "bg-orange-50 text-orange-800 border-orange-200" },
+    cashier: { label: "💳 POS Cashier", color: "bg-purple-50 text-purple-700 border-purple-200" },
+    sales: { label: "💳 POS Cashier", color: "bg-purple-50 text-purple-700 border-purple-200" }
+  };
+
+  const allNavTabs = [
+    { id: "overview", label: "Overview", icon: BarChart2 },
+    { id: "add-product", label: "Add Products", icon: Plus },
+    { id: "orders", label: "Orders", icon: ShoppingCart },
+    { id: "catalog", label: "Catalog", icon: Package },
+    { id: "prices", label: "Prices", icon: Tag },
+    { id: "campaigns", label: "Campaigns", icon: Megaphone },
+    { id: "balance", label: "Balance", icon: Wallet },
+    { id: "analytics", label: "Analytics", icon: TrendingUp },
+    { id: "staff", label: "Staff", icon: Users2 },
+    { id: "settings", label: "Settings", icon: Settings },
+  ];
+
+  const permittedTabIds = (() => {
+    const norm = (userRole || "").toLowerCase().trim();
+    if (norm === "store-manager" || norm === "manager") {
+      return ["overview", "add-product", "orders", "catalog", "prices", "campaigns", "analytics"];
+    }
+    if (norm.includes("delivery") || norm.includes("driver")) {
+      return ["orders"];
+    }
+    if (norm.includes("kitchen") || norm.includes("cook") || norm.includes("chef")) {
+      return ["orders"];
+    }
+    if (norm.includes("cashier") || norm.includes("sales") || norm.includes("billing")) {
+      return ["orders", "catalog", "prices"];
+    }
+    // Default Admin / Store Owner full access
+    return ["overview", "add-product", "orders", "catalog", "prices", "campaigns", "balance", "analytics", "staff", "settings"];
+  })();
+
+  const visibleNavTabs = allNavTabs.filter(tab => permittedTabIds.includes(tab.id));
+
   return (
     <div className="min-h-screen bg-[#FAFAFA] text-neutral-900 font-sans flex relative overflow-x-hidden">
       {sidebarOpen && (
         <button
           type="button"
           aria-label="Close sidebar"
-          className="fixed inset-0 z-40 bg-black/20 md:hidden"
+          className="fixed inset-0 z-40 bg-black/40 backdrop-blur-xs md:hidden cursor-pointer"
           onClick={closeSidebar}
         />
       )}
 
-      {/* 1. LEFT SIDEBAR NAVIGATION (TOWNCART STYLE) */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      {/* 1. LEFT SIDEBAR NAVIGATION (TOWNCART STYLE WITH RBAC) */}
+      <aside className={`fixed inset-y-0 left-0 z-50 w-72 sm:w-64 bg-white border-r border-[#F0EEEB] transform transition-transform duration-300 ease-in-out flex flex-col shadow-xl md:shadow-none ${sidebarOpen ? "translate-x-0" : "-translate-x-full"
         } md:translate-x-0 md:static md:h-screen md:flex-shrink-0`}>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+        <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Logo & Store details */}
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden shadow-sm">
-              {(logoUrl || storeData.logoUrl) ? (
-                <img src={logoUrl || storeData.logoUrl} alt="Logo" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full bg-[#D03D56] flex items-center justify-center text-white font-black text-sm">
-                  {storeData.name?.charAt(0)?.toUpperCase() || "H"}
-                </div>
-              )}
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl flex-shrink-0 overflow-hidden shadow-sm">
+                {(logoUrl || storeData?.logoUrl) ? (
+                  <img src={logoUrl || storeData?.logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                ) : (
+                  <div className="w-full h-full bg-[#D03D56] flex items-center justify-center text-white font-black text-sm">
+                    {storeData?.name?.charAt(0)?.toUpperCase() || name?.charAt(0)?.toUpperCase() || "H"}
+                  </div>
+                )}
+              </div>
+              <div className="min-w-0">
+                <h3 className="font-black text-sm text-neutral-955 truncate uppercase tracking-tight">{storeData?.name || name || "Store"}</h3>
+                <span className="text-[10px] text-[#737373] font-bold capitalize block mt-0.5">
+                  {{
+                    restaurant: "Restaurant",
+                    bakery: "Bakery",
+                    restaurant_bakery: "Restaurant & Bakery",
+                    cafe: "Café",
+                    fastfood: "Fast Food / Street Food",
+                    juice_bar: "Juice Bar",
+                    sweets_shop: "Sweets & Mithai",
+                    ice_cream: "Ice Cream Parlour",
+                    grocery: "Grocery & Kirana",
+                    retail: "Retail Shop",
+                    pharmacy: "Pharmacy",
+                    electronics: "Electronics Store",
+                    clothing: "Clothing & Apparel",
+                    stationery: "Stationery & Books",
+                    salon: "Salon & Spa",
+                    gym: "Gym & Fitness",
+                    water: "Water Delivery",
+                    workshop: "Workshop / Classes",
+                    repair: "Repair Services",
+                    other: "Store",
+                  }[storeData?.softwareType || softwareType || "restaurant"] || "Store"}
+                </span>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h3 className="font-black text-sm text-neutral-955 truncate uppercase tracking-tight">{storeData.name}</h3>
-              <span className="text-[10px] text-[#737373] font-bold capitalize block mt-0.5">
-                {{
-                  restaurant: "Restaurant",
-                  bakery: "Bakery",
-                  restaurant_bakery: "Restaurant & Bakery",
-                  cafe: "Café",
-                  fastfood: "Fast Food / Street Food",
-                  juice_bar: "Juice Bar",
-                  sweets_shop: "Sweets & Mithai",
-                  ice_cream: "Ice Cream Parlour",
-                  grocery: "Grocery & Kirana",
-                  retail: "Retail Shop",
-                  pharmacy: "Pharmacy",
-                  electronics: "Electronics Store",
-                  clothing: "Clothing & Apparel",
-                  stationery: "Stationery & Books",
-                  salon: "Salon & Spa",
-                  gym: "Gym & Fitness",
-                  water: "Water Delivery",
-                  workshop: "Workshop / Classes",
-                  repair: "Repair Services",
-                  other: "Store",
-                }[storeData.softwareType] || "Store"}
-              </span>
+
+            {/* Active User Role Badge */}
+            <div className={`px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 ${
+              (roleBadges[userRole?.toLowerCase()] || roleBadges.admin).color
+            }`}>
+              <span>{(roleBadges[userRole?.toLowerCase()] || roleBadges.admin).label}</span>
             </div>
           </div>
 
-          {/* Nav List */}
+          {/* Nav List (Filtered by Role Permissions) */}
           <nav className="space-y-1">
-            {[
-              { id: "overview", label: "Overview", icon: BarChart2 },
-              { id: "add-product", label: "Add Products", icon: Plus },
-              { id: "orders", label: "Orders", icon: ShoppingCart },
-              { id: "catalog", label: "Catalog", icon: Package },
-              { id: "prices", label: "Prices", icon: Tag },
-              { id: "campaigns", label: "Campaigns", icon: Megaphone },
-              { id: "balance", label: "Balance", icon: Wallet },
-              { id: "analytics", label: "Analytics", icon: TrendingUp },
-              { id: "staff", label: "Staff", icon: Users2 },
-              { id: "settings", label: "Settings", icon: Settings },
-            ].map((tab) => {
+            {visibleNavTabs.map((tab) => {
               const Icon = tab.icon;
               const isSelected = activeTab === tab.id;
               return (
@@ -1558,6 +1642,17 @@ export default function StoreOwnerProfile() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={storeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-1.5 bg-[#F7EBEF] text-[#D03D56] hover:bg-[#D03D56] hover:text-white rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-2xs border border-[#D03D56]/20 cursor-pointer"
+              title="Open customer storefront in a new tab"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+              <span className="hidden xs:inline">Visit Live Storefront</span>
+            </a>
+
             <button
               type="button"
               onClick={handleToggleSoundAlerts}
@@ -1728,6 +1823,8 @@ export default function StoreOwnerProfile() {
               setCodEnabled={setCodEnabled}
               upiId={upiId}
               setUpiId={setUpiId}
+              upiEnabled={upiEnabled}
+              setUpiEnabled={setUpiEnabled}
               deliveryFee={deliveryFee}
               setDeliveryFee={setDeliveryFee}
               gstTaxRate={gstTaxRate}
@@ -1738,8 +1835,11 @@ export default function StoreOwnerProfile() {
               setOtherChargesLabel={setOtherChargesLabel}
               selfPickup={selfPickup}
               setSelfPickup={setSelfPickup}
+              dineInEnabled={dineInEnabled}
+              setDineInEnabled={setDineInEnabled}
               storeIsOpen={storeIsOpen}
               setStoreIsOpen={setStoreIsOpen}
+              handleToggleStoreOpen={handleToggleStoreOpen}
               busyModeActive={busyModeActive}
               setBusyModeActive={setBusyModeActive}
               busyModeMessage={busyModeMessage}

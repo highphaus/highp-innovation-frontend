@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import { 
   Settings, 
   CreditCard, 
@@ -40,6 +40,7 @@ export default function SettingsTab({
   subscriptionPlan,
   ordersCount,
   logoUrl,
+  setLogoUrl,
   faviconUrl,
   setFaviconUrl,
   phone,
@@ -67,14 +68,20 @@ export default function SettingsTab({
   settingsSubTab,
   setSettingsSubTab,
   updating,
+  errorMsg,
+  successMsg,
   slug,
   
   codEnabled,
   setCodEnabled,
   selfPickup,
   setSelfPickup,
+  dineInEnabled,
+  setDineInEnabled,
   upiId,
   setUpiId,
+  upiEnabled,
+  setUpiEnabled,
   deliveryFee,
   setDeliveryFee,
   gstTaxRate,
@@ -87,6 +94,7 @@ export default function SettingsTab({
   setCheckoutMode,
   storeIsOpen,
   setStoreIsOpen,
+  handleToggleStoreOpen,
   busyModeActive,
   setBusyModeActive,
   busyModeMessage,
@@ -114,6 +122,72 @@ export default function SettingsTab({
 }) {
   const logoInputRef = useRef(null);
 
+  const [busyPresets, setBusyPresets] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`busy_presets_${slug || "store"}`);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [
+      "Deliver Agents are busy so it takes 1 hour delay to reach",
+      "High order volume! Deliveries may take 15-20 mins longer.",
+      "Heavy rain in area! Order fulfillment may be delayed by 30 mins."
+    ];
+  });
+
+  const handleAddBusyPreset = () => {
+    if (!busyModeMessage || !busyModeMessage.trim()) return;
+    const cleanMsg = busyModeMessage.trim();
+    const currentList = Array.isArray(busyPresets) ? busyPresets : [];
+    if (currentList.includes(cleanMsg)) return;
+    const next = [cleanMsg, ...currentList];
+    setBusyPresets(next);
+    try { localStorage.setItem(`busy_presets_${slug || "store"}`, JSON.stringify(next)); } catch (_) {}
+  };
+
+  const handleDeleteBusyPreset = (presetToDelete) => {
+    const currentList = Array.isArray(busyPresets) ? busyPresets : [];
+    const next = currentList.filter(p => p !== presetToDelete);
+    setBusyPresets(next);
+    try { localStorage.setItem(`busy_presets_${slug || "store"}`, JSON.stringify(next)); } catch (_) {}
+    if (busyModeMessage === presetToDelete) {
+      setBusyModeMessage(next[0] || "");
+    }
+  };
+
+  const [internalSubTab, setInternalSubTab] = useState("general");
+  const currentTab = settingsSubTab || internalSubTab;
+
+  const handleSelectSubTab = (tabId) => {
+    setInternalSubTab(tabId);
+    if (typeof setSettingsSubTab === "function") {
+      setSettingsSubTab(tabId);
+    }
+  };
+
+  const normTab = (currentTab || "").toLowerCase().trim();
+  let activeSubTab = "general";
+  if (normTab === "operations" || normTab === "status" || normTab === "store-status" || normTab === "operating") {
+    activeSubTab = "operations";
+  } else if (
+    normTab === "shipping" || 
+    normTab.includes("delivery") || 
+    normTab.includes("rule") || 
+    normTab === "checkout"
+  ) {
+    activeSubTab = "shipping";
+  } else if (normTab === "payments" || normTab === "bank" || normTab === "banking") {
+    activeSubTab = "payments";
+  } else if (normTab === "alerts" || normTab === "notifications" || normTab === "sound") {
+    activeSubTab = "alerts";
+  } else if (normTab === "banners" || normTab === "promo") {
+    activeSubTab = "banners";
+  } else {
+    activeSubTab = "general";
+  }
+
   const subTabsList = [
     { id: "general", label: "General", icon: Settings },
     { id: "operations", label: "Store Status", icon: Clock },
@@ -135,18 +209,43 @@ export default function SettingsTab({
         </span>
       </div>
 
+      {/* PERSISTENT UPDATE CONFIRMATION BANNER */}
+      {successMsg && (
+        <div className="mb-6 bg-emerald-50 border border-emerald-300 text-emerald-900 px-4 py-3.5 rounded-2xl flex items-center gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
+          <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <CheckCircle className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-emerald-900">Changes Saved &amp; Updated!</h4>
+            <p className="text-xs font-medium text-emerald-800 mt-0.5">{successMsg}</p>
+          </div>
+        </div>
+      )}
+
+      {errorMsg && (
+        <div className="mb-6 bg-red-50 border border-red-300 text-red-900 px-4 py-3.5 rounded-2xl flex items-center gap-3 shadow-xs animate-in fade-in slide-in-from-top-2">
+          <div className="w-7 h-7 rounded-full bg-red-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+            <AlertTriangle className="w-4 h-4" />
+          </div>
+          <div>
+            <h4 className="text-xs font-black uppercase tracking-wider text-red-900">Update Error</h4>
+            <p className="text-xs font-medium text-red-800 mt-0.5">{errorMsg}</p>
+          </div>
+        </div>
+      )}
+
       <div className="flex flex-col md:flex-row gap-8 items-start">
         
         {/* LEFT TAB NAVIGATION */}
         <aside className="w-full md:w-56 flex flex-row md:flex-col overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 gap-1 border-b md:border-b-0 md:border-r border-[#e2e8f0] flex-shrink-0 scrollbar-none">
           {subTabsList.map((tab) => {
             const Icon = tab.icon;
-            const isActive = settingsSubTab === tab.id;
+            const isActive = activeSubTab === tab.id;
             return (
               <button
                 key={tab.id}
                 type="button"
-                onClick={() => setSettingsSubTab(tab.id)}
+                onClick={() => handleSelectSubTab(tab.id)}
                 className={`flex items-center gap-3 px-4 py-3 text-xs font-bold rounded-xl transition-all whitespace-nowrap cursor-pointer ${
                   isActive
                     ? "bg-[#F7EBEF] text-[#D03D56] border-l-3 border-[#D03D56] font-extrabold shadow-2xs"
@@ -164,7 +263,7 @@ export default function SettingsTab({
         <div className="flex-1 w-full bg-transparent space-y-8">
           
           {/* SUB-TAB 1: GENERAL STORE IDENTITY & CONTACT PARAMETERS */}
-          {settingsSubTab === "general" && (
+          {activeSubTab === "general" && (
             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-3xl">
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-[#0f172a]">General Profile</h2>
@@ -237,11 +336,25 @@ export default function SettingsTab({
                         <Camera className="w-6 h-6 text-[#64748b]" />
                       )}
                     </div>
-                    <div>
-                      <button type="button" onClick={() => logoInputRef.current?.click()} className="px-4 py-2 border border-[#cbd5e1] text-xs font-bold rounded-lg bg-white text-[#2d3748] shadow-2xs cursor-pointer hover:bg-neutral-50">
-                        Upload New Logo
-                      </button>
-                      <p className="text-[10px] text-[#64748b] mt-1">Recommended size: 500x500 px PNG or JPG</p>
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <button type="button" onClick={() => logoInputRef.current?.click()} className="px-4 py-2 border border-[#cbd5e1] text-xs font-bold rounded-lg bg-white text-[#2d3748] shadow-2xs cursor-pointer hover:bg-neutral-50">
+                          Upload New Logo
+                        </button>
+
+                        {logoUrl && (
+                          <button 
+                            type="button" 
+                            onClick={() => setLogoUrl?.("")} 
+                            className="px-3 py-2 border border-red-200 text-xs font-bold rounded-lg bg-red-50 text-red-600 shadow-2xs cursor-pointer hover:bg-red-100 flex items-center gap-1.5 transition-all"
+                            title="Delete store logo"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Delete Logo</span>
+                          </button>
+                        )}
+                      </div>
+                      <p className="text-[10px] text-[#64748b]">Recommended size: 500x500 px PNG or JPG</p>
                     </div>
                   </div>
                 </div>
@@ -288,15 +401,29 @@ export default function SettingsTab({
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={updating} className="px-6 py-3 bg-[#D03D56] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs hover:bg-[#3F0712] cursor-pointer">
-                  {updating ? "Saving Changes..." : "Save General Settings"}
+                <button 
+                  type="submit" 
+                  disabled={updating} 
+                  className="px-6 py-3 bg-[#D03D56] hover:bg-[#a02240] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {updating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Settings...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                      <span>Save General Settings</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
           {/* SUB-TAB 2: OPERATING STATUS & RUSH HOUR CONTROL */}
-          {settingsSubTab === "operations" && (
+          {activeSubTab === "operations" && (
             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-3xl">
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-[#0f172a]">Store Status &amp; Rush Hour Controls</h2>
@@ -313,7 +440,14 @@ export default function SettingsTab({
 
                   <button
                     type="button"
-                    onClick={() => setStoreIsOpen?.(!storeIsOpen)}
+                    onClick={() => {
+                      const newVal = storeIsOpen === false ? true : false;
+                      if (handleToggleStoreOpen) {
+                        handleToggleStoreOpen(newVal);
+                      } else if (setStoreIsOpen) {
+                        setStoreIsOpen(newVal);
+                      }
+                    }}
                     className={`w-14 h-7 flex items-center rounded-full p-1 transition-colors cursor-pointer ${storeIsOpen !== false ? "bg-emerald-600" : "bg-red-600"}`}
                   >
                     <div className={`bg-white w-5 h-5 rounded-full shadow-md transition-transform ${storeIsOpen !== false ? "translate-x-7" : "translate-x-0"}`} />
@@ -342,15 +476,77 @@ export default function SettingsTab({
                 </div>
 
                 {busyModeActive && (
-                  <div className="space-y-2 pt-2 border-t border-[#f1f5f9]">
-                    <label className="text-xs font-bold text-[#334155]">Custom Announcement Banner Text</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. High order volume! Deliveries may take 15-20 mins longer."
-                      value={busyModeMessage}
-                      onChange={(e) => setBusyModeMessage(e.target.value)}
-                      className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56]"
-                    />
+                  <div className="space-y-4 pt-3 border-t border-[#f1f5f9]">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-[#334155]">Active Custom Announcement Banner Text</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. Deliver Agents are busy so it takes 1 hour delay to reach..."
+                        value={busyModeMessage}
+                        onChange={(e) => setBusyModeMessage(e.target.value)}
+                        className="w-full border border-[#cbd5e1] rounded-lg px-3.5 py-2.5 text-sm focus:outline-none focus:border-[#D03D56] font-medium"
+                      />
+                    </div>
+
+                    {/* MULTIPLE PRESET ANNOUNCEMENTS MANAGER */}
+                    <div className="space-y-2 pt-1">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-[#334155]">Saved Custom Announcement Templates</span>
+                        {busyModeMessage && busyModeMessage.trim() && !busyPresets.includes(busyModeMessage.trim()) && (
+                          <button
+                            type="button"
+                            onClick={handleAddBusyPreset}
+                            className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300 px-2.5 py-1 rounded-md hover:bg-emerald-100 transition-all flex items-center gap-1 cursor-pointer"
+                          >
+                            <Plus className="w-3 h-3" />
+                            <span>Save Current as Preset</span>
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="space-y-2 max-h-52 overflow-y-auto pr-1">
+                        {busyPresets.map((preset, idx) => {
+                          const isSelected = busyModeMessage === preset;
+                          return (
+                            <div 
+                              key={idx}
+                              className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs transition-all ${
+                                isSelected ? "bg-[#F7EBEF] border-[#D03D56] text-[#0f172a] shadow-xs" : "bg-[#f8fafc] border-[#e2e8f0] text-neutral-700 hover:bg-neutral-100"
+                              }`}
+                            >
+                              <div 
+                                onClick={() => setBusyModeMessage(preset)}
+                                className="flex items-center gap-2 cursor-pointer flex-1 min-w-0"
+                              >
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${isSelected ? "bg-[#D03D56]" : "bg-neutral-400"}`} />
+                                <span className={`font-semibold truncate ${isSelected ? "text-[#D03D56] font-bold" : ""}`}>{preset}</span>
+                              </div>
+
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <button
+                                  type="button"
+                                  onClick={() => setBusyModeMessage(preset)}
+                                  className={`px-2.5 py-1 text-[10px] font-bold rounded-lg transition-colors cursor-pointer ${
+                                    isSelected ? "bg-[#D03D56] text-white" : "bg-white border border-neutral-300 text-neutral-800 hover:bg-neutral-200"
+                                  }`}
+                                >
+                                  {isSelected ? "Active ✓" : "Use This"}
+                                </button>
+
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteBusyPreset(preset)}
+                                  className="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors cursor-pointer"
+                                  title="Delete announcement template"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 )}
               </div>
@@ -372,15 +568,29 @@ export default function SettingsTab({
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={updating} className="px-6 py-3 bg-[#D03D56] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs hover:bg-[#3F0712] cursor-pointer">
-                  {updating ? "Saving Changes..." : "Save Status Settings"}
+                <button 
+                  type="submit" 
+                  disabled={updating} 
+                  className="px-6 py-3 bg-[#D03D56] hover:bg-[#a02240] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {updating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Settings...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                      <span>Save Status Settings</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
           {/* SUB-TAB 3: DELIVERY & CHECKOUT RULES */}
-          {settingsSubTab === "shipping" && (
+          {activeSubTab === "shipping" && (
             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-3xl">
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-[#0f172a]">Delivery &amp; Checkout Rules</h2>
@@ -396,8 +606,8 @@ export default function SettingsTab({
                     <label className="text-xs font-bold text-[#334155]">Standard Delivery Fee (₹)</label>
                     <input 
                       type="number" 
-                      value={deliveryFee} 
-                      onChange={(e) => setDeliveryFee(Number(e.target.value))} 
+                      value={deliveryFee !== undefined && deliveryFee !== null ? deliveryFee : ""} 
+                      onChange={(e) => setDeliveryFee?.(e.target.value === "" ? "" : Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
                   </div>
@@ -406,8 +616,8 @@ export default function SettingsTab({
                     <label className="text-xs font-bold text-[#334155]">Minimum Order Amount (₹)</label>
                     <input 
                       type="number" 
-                      value={minOrderAmount} 
-                      onChange={(e) => setMinOrderAmount(Number(e.target.value))} 
+                      value={minOrderAmount !== undefined && minOrderAmount !== null ? minOrderAmount : ""} 
+                      onChange={(e) => setMinOrderAmount?.(e.target.value === "" ? "" : Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
                   </div>
@@ -416,8 +626,8 @@ export default function SettingsTab({
                     <label className="text-xs font-bold text-[#334155]">Free Delivery Above (₹)</label>
                     <input 
                       type="number" 
-                      value={freeDeliveryAbove} 
-                      onChange={(e) => setFreeDeliveryAbove(Number(e.target.value))} 
+                      value={freeDeliveryAbove !== undefined && freeDeliveryAbove !== null ? freeDeliveryAbove : ""} 
+                      onChange={(e) => setFreeDeliveryAbove?.(e.target.value === "" ? "" : Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
                   </div>
@@ -439,9 +649,9 @@ export default function SettingsTab({
                       step="0.1"
                       min="0"
                       max="100"
-                      placeholder="5"
-                      value={gstTaxRate !== undefined ? gstTaxRate : 5} 
-                      onChange={(e) => setGstTaxRate(Number(e.target.value))} 
+                      placeholder="0"
+                      value={gstTaxRate !== undefined && gstTaxRate !== null ? gstTaxRate : 0} 
+                      onChange={(e) => setGstTaxRate(e.target.value === "" ? "" : Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
                     <span className="text-[9px] text-[#64748b] block">Set to 0 for no tax.</span>
@@ -453,8 +663,8 @@ export default function SettingsTab({
                       type="number"
                       min="0"
                       placeholder="0"
-                      value={otherChargesAmount || ""} 
-                      onChange={(e) => setOtherChargesAmount(Number(e.target.value))} 
+                      value={otherChargesAmount !== undefined && otherChargesAmount !== null ? otherChargesAmount : ""} 
+                      onChange={(e) => setOtherChargesAmount?.(e.target.value === "" ? "" : Number(e.target.value))} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold" 
                     />
                     <span className="text-[9px] text-[#64748b] block">Optional packaging/service fee.</span>
@@ -466,7 +676,7 @@ export default function SettingsTab({
                       type="text"
                       placeholder="Packaging & Service Fee"
                       value={otherChargesLabel || ""} 
-                      onChange={(e) => setOtherChargesLabel(e.target.value)} 
+                      onChange={(e) => setOtherChargesLabel?.(e.target.value)} 
                       className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-medium" 
                     />
                     <span className="text-[9px] text-[#64748b] block">Label shown on order receipts.</span>
@@ -490,7 +700,21 @@ export default function SettingsTab({
                   </button>
                 </div>
 
-                <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center justify-between py-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-[#0f172a]">UPI &amp; Online Payment</h4>
+                    <p className="text-[11px] text-[#64748b]">Allow customers to pay via UPI QR code or Online Payment apps at checkout.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setUpiEnabled?.(!upiEnabled)}
+                    className={`w-12 h-6 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${upiEnabled !== false ? "bg-[#D03D56]" : "bg-neutral-200"}`}
+                  >
+                    <div className={`bg-white w-5 h-5 rounded-full shadow transition-transform ${upiEnabled !== false ? "translate-x-6" : "translate-x-0"}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between py-3">
                   <div>
                     <h4 className="text-xs font-bold text-[#0f172a]">Self-Pickup / Takeaway</h4>
                     <p className="text-[11px] text-[#64748b]">Allow customers to pick up orders directly from the store.</p>
@@ -503,6 +727,20 @@ export default function SettingsTab({
                     <div className={`bg-white w-5 h-5 rounded-full shadow transition-transform ${selfPickup ? "translate-x-6" : "translate-x-0"}`} />
                   </button>
                 </div>
+
+                <div className="flex items-center justify-between pt-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-[#0f172a]">Dine-In / Eat in Shop</h4>
+                    <p className="text-[11px] text-[#64748b]">Allow customers to place orders to eat directly inside the shop/restaurant.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setDineInEnabled?.(!dineInEnabled)}
+                    className={`w-12 h-6 flex items-center rounded-full p-0.5 transition-colors cursor-pointer ${dineInEnabled !== false ? "bg-[#D03D56]" : "bg-neutral-200"}`}
+                  >
+                    <div className={`bg-white w-5 h-5 rounded-full shadow transition-transform ${dineInEnabled !== false ? "translate-x-6" : "translate-x-0"}`} />
+                  </button>
+                </div>
               </div>
 
               {/* CHECKOUT DISPATCH MODE */}
@@ -510,7 +748,7 @@ export default function SettingsTab({
                 <h4 className="text-xs font-bold text-[#0f172a]">Order Submission Mode</h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div 
-                    onClick={() => setCheckoutMode("website")}
+                    onClick={() => setCheckoutMode?.("website")}
                     className={`border p-4 rounded-xl cursor-pointer transition-all ${checkoutMode === "website" ? "border-[#D03D56] bg-[#F7EBEF]" : "border-[#cbd5e1] bg-white"}`}
                   >
                     <h5 className="text-xs font-bold text-[#0f172a]">🌐 Website Checkout</h5>
@@ -518,7 +756,7 @@ export default function SettingsTab({
                   </div>
 
                   <div 
-                    onClick={() => setCheckoutMode("whatsapp")}
+                    onClick={() => setCheckoutMode?.("whatsapp")}
                     className={`border p-4 rounded-xl cursor-pointer transition-all ${checkoutMode === "whatsapp" ? "border-[#D03D56] bg-[#F7EBEF]" : "border-[#cbd5e1] bg-white"}`}
                   >
                     <h5 className="text-xs font-bold text-[#0f172a]">💬 Direct WhatsApp Checkout</h5>
@@ -528,15 +766,29 @@ export default function SettingsTab({
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={updating} className="px-6 py-3 bg-[#D03D56] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs hover:bg-[#3F0712] cursor-pointer">
-                  {updating ? "Saving Changes..." : "Save Delivery Rules"}
+                <button 
+                  type="submit" 
+                  disabled={updating} 
+                  className="px-6 py-3 bg-[#D03D56] hover:bg-[#a02240] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {updating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Settings...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                      <span>Save Delivery Rules</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
           {/* SUB-TAB 4: PAYMENTS & BANKING DETAILS */}
-          {settingsSubTab === "payments" && (
+          {activeSubTab === "payments" && (
             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-3xl">
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-[#0f172a]">Payments &amp; Bank Details</h2>
@@ -544,10 +796,25 @@ export default function SettingsTab({
               </div>
 
               {/* UPI PAYMENTS CARD */}
-              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-2xs space-y-3">
-                <h3 className="text-xs font-bold text-[#334155] uppercase tracking-wider">UPI Virtual Payment Address</h3>
-                <div className="space-y-1.5 max-w-md">
-                  <label className="text-xs font-bold text-[#334155]">Merchant UPI ID</label>
+              <div className="bg-white border border-[#e2e8f0] rounded-2xl p-5 shadow-2xs space-y-4">
+                <div className="flex items-center justify-between border-b border-[#f1f5f9] pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold text-[#334155] uppercase tracking-wider">UPI Online Payment Option</h3>
+                    <p className="text-[11px] text-[#64748b] mt-0.5">Enable or disable UPI QR &amp; online payment option for customers on the checkout cart page.</p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input 
+                      type="checkbox" 
+                      checked={upiEnabled} 
+                      onChange={(e) => setUpiEnabled(e.target.checked)} 
+                      className="sr-only peer" 
+                    />
+                    <div className="w-11 h-6 bg-[#cbd5e1] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-[#cbd5e1] after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#D03D56]"></div>
+                  </label>
+                </div>
+
+                <div className="space-y-1.5 max-w-md pt-1">
+                  <label className="text-xs font-bold text-[#334155]">Merchant UPI VPA ID</label>
                   <input
                     type="text"
                     placeholder="e.g. merchantname@upi"
@@ -555,7 +822,11 @@ export default function SettingsTab({
                     onChange={(e) => setUpiId(e.target.value)}
                     className="w-full border border-[#cbd5e1] rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-[#D03D56] font-mono font-bold"
                   />
-                  <p className="text-[10px] text-[#64748b]">Allows instant QR code scanning for online customer payments.</p>
+                  <p className="text-[10px] text-[#64748b]">
+                    {upiEnabled 
+                      ? "✓ UPI option will be enabled and visible on the customer checkout cart page." 
+                      : "✕ UPI option is currently disabled and hidden from customers at checkout."}
+                  </p>
                 </div>
               </div>
 
@@ -607,15 +878,29 @@ export default function SettingsTab({
               </div>
 
               <div className="pt-2 flex justify-end">
-                <button type="submit" disabled={updating} className="px-6 py-3 bg-[#D03D56] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs hover:bg-[#3F0712] cursor-pointer">
-                  {updating ? "Saving Changes..." : "Save Payment Details"}
+                <button 
+                  type="submit" 
+                  disabled={updating} 
+                  className="px-6 py-3 bg-[#D03D56] hover:bg-[#a02240] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {updating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Settings...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                      <span>Save Payment Details</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
           {/* SUB-TAB 5: SOUND & NOTIFICATION ALERTS */}
-          {settingsSubTab === "alerts" && (
+          {activeSubTab === "alerts" && (
             <form onSubmit={handleUpdateProfile} className="space-y-6 max-w-3xl">
               <div className="space-y-1">
                 <h2 className="text-lg font-bold text-[#0f172a]">Sound &amp; Audio Notifications</h2>
@@ -729,15 +1014,29 @@ export default function SettingsTab({
                   🔔 Test Sound Alert Chime
                 </button>
 
-                <button type="submit" disabled={updating} className="px-6 py-3 bg-[#D03D56] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-xs hover:bg-[#3F0712] cursor-pointer">
-                  {updating ? "Saving Changes..." : "Save Alert Settings"}
+                <button 
+                  type="submit" 
+                  disabled={updating} 
+                  className="px-6 py-3 bg-[#D03D56] hover:bg-[#a02240] text-white text-xs font-bold uppercase tracking-wider rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer disabled:opacity-60"
+                >
+                  {updating ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin text-white" />
+                      <span>Updating Settings...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle className="w-4 h-4 text-white" />
+                      <span>Save Alert Settings</span>
+                    </>
+                  )}
                 </button>
               </div>
             </form>
           )}
 
           {/* SUB-TAB 6: PROMOTIONAL BANNERS */}
-          {settingsSubTab === "banners" && (
+          {activeSubTab === "banners" && (
             <div className="space-y-6 max-w-4xl">
               <div className="space-y-1">
                 <h2 className="text-xl font-bold text-[#0f172a]">Promotional Storefront Banners</h2>
