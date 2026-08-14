@@ -387,7 +387,7 @@ export default function Storefront() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-4">
+          <div className="hidden md:flex items-center gap-4">
             {customerUser ? (
               <div className="relative">
                 <button onClick={() => setUserMenuOpen(!userMenuOpen)} className="w-8 h-8 rounded-full bg-white/20 text-white border border-white/10 font-bold text-xs flex items-center justify-center cursor-pointer">
