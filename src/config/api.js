@@ -18,8 +18,8 @@ export const getApiBaseUrl = () => {
     }
   }
 
-  // 3. Production Default (Render Backend)
-  return "https://highp-innovation-backend.onrender.com/api";
+  // 3. Production Default (Vercel Backend Serverless Gateway)
+  return "https://highp-innovation-backend.vercel.app/api";
 };
 
 export const API_BASE_URL = getApiBaseUrl();
